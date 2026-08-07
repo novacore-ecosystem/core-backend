@@ -1,3 +1,5 @@
+using NovaCore.Promotion.Domain.Entities.Distributions;
+
 namespace NovaCore.Promotion.Domain.Entities.Rewards;
 
 /// <summary>
@@ -13,6 +15,9 @@ public sealed class RewardDistribution : BaseEntity<Guid>, IAuditable
     public DistributionStatus Status { get; private set; }
     public DateTime? ScheduledAt { get; private set; }
     public DateTime? ExecutedAt { get; private set; }
+
+    /// <summary>Forward reference to the independent DistributionJob root (Phase 2.6 correction) - same pattern as Coupon.Campaign/Coupon.Promotion, resolved at the Persistence layer via FK.</summary>
+    public DistributionJob? DistributionJob { get; private set; }
 
     private RewardDistribution() { }
 

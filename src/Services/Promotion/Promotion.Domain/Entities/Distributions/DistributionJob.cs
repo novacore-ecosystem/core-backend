@@ -3,12 +3,12 @@ namespace NovaCore.Promotion.Domain.Entities.Distributions;
 /// <summary>
 /// Aggregate root for a DistributionJob - owns Batches. DistributionItem/DistributionExecution/
 /// DistributionRetry/DistributionHistory are related by id only, not navigated from here - see
-/// docs/promotion-service/aggregates/distribution.md. Like RewardProgram, no ValueObjects section
-/// was given for this aggregate - Code stays a plain string.
+/// docs/promotion-service/aggregates/distribution.md. Code now uses the shared EntityCode Value
+/// Object, same as every other aggregate root (Phase 2.6 correction).
 /// </summary>
 public sealed class DistributionJob : AggregateRoot<Guid>, IAuditable, ITenantEntity
 {
-    public string Code { get; private set; } = string.Empty;
+    public EntityCode Code { get; private set; } = default!;
     public string Name { get; private set; } = string.Empty;
     public DistributionStatus Status { get; private set; }
     public DistributionStrategy Strategy { get; private set; }
@@ -29,9 +29,8 @@ public sealed class DistributionJob : AggregateRoot<Guid>, IAuditable, ITenantEn
     #region Constructor
     private DistributionJob() { }
 
-    public static DistributionJob Create(string code, string name, DistributionStrategy strategy, DateTime? scheduledAt = null)
+    public static DistributionJob Create(EntityCode code, string name, DistributionStrategy strategy, DateTime? scheduledAt = null)
     {
-        ValidateCode(code);
         ValidateName(name);
 
         return new DistributionJob
@@ -63,12 +62,6 @@ public sealed class DistributionJob : AggregateRoot<Guid>, IAuditable, ITenantEn
     {
         if (string.IsNullOrWhiteSpace(name))
             throw ExceptionFactory.RequiredField("Distribution job name cannot be empty.");
-    }
-
-    private static void ValidateCode(string code)
-    {
-        if (string.IsNullOrWhiteSpace(code))
-            throw ExceptionFactory.RequiredField("Distribution job code cannot be empty.");
     }
     #endregion
 
