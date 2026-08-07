@@ -2,6 +2,10 @@
 
 One line per still-open task, most recent date first. Per-task detail lives in each date folder — see [README.md](./README.md) for the convention.
 
+## 2026-08-08
+
+- [x] Task 1 — Promotion Service Phase 3.1 Entity Configuration + Domain Correction (`2026-08-08/Task1_promotion-service-phase3.1-entity-configuration-domain-correction.md`) — done. First Phase 3 (Persistence) prompt. Corrected all 10 Translation entities' identity from a reused parent `Id` to an explicit `{Parent}Id` + `LanguageCode` composite key (a real defect - two languages for the same parent would have collided on `Id`), declared `: byte` on all 32 enums, ran a full bidirectional navigation-completeness sweep across all 103 entities (reversing Phase 2.6's more conservative one-directional stance under this phase's explicit mandate). Wrote `IEntityTypeConfiguration<T>` for all 103 entities, wired `PromotionDbContext`'s 103 DbSets, froze the entity-configuration conventions doc. `Promotion.Domain` and `Promotion.Persistence` both build clean, 0 errors. Phase 3 remains in progress.
+
 ## 2026-08-07
 
 - [x] Task 1 — Promotion Service Phase 2.3 Loyalty + Reward + Distribution aggregates (`2026-08-07/Task1_promotion-service-phase2.3-loyalty-reward-distribution-aggregates.md`) — done. 22 entities across 3 aggregates, 6 enums (2 reused cross-aggregate: `RewardDistribution.Status`/`DistributionStatus`, `DistributionItem.RewardType`/`RewardType`), 2 Value Objects (Reward/Distribution's briefs gave none — flagged). Structural only, no build. Still in Phase 2 — next prompt (2.4) implements Recommendation + Product Set + Gift.

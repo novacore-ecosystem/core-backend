@@ -25,6 +25,7 @@
 | [value-objects/](value-objects/) | Value Object docs | Phase 2+ |
 | [enums/](enums/) | Enum catalogue | Phase 2+ |
 | [indexes/](indexes/) | Index / unique-constraint catalogue | Phase 3+ |
+| [persistence/entity-configuration-conventions.md](persistence/entity-configuration-conventions.md) | EF Core entity configuration policy (Translation/mapping composite keys, enum underlying type, PK strategy, navigation policy) | Frozen Phase 3.1 |
 | [search/search-strategy.md](search/search-strategy.md) | Elasticsearch integration strategy (frozen now) | Strategy: Phase 0. Implementation: Phase 4 |
 | [cqrs/cqrs-strategy.md](cqrs/cqrs-strategy.md) | CQRS strategy (frozen now) | Strategy: Phase 0. Implementation: Phase 5 |
 | [persistence/persistence-strategy.md](persistence/persistence-strategy.md) | Repository / persistence-service strategy (frozen now) | Strategy: Phase 0. Implementation: Phase 3/5 |
@@ -33,4 +34,4 @@
 
 ## Current status
 
-See [planning/PROGRESS.md](planning/PROGRESS.md). **Phase 0, 1, and 2 (Domain Model) complete, 3/7 — including 2.6, the Final Domain Correction & Freeze pass. The Domain model is now frozen — future phases should no longer modify it unless a design defect is discovered. Ready for Phase 3 (Persistence).**
+See [planning/PROGRESS.md](planning/PROGRESS.md). **Phase 0, 1, and 2 (Domain Model) complete, 3/7. Phase 3 (Persistence) is in progress — 3.1 (Entity Configuration + Domain Correction) is done: all 103 entities have an `IEntityTypeConfiguration<T>` under `Promotion.Persistence/Configs/`, `PromotionDbContext` is fully wired, and `Promotion.Domain`/`Promotion.Persistence` both build clean. No repository, persistence service, CQRS, or migration exists yet.**

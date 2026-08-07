@@ -1,8 +1,13 @@
-# Domain — DONE (Phase 2 complete, frozen after Phase 2.6 final correction)
+# Domain — DONE (Phase 2 complete; Phase 3.1 made targeted corrections while configuring Persistence)
 
 **Phase 2 (Domain Model) is complete as of Phase 2.6 (Final Domain Correction & Freeze).** `Promotion.Domain` builds clean across 13 aggregate groups. See [../../../docs/promotion-service/aggregates/](../../../docs/promotion-service/aggregates/) for the full per-aggregate breakdown and [../../../docs/promotion-service/entities/translation-workflow.md](../../../docs/promotion-service/entities/translation-workflow.md) for the frozen Translation feature order.
 
-**The Domain model is now frozen** — do not modify it in future phases unless a design defect is discovered. Phase 3 (Persistence) is current; no EF Core, no MediatR, no repository types belong in this project — see [../../../docs/promotion-service/phases/phase-3-persistence.md](../../../docs/promotion-service/phases/phase-3-persistence.md).
+**Phase 3.1 (Entity Configuration + Domain Correction) made three further Domain corrections while writing EF configuration**, per that phase's own explicit instruction to combine Domain correction with Persistence configuration in one pass — this is not a reopening of the freeze, just the one phase explicitly authorized to touch Domain when EF configuration surfaces a real defect:
+- Every `{Entity}Translation` entity's identity corrected from a reused parent `Id` to an explicit `{Parent}Id` + `LanguageCode` composite key.
+- All 32 enums now declare `: byte` explicitly.
+- Every FK to a local entity now has a bidirectional navigation (forward ref + reverse collection), reversing Phase 2.6's more conservative one-directional stance under this phase's explicit mandate.
+
+No EF Core, no MediatR, no repository types belong in this project beyond what Phase 3.1 added (`Promotion.Persistence/Configs/*.cs`, `PromotionDbContext`'s DbSets) — see [../../../docs/promotion-service/persistence/entity-configuration-conventions.md](../../../docs/promotion-service/persistence/entity-configuration-conventions.md).
 
 ## What Phase 2.5 changed (standardization)
 
