@@ -7,6 +7,8 @@ public sealed class PromotionTarget : BaseEntity<Guid>, IAuditable
     public PromotionTargetType TargetType { get; private set; }
     public string TargetKey { get; private set; } = string.Empty;
 
+    public PromotionEntity Promotion { get; private set; } = default!;
+
     private PromotionTarget() { }
 
     /// <summary>Only Promotion may construct a PromotionTarget - see Promotion.AddTarget.</summary>

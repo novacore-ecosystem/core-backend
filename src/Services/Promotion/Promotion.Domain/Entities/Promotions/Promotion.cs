@@ -1,3 +1,5 @@
+using NovaCore.Promotion.Domain.Entities.Campaigns;
+
 namespace NovaCore.Promotion.Domain.Entities.Promotions;
 
 /// <summary>
@@ -23,6 +25,7 @@ public sealed class Promotion : AggregateRoot<Guid>, IAuditable, ITenantEntity
     public string TimeZone { get; private set; } = string.Empty;
     public bool IsEnabled { get; private set; }
 
+    public Campaign? Campaign { get; private set; }
     public ICollection<PromotionVersion> Versions { get; private set; } = [];
     public ICollection<PromotionRule> Rules { get; private set; } = [];
     public ICollection<PromotionTarget> Targets { get; private set; } = [];

@@ -11,6 +11,9 @@ public sealed class PromotionExclusion : BaseEntity
     public Guid PromotionId { get; private set; }
     public Guid ExcludedPromotionId { get; private set; }
 
+    public PromotionEntity Promotion { get; private set; } = default!;
+    public PromotionEntity ExcludedPromotion { get; private set; } = default!;
+
     private PromotionExclusion() { }
 
     public static PromotionExclusion Create(Guid promotionId, Guid excludedPromotionId)

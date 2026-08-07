@@ -6,6 +6,8 @@ public sealed class CampaignTag : BaseEntity<Guid>
     public Guid CampaignId { get; private set; }
     public string Label { get; private set; } = string.Empty;
 
+    public Campaign Campaign { get; private set; } = default!;
+
     private CampaignTag() { }
 
     /// <summary>Only Campaign may construct a CampaignTag - see Campaign.AddTag.</summary>

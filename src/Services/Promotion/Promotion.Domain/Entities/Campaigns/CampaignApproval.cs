@@ -1,11 +1,9 @@
 namespace NovaCore.Promotion.Domain.Entities.Campaigns;
 
 /// <summary>
-/// Structural record of a Campaign's approval request/decision. Related to Campaign via
-/// CampaignId only (not a Campaign navigation collection - not listed in the requested
-/// Navigation set). No approval-status enum/workflow yet - Phase 2.5 ("Approval + Validation +
-/// Audit") owns the real workflow; this is a minimal placeholder shape so the entity exists
-/// structurally without anticipating that phase's design.
+/// Structural record of a Campaign's approval request/decision. No approval-status enum/workflow
+/// yet - Phase 2.5 ("Approval + Validation + Audit") owns the real workflow; this is a minimal
+/// placeholder shape so the entity exists structurally without anticipating that phase's design.
 /// </summary>
 public sealed class CampaignApproval : BaseEntity<Guid>, IAuditable
 {
@@ -15,6 +13,8 @@ public sealed class CampaignApproval : BaseEntity<Guid>, IAuditable
     public Guid? DecidedById { get; private set; }
     public DateTime? DecidedAt { get; private set; }
     public string? Comment { get; private set; }
+
+    public Campaign Campaign { get; private set; } = default!;
 
     private CampaignApproval() { }
 

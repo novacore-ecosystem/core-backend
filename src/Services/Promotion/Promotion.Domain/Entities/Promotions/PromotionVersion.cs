@@ -7,6 +7,8 @@ public sealed class PromotionVersion : BaseEntity<Guid>, IAuditable
     public int VersionNumber { get; private set; }
     public string? Note { get; private set; }
 
+    public PromotionEntity Promotion { get; private set; } = default!;
+
     private PromotionVersion() { }
 
     /// <summary>Only Promotion may construct a PromotionVersion - see Promotion.AddVersion.</summary>

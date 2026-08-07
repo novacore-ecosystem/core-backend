@@ -8,6 +8,8 @@ public sealed class PromotionExecutionPolicy : BaseEntity, IAuditable
     public int? MaxExecutionsPerOrder { get; private set; }
     public string? Note { get; private set; }
 
+    public PromotionEntity Promotion { get; private set; } = default!;
+
     private PromotionExecutionPolicy() { }
 
     /// <summary>Only Promotion may construct a PromotionExecutionPolicy - see Promotion.SetExecutionPolicy.</summary>

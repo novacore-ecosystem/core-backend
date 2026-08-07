@@ -7,6 +7,8 @@ public sealed class PromotionConstraint : BaseEntity<Guid>, IAuditable
     public PromotionConstraintType ConstraintType { get; private set; }
     public string Value { get; private set; } = string.Empty;
 
+    public PromotionEntity Promotion { get; private set; } = default!;
+
     private PromotionConstraint() { }
 
     /// <summary>Only Promotion may construct a PromotionConstraint - see Promotion.AddConstraint.</summary>

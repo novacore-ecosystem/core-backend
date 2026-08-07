@@ -8,6 +8,8 @@ public sealed class PromotionBenefit : BaseEntity<Guid>, IAuditable
     public decimal Value { get; private set; }
     public int DisplayOrder { get; private set; }
 
+    public PromotionEntity Promotion { get; private set; } = default!;
+
     private PromotionBenefit() { }
 
     /// <summary>Only Promotion may construct a PromotionBenefit - see Promotion.AddBenefit.</summary>

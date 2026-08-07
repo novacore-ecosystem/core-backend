@@ -7,6 +7,8 @@ public sealed class CampaignChannel : BaseEntity<Guid>, IAuditable
     public string Channel { get; private set; } = string.Empty;
     public bool IsEnabled { get; private set; }
 
+    public Campaign Campaign { get; private set; } = default!;
+
     private CampaignChannel() { }
 
     /// <summary>Only Campaign may construct a CampaignChannel - see Campaign.AddChannel.</summary>

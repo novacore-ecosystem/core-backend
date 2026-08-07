@@ -10,6 +10,8 @@ public sealed class CampaignAttachment : BaseEntity<Guid>, IAuditable
     public long? SizeBytes { get; private set; }
     public int DisplayOrder { get; private set; }
 
+    public Campaign Campaign { get; private set; } = default!;
+
     private CampaignAttachment() { }
 
     /// <summary>Only Campaign may construct a CampaignAttachment - see Campaign.AddAttachment.</summary>

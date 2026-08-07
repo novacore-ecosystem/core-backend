@@ -14,6 +14,8 @@ public sealed class CampaignBudget : BaseEntity<Guid>, IAuditable
     public Money SpentAmount { get; private set; } = default!;
     public Currency CurrencyCode { get; private set; } = default!;
 
+    public Campaign Campaign { get; private set; } = default!;
+
     private CampaignBudget() { }
 
     public static CampaignBudget Create(Guid campaignId, Money allocatedAmount, Currency currencyCode)

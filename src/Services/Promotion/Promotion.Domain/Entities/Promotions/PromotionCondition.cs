@@ -8,6 +8,8 @@ public sealed class PromotionCondition : BaseEntity<Guid>, IAuditable
     public PromotionConditionOperator Operator { get; private set; }
     public string Value { get; private set; } = string.Empty;
 
+    public PromotionRule Rule { get; private set; } = default!;
+
     private PromotionCondition() { }
 
     /// <summary>Only PromotionRule constructs a PromotionCondition - see PromotionRule.AddCondition.</summary>

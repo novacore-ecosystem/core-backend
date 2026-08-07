@@ -9,6 +9,7 @@ public sealed class PromotionRule : BaseEntity<Guid>, IAuditable
     public int DisplayOrder { get; private set; }
     public bool IsEnabled { get; private set; }
 
+    public PromotionEntity Promotion { get; private set; } = default!;
     public PromotionRuleGroup? RuleGroup { get; private set; }
     public ICollection<PromotionCondition> Conditions { get; private set; } = [];
 

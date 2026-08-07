@@ -7,6 +7,8 @@ public sealed class PromotionStackingPolicy : BaseEntity, IAuditable
     public PromotionStackingMode Mode { get; private set; }
     public string? Note { get; private set; }
 
+    public PromotionEntity Promotion { get; private set; } = default!;
+
     private PromotionStackingPolicy() { }
 
     /// <summary>Only Promotion may construct a PromotionStackingPolicy - see Promotion.SetStackingPolicy.</summary>

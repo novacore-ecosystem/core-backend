@@ -8,6 +8,8 @@ public sealed class CampaignSchedule : BaseEntity<Guid>, IAuditable
     public string? Label { get; private set; }
     public int DisplayOrder { get; private set; }
 
+    public Campaign Campaign { get; private set; } = default!;
+
     private CampaignSchedule() { }
 
     /// <summary>Only Campaign may construct a CampaignSchedule - see Campaign.AddSchedule.</summary>

@@ -8,6 +8,8 @@ public sealed class CampaignAudience : BaseEntity<Guid>, IAuditable
     public string? Description { get; private set; }
     public int DisplayOrder { get; private set; }
 
+    public Campaign Campaign { get; private set; } = default!;
+
     private CampaignAudience() { }
 
     /// <summary>Only Campaign may construct a CampaignAudience - see Campaign.AddAudience.</summary>

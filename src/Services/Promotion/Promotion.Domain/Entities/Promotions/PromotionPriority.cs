@@ -14,6 +14,8 @@ public sealed class PromotionPriority : BaseEntity<Guid>, IAuditable
     public PromotionPriorityValue Value { get; private set; } = default!;
     public string? Note { get; private set; }
 
+    public PromotionEntity Promotion { get; private set; } = default!;
+
     private PromotionPriority() { }
 
     public static PromotionPriority Create(Guid promotionId, PromotionPriorityType priorityType, PromotionPriorityValue value, string? note)

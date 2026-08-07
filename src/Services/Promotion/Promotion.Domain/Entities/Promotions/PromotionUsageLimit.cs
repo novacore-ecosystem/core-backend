@@ -7,6 +7,8 @@ public sealed class PromotionUsageLimit : BaseEntity<Guid>, IAuditable
     public PromotionUsageScope Scope { get; private set; }
     public int MaxUsage { get; private set; }
 
+    public PromotionEntity Promotion { get; private set; } = default!;
+
     private PromotionUsageLimit() { }
 
     /// <summary>Only Promotion may construct a PromotionUsageLimit - see Promotion.AddUsageLimit.</summary>
