@@ -11,6 +11,12 @@ public sealed class PointAccount : BaseEntity<Guid>, IAuditable
     public Quantity LifetimeEarned { get; private set; } = default!;
     public Quantity LifetimeSpent { get; private set; } = default!;
 
+    public LoyaltyProgram Program { get; private set; } = default!;
+    public ICollection<PointTransaction> Transactions { get; private set; } = [];
+    public ICollection<PointExpiration> Expirations { get; private set; } = [];
+    public ICollection<PointAdjustment> Adjustments { get; private set; } = [];
+    public ICollection<PointHistory> History { get; private set; } = [];
+
     private PointAccount() { }
 
     /// <summary>Only LoyaltyProgram may construct a PointAccount - see LoyaltyProgram.AddAccount.</summary>

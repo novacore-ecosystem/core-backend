@@ -9,6 +9,9 @@ public sealed class DistributionBatch : BaseEntity<Guid>, IAuditable
     public int ProcessedItems { get; private set; }
     public int FailedItems { get; private set; }
 
+    public DistributionJob Job { get; private set; } = default!;
+    public ICollection<DistributionItem> Items { get; private set; } = [];
+
     private DistributionBatch() { }
 
     /// <summary>Only DistributionJob may construct a DistributionBatch - see DistributionJob.AddBatch.</summary>

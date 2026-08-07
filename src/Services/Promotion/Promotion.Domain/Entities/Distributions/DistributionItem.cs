@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Entities.Distributions;
 
-/// <summary>A single user/reward-reference item within a DistributionBatch - reuses the Reward aggregate's RewardType enum (field name/semantics line up exactly, both implemented in this same phase). Not navigated from DistributionJob, so construction is public.</summary>
+/// <summary>A single user/reward-reference item within a DistributionBatch - reuses the Reward aggregate's RewardType enum (field name/semantics line up exactly, both implemented in this same phase). Not navigated from DistributionJob directly, but is navigated from DistributionBatch as of Phase 3.1; construction remains public (DistributionBatch has no factory method for these).</summary>
 public sealed class DistributionItem : BaseEntity<Guid>, IAuditable
 {
     public Guid BatchId { get; private set; }
@@ -8,6 +8,9 @@ public sealed class DistributionItem : BaseEntity<Guid>, IAuditable
     public RewardType RewardType { get; private set; }
     public Guid? ReferenceId { get; private set; }
     public string? Status { get; private set; }
+
+    public DistributionBatch Batch { get; private set; } = default!;
+    public ICollection<DistributionExecution> Executions { get; private set; } = [];
 
     private DistributionItem() { }
 

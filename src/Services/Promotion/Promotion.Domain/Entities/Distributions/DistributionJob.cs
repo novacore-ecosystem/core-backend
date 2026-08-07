@@ -17,6 +17,7 @@ public sealed class DistributionJob : AggregateRoot<Guid>, IAuditable, ITenantEn
     public DateTime? CompletedAt { get; private set; }
 
     public ICollection<DistributionBatch> Batches { get; private set; } = [];
+    public ICollection<DistributionHistory> History { get; private set; } = [];
 
     public Guid TenantId { get; private set; }
 

@@ -7,6 +7,8 @@ public sealed class RewardDefinition : BaseEntity<Guid>, IAuditable
     public RewardType RewardType { get; private set; }
     public string? Configuration { get; private set; }
 
+    public RewardProgram Program { get; private set; } = default!;
+
     private RewardDefinition() { }
 
     /// <summary>Only RewardProgram may construct a RewardDefinition - see RewardProgram.AddDefinition.</summary>

@@ -2,9 +2,10 @@ namespace NovaCore.Promotion.Domain.Entities.Loyalty;
 
 /// <summary>
 /// Aggregate root for a LoyaltyProgram - owns PointRules/PointPolicies/Accounts. PointTransaction/
-/// PointLedger/PointExpiration/PointAdjustment/PointHistory are related to a PointAccount (or a
-/// PointTransaction, for PointLedger) by id only, not navigated from here or from PointAccount -
-/// see docs/promotion-service/aggregates/loyalty.md.
+/// PointLedger/PointExpiration/PointAdjustment/PointHistory are navigated bidirectionally from
+/// PointAccount (or PointTransaction, for PointLedger), per Phase 3.1's navigation-completeness
+/// pass, but remain unowned (public construction, no Add{Child} on PointAccount) - not navigated
+/// from LoyaltyProgram itself - see docs/promotion-service/aggregates/loyalty.md.
 /// </summary>
 public sealed class LoyaltyProgram : AggregateRoot<Guid>, IAuditable, ITenantEntity
 {

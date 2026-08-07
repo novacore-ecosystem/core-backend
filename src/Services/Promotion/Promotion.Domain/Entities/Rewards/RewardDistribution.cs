@@ -16,8 +16,12 @@ public sealed class RewardDistribution : BaseEntity<Guid>, IAuditable
     public DateTime? ScheduledAt { get; private set; }
     public DateTime? ExecutedAt { get; private set; }
 
+    public RewardProgram Program { get; private set; } = default!;
+
     /// <summary>Forward reference to the independent DistributionJob root (Phase 2.6 correction) - same pattern as Coupon.Campaign/Coupon.Promotion, resolved at the Persistence layer via FK.</summary>
     public DistributionJob? DistributionJob { get; private set; }
+
+    public ICollection<RewardExecution> Executions { get; private set; } = [];
 
     private RewardDistribution() { }
 

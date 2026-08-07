@@ -7,6 +7,8 @@ public sealed class PointPolicy : BaseEntity<Guid>, IAuditable
     public string PolicyType { get; private set; } = string.Empty;
     public string? Configuration { get; private set; }
 
+    public LoyaltyProgram Program { get; private set; } = default!;
+
     private PointPolicy() { }
 
     /// <summary>Only LoyaltyProgram may construct a PointPolicy - see LoyaltyProgram.AddPointPolicy.</summary>

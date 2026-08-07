@@ -8,6 +8,8 @@ public sealed class PointRule : BaseEntity<Guid>, IAuditable
     public int Priority { get; private set; }
     public bool IsEnabled { get; private set; }
 
+    public LoyaltyProgram Program { get; private set; } = default!;
+
     private PointRule() { }
 
     /// <summary>Only LoyaltyProgram may construct a PointRule - see LoyaltyProgram.AddPointRule.</summary>

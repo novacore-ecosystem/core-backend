@@ -1,12 +1,14 @@
 namespace NovaCore.Promotion.Domain.Entities.Loyalty;
 
-/// <summary>A double-entry ledger row for a PointTransaction - not navigated from PointTransaction (no Navigation section given for it), so construction is public. No balance calculation lives here.</summary>
+/// <summary>A double-entry ledger row for a PointTransaction - construction remains public (PointTransaction has no factory method for these). No balance calculation lives here.</summary>
 public sealed class PointLedger : BaseEntity<Guid>, IAuditable
 {
     public Guid TransactionId { get; private set; }
     public int Debit { get; private set; }
     public int Credit { get; private set; }
     public int Balance { get; private set; }
+
+    public PointTransaction Transaction { get; private set; } = default!;
 
     private PointLedger() { }
 

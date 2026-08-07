@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Entities.Loyalty;
 
-/// <summary>A single point movement for a PointAccount - not navigated from PointAccount (no Navigation section given for it), so construction is public. No earn/spend calculation lives here.</summary>
+/// <summary>A single point movement for a PointAccount - construction remains public (PointAccount has no factory method for these). No earn/spend calculation lives here.</summary>
 public sealed class PointTransaction : BaseEntity<Guid>, IAuditable
 {
     public Guid AccountId { get; private set; }
@@ -9,6 +9,9 @@ public sealed class PointTransaction : BaseEntity<Guid>, IAuditable
     public Guid? ReferenceId { get; private set; }
     public int Points { get; private set; }
     public int BalanceAfter { get; private set; }
+
+    public PointAccount Account { get; private set; } = default!;
+    public ICollection<PointLedger> Ledgers { get; private set; } = [];
 
     private PointTransaction() { }
 

@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Entities.Loyalty;
 
-/// <summary>A manual point correction for a PointAccount - not navigated from PointAccount, so construction is public. No approval/validation logic lives here.</summary>
+/// <summary>A manual point correction for a PointAccount - construction remains public (PointAccount has no factory method for these). No approval/validation logic lives here.</summary>
 public sealed class PointAdjustment : BaseEntity<Guid>, IAuditable
 {
     public Guid AccountId { get; private set; }
@@ -8,6 +8,8 @@ public sealed class PointAdjustment : BaseEntity<Guid>, IAuditable
     public int Points { get; private set; }
     public Guid? OperatorId { get; private set; }
     public DateTime AdjustedAt { get; private set; }
+
+    public PointAccount Account { get; private set; } = default!;
 
     private PointAdjustment() { }
 

@@ -1,11 +1,13 @@
 namespace NovaCore.Promotion.Domain.Entities.Loyalty;
 
-/// <summary>An append-only audit trail row for a PointAccount - CreatedAt is inherited from BaseEntity, not redeclared. Not navigated from PointAccount, so construction is public.</summary>
+/// <summary>An append-only audit trail row for a PointAccount - CreatedAt is inherited from BaseEntity, not redeclared. Construction remains public (PointAccount has no factory method for these).</summary>
 public sealed class PointHistory : BaseEntity<Guid>, IAuditable
 {
     public Guid AccountId { get; private set; }
     public string Action { get; private set; } = string.Empty;
     public Guid? OperatorId { get; private set; }
+
+    public PointAccount Account { get; private set; } = default!;
 
     private PointHistory() { }
 
