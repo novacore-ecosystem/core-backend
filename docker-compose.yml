@@ -160,6 +160,27 @@ services:
     networks:
       - default
 
+  shipping-api:
+    image: ${SHIPPING_CONTAINER_NAME}
+    build:
+      context: .
+      dockerfile: ./src/Services/Shipping/Shipping.API/Dockerfile
+    depends_on:
+      pg:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      seq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      apm-server:
+        condition: service_healthy
+    networks:
+      - default
+
   audit-api:
     image: ${AUDIT_CONTAINER_NAME}
     build:

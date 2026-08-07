@@ -421,6 +421,47 @@ services:
       retries: 3
       start_period: 40s
 
+  shipping-api:
+    container_name: ${SHIPPING_CONTAINER_NAME}
+    ports:
+      - "${SHIPPING_PUBLIC_HTTP_PORT}:${SHIPPING_HTTP_PORT}"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${SHIPPING_URLS}
+      - ASPNETCORE_HTTP_PORT=${SHIPPING_HTTP_PORT}
+      # Database
+      - ConnectionStrings__DefaultConnection=${SHIPPING_DB_CONNECTION}
+      # Logging
+      - Logging__Seq__Url=${SEQ_URL}
+      - Logging__Elasticsearch__Url=${ELASTICSEARCH_URL}
+      # Observability (APM/tracing - see docs/setup/observability.md)
+      - Observability__ApmServerUrl=${APM_SERVER_URL}
+      # JWT (validation only - tokens are issued by Auth)
+      - Jwt__SecretKey=${AUTH_JWT_SECRET_KEY}
+      - Jwt__Issuer=${AUTH_JWT_ISSUER}
+      - Jwt__Audience=${AUTH_JWT_AUDIENCE}
+      - Jwt__AccessTokenExpirationMinutes=${AUTH_JWT_ACCESS_TOKEN_EXPIRATION_MINUTES}
+      - Jwt__RefreshTokenExpirationDays=${AUTH_JWT_REFRESH_TOKEN_EXPIRATION_DAYS}
+      # Kafka
+      - Kafka__BootstrapServers=${SHIPPING_KAFKA_BROKERS}
+      # Cache (required for the Idempotency framework's distributed lock - see BuildingBlock.Infrastructure.Idempotency)
+      - Cache__ConnectionString=${SHIPPING_REDIS_CONNECTION_STRING}
+      - Cache__DefaultExpirationMinutes=${SHIPPING_REDIS_EXPIRATION_MINUTES}
+      - Cache__KeyPrefix=${SHIPPING_REDIS_KEY_PREFIX}
+      - Cache__ConnectionTimeout=${SHIPPING_REDIS_CONNECTION_TIMEOUT}
+      # Idempotency (shared framework config - see docs/reference/idempotency.md)
+      - Idempotency__HeaderName=${IDEMPOTENCY_HEADER_NAME}
+      - Idempotency__LockTimeoutSeconds=${IDEMPOTENCY_LOCK_TIMEOUT_SECONDS}
+      - Idempotency__LockExpirationSeconds=${IDEMPOTENCY_LOCK_EXPIRATION_SECONDS}
+      - Idempotency__RecordExpirationMinutes=${IDEMPOTENCY_RECORD_EXPIRATION_MINUTES}
+      - Idempotency__MaxCachedResponseSizeBytes=${IDEMPOTENCY_MAX_CACHED_RESPONSE_SIZE_BYTES}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   audit-api:
     container_name: ${AUDIT_CONTAINER_NAME}
     ports:
