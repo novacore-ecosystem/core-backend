@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum VoucherStatus
+public enum VoucherStatus : byte
 {
     Draft = 0,
     PendingApproval = 1,

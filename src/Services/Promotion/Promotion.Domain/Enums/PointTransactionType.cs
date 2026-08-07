@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum PointTransactionType
+public enum PointTransactionType : byte
 {
     Earn = 0,
     Spend = 1,

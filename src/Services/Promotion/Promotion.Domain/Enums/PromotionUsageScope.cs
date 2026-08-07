@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum PromotionUsageScope
+public enum PromotionUsageScope : byte
 {
     PerCustomer = 0,
     PerOrder = 1,

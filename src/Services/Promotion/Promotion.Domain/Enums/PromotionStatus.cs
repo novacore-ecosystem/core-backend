@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum PromotionStatus
+public enum PromotionStatus : byte
 {
     Draft = 0,
     Active = 1,

@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum DistributionStrategy
+public enum DistributionStrategy : byte
 {
     Broadcast = 0,
     Segment = 1,

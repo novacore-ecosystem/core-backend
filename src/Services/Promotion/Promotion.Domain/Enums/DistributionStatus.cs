@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum DistributionStatus
+public enum DistributionStatus : byte
 {
     Draft = 0,
     Scheduled = 1,

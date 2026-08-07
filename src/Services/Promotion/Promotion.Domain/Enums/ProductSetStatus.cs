@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum ProductSetStatus
+public enum ProductSetStatus : byte
 {
     Draft = 0,
     Active = 1,

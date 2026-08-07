@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum CampaignStatus
+public enum CampaignStatus : byte
 {
     Draft = 0,
     Scheduled = 1,

@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum VoucherType
+public enum VoucherType : byte
 {
     Cash = 0,
     Balance = 1,

@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum CouponStatus
+public enum CouponStatus : byte
 {
     Draft = 0,
     PendingApproval = 1,

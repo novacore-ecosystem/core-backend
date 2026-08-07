@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum ApprovalStepStatus
+public enum ApprovalStepStatus : byte
 {
     Pending = 0,
     Approved = 1,

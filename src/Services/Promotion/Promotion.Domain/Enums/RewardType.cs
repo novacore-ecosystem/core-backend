@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum RewardType
+public enum RewardType : byte
 {
     Coupon = 0,
     Voucher = 1,

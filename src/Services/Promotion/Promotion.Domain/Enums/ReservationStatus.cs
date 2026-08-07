@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum ReservationStatus
+public enum ReservationStatus : byte
 {
     Reserved = 0,
     Released = 1,

@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum CouponType
+public enum CouponType : byte
 {
     Shared = 0,
     Unique = 1,

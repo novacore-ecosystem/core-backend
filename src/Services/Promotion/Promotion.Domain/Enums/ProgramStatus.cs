@@ -6,7 +6,7 @@ namespace NovaCore.Promotion.Domain.Enums;
 /// RecommendationProgram). Consolidated from 4 duplicate enums during the Phase 2.5 Domain
 /// Standardization Review - see docs/promotion-service/enums/README.md.
 /// </summary>
-public enum ProgramStatus
+public enum ProgramStatus : byte
 {
     Draft = 0,
     Active = 1,

@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum PromotionStackingMode
+public enum PromotionStackingMode : byte
 {
     NotStackable = 0,
     StackWithAny = 1,

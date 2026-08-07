@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum PromotionExecutionMode
+public enum PromotionExecutionMode : byte
 {
     Automatic = 0,
     Manual = 1,

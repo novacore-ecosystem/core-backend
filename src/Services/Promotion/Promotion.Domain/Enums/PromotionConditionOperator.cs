@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum PromotionConditionOperator
+public enum PromotionConditionOperator : byte
 {
     Equals = 0,
     NotEquals = 1,

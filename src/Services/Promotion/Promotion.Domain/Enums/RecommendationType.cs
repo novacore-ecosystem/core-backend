@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum RecommendationType
+public enum RecommendationType : byte
 {
     CrossSell = 0,
     UpSell = 1,

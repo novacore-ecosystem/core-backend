@@ -1,6 +1,6 @@
 namespace NovaCore.Promotion.Domain.Enums;
 
-public enum ApprovalWorkflowStatus
+public enum ApprovalWorkflowStatus : byte
 {
     Draft = 0,
     Pending = 1,
