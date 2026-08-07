@@ -8,7 +8,7 @@ public sealed class CouponReservation : BaseEntity<Guid>, IAuditable
     public string ReservationToken { get; private set; } = string.Empty;
     public DateTime ReservedAt { get; private set; }
     public DateTime? ExpiredAt { get; private set; }
-    public string Status { get; private set; } = "Reserved";
+    public ReservationStatus Status { get; private set; } = ReservationStatus.Reserved;
 
     private CouponReservation() { }
 
@@ -29,11 +29,8 @@ public sealed class CouponReservation : BaseEntity<Guid>, IAuditable
         };
     }
 
-    public void UpdateStatus(string status)
+    public void UpdateStatus(ReservationStatus status)
     {
-        if (string.IsNullOrWhiteSpace(status))
-            throw ExceptionFactory.RequiredField("Reservation status cannot be empty.");
-
         Status = status;
     }
 }

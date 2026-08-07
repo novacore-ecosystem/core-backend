@@ -16,7 +16,7 @@ public sealed class Voucher : AggregateRoot<Guid>, IAuditable, ITenantEntity
     public string? Description { get; private set; }
     public VoucherType VoucherType { get; private set; }
     public VoucherStatus Status { get; private set; }
-    public string Currency { get; private set; } = string.Empty;
+    public Currency Currency { get; private set; } = default!;
     public Money Amount { get; private set; } = default!;
     public Money Balance { get; private set; } = default!;
     public DateTime StartTime { get; private set; }
@@ -50,7 +50,7 @@ public sealed class Voucher : AggregateRoot<Guid>, IAuditable, ITenantEntity
         string name,
         VoucherType voucherType,
         Money amount,
-        string currency,
+        Currency currency,
         DateTime startTime,
         DateTime endTime,
         string timeZone,
@@ -59,7 +59,6 @@ public sealed class Voucher : AggregateRoot<Guid>, IAuditable, ITenantEntity
     {
         ValidateName(name);
         ValidatePeriod(startTime, endTime, timeZone);
-        ValidateCurrency(currency);
 
         return new Voucher
         {
@@ -135,12 +134,6 @@ public sealed class Voucher : AggregateRoot<Guid>, IAuditable, ITenantEntity
 
         if (endTime <= startTime)
             throw ExceptionFactory.InvalidRange("End time must be after start time.");
-    }
-
-    private static void ValidateCurrency(string currency)
-    {
-        if (string.IsNullOrWhiteSpace(currency))
-            throw ExceptionFactory.RequiredField("Currency cannot be empty.");
     }
     #endregion
 
