@@ -1,11 +1,14 @@
 namespace NovaCore.Promotion.Domain.Entities.Rewards;
 
-/// <summary>Per-language override of a RewardProgram's Name/Description - Translation pattern, reuses the parent's Id (Rule 5), composite key (Id, LanguageCode) configured in Persistence.</summary>
-public sealed class RewardProgramTranslation : BaseEntity<Guid>, IAuditable, ITenantEntity
+/// <summary>Per-language override of a RewardProgram's Name/Description. Identity is ProgramId + LanguageCode (Phase 3.1 correction) - no surrogate Id.</summary>
+public sealed class RewardProgramTranslation : BaseEntity, IAuditable, ITenantEntity
 {
+    public Guid ProgramId { get; private set; }
     public LanguageCode LanguageCode { get; private set; } = default!;
     public string Name { get; private set; } = string.Empty;
     public string? Description { get; private set; }
+
+    public RewardProgram Program { get; private set; } = default!;
 
     public Guid TenantId { get; private set; }
 
@@ -24,7 +27,7 @@ public sealed class RewardProgramTranslation : BaseEntity<Guid>, IAuditable, ITe
 
         return new RewardProgramTranslation
         {
-            Id = programId,
+            ProgramId = programId,
             LanguageCode = languageCode,
             Name = name,
             Description = description,

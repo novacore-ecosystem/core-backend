@@ -1,11 +1,20 @@
 namespace NovaCore.Promotion.Domain.Entities.Campaigns;
 
-/// <summary>Per-language override of a Campaign's Name/Description - Translation pattern, reuses the parent's Id (Rule 5), composite key (Id, LanguageCode) configured in Persistence. Renamed from CampaignLocalization during the Phase 2.5 Domain Standardization Review for naming consistency with every other Translation entity in the platform (ProductBrandTranslation, RoleTranslation, ...).</summary>
-public sealed class CampaignTranslation : BaseEntity<Guid>, IAuditable, ITenantEntity
+/// <summary>
+/// Per-language override of a Campaign's Name/Description. Identity is CampaignId + LanguageCode
+/// (Phase 3.1 correction) - no surrogate Id, since a Translation's identity is fully determined by
+/// its parent and language, not an independent lifecycle. Renamed from CampaignLocalization during
+/// the Phase 2.5 Domain Standardization Review for naming consistency with every other Translation
+/// entity in the platform.
+/// </summary>
+public sealed class CampaignTranslation : BaseEntity, IAuditable, ITenantEntity
 {
+    public Guid CampaignId { get; private set; }
     public LanguageCode LanguageCode { get; private set; } = default!;
     public string Name { get; private set; } = string.Empty;
     public string? Description { get; private set; }
+
+    public Campaign Campaign { get; private set; } = default!;
 
     public Guid TenantId { get; private set; }
 
@@ -24,7 +33,7 @@ public sealed class CampaignTranslation : BaseEntity<Guid>, IAuditable, ITenantE
 
         return new CampaignTranslation
         {
-            Id = campaignId,
+            CampaignId = campaignId,
             LanguageCode = languageCode,
             Name = name,
             Description = description,

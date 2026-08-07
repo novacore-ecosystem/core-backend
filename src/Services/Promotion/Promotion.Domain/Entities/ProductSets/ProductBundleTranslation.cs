@@ -1,10 +1,13 @@
 namespace NovaCore.Promotion.Domain.Entities.ProductSets;
 
-/// <summary>Per-language override of a ProductBundle's Name - Translation pattern, reuses the parent's Id (Rule 5), composite key (Id, LanguageCode) configured in Persistence. Name-only, since ProductBundle itself has no Description field.</summary>
-public sealed class ProductBundleTranslation : BaseEntity<Guid>, IAuditable, ITenantEntity
+/// <summary>Per-language override of a ProductBundle's Name. Identity is BundleId + LanguageCode (Phase 3.1 correction) - no surrogate Id. Name-only, since ProductBundle itself has no Description field.</summary>
+public sealed class ProductBundleTranslation : BaseEntity, IAuditable, ITenantEntity
 {
+    public Guid BundleId { get; private set; }
     public LanguageCode LanguageCode { get; private set; } = default!;
     public string Name { get; private set; } = string.Empty;
+
+    public ProductBundle Bundle { get; private set; } = default!;
 
     public Guid TenantId { get; private set; }
 
@@ -23,7 +26,7 @@ public sealed class ProductBundleTranslation : BaseEntity<Guid>, IAuditable, ITe
 
         return new ProductBundleTranslation
         {
-            Id = bundleId,
+            BundleId = bundleId,
             LanguageCode = languageCode,
             Name = name,
         };

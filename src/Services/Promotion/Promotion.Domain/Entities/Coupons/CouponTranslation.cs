@@ -1,11 +1,14 @@
 namespace NovaCore.Promotion.Domain.Entities.Coupons;
 
-/// <summary>Per-language override of a Coupon's Name/Description - Translation pattern, reuses the parent's Id (Rule 5), composite key (Id, LanguageCode) configured in Persistence.</summary>
-public sealed class CouponTranslation : BaseEntity<Guid>, IAuditable, ITenantEntity
+/// <summary>Per-language override of a Coupon's Name/Description. Identity is CouponId + LanguageCode (Phase 3.1 correction) - no surrogate Id.</summary>
+public sealed class CouponTranslation : BaseEntity, IAuditable, ITenantEntity
 {
+    public Guid CouponId { get; private set; }
     public LanguageCode LanguageCode { get; private set; } = default!;
     public string Name { get; private set; } = string.Empty;
     public string? Description { get; private set; }
+
+    public Coupon Coupon { get; private set; } = default!;
 
     public Guid TenantId { get; private set; }
 
@@ -24,7 +27,7 @@ public sealed class CouponTranslation : BaseEntity<Guid>, IAuditable, ITenantEnt
 
         return new CouponTranslation
         {
-            Id = couponId,
+            CouponId = couponId,
             LanguageCode = languageCode,
             Name = name,
             Description = description,

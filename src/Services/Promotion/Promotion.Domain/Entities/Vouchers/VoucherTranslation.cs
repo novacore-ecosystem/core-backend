@@ -1,11 +1,14 @@
 namespace NovaCore.Promotion.Domain.Entities.Vouchers;
 
-/// <summary>Per-language override of a Voucher's Name/Description - Translation pattern, reuses the parent's Id (Rule 5), composite key (Id, LanguageCode) configured in Persistence.</summary>
-public sealed class VoucherTranslation : BaseEntity<Guid>, IAuditable, ITenantEntity
+/// <summary>Per-language override of a Voucher's Name/Description. Identity is VoucherId + LanguageCode (Phase 3.1 correction) - no surrogate Id.</summary>
+public sealed class VoucherTranslation : BaseEntity, IAuditable, ITenantEntity
 {
+    public Guid VoucherId { get; private set; }
     public LanguageCode LanguageCode { get; private set; } = default!;
     public string Name { get; private set; } = string.Empty;
     public string? Description { get; private set; }
+
+    public Voucher Voucher { get; private set; } = default!;
 
     public Guid TenantId { get; private set; }
 
@@ -24,7 +27,7 @@ public sealed class VoucherTranslation : BaseEntity<Guid>, IAuditable, ITenantEn
 
         return new VoucherTranslation
         {
-            Id = voucherId,
+            VoucherId = voucherId,
             LanguageCode = languageCode,
             Name = name,
             Description = description,

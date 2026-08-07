@@ -1,11 +1,14 @@
 namespace NovaCore.Promotion.Domain.Entities.Promotions;
 
-/// <summary>Per-language override of a Promotion's Name/Description - Translation pattern, reuses the parent's Id (Rule 5), composite key (Id, LanguageCode) configured in Persistence.</summary>
-public sealed class PromotionTranslation : BaseEntity<Guid>, IAuditable, ITenantEntity
+/// <summary>Per-language override of a Promotion's Name/Description. Identity is PromotionId + LanguageCode (Phase 3.1 correction) - no surrogate Id.</summary>
+public sealed class PromotionTranslation : BaseEntity, IAuditable, ITenantEntity
 {
+    public Guid PromotionId { get; private set; }
     public LanguageCode LanguageCode { get; private set; } = default!;
     public string Name { get; private set; } = string.Empty;
     public string? Description { get; private set; }
+
+    public PromotionEntity Promotion { get; private set; } = default!;
 
     public Guid TenantId { get; private set; }
 
@@ -24,7 +27,7 @@ public sealed class PromotionTranslation : BaseEntity<Guid>, IAuditable, ITenant
 
         return new PromotionTranslation
         {
-            Id = promotionId,
+            PromotionId = promotionId,
             LanguageCode = languageCode,
             Name = name,
             Description = description,
