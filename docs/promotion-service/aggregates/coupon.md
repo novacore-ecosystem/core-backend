@@ -23,7 +23,7 @@
 | `CouponBatch` | `BaseEntity<Guid>` | Name/Source/ImportedAt/TotalCount/ActivatedCount/UsedCount/FailedCount — public `Create` (independent lifecycle) |
 | `CouponCode` (entity) | `BaseEntity<Guid>` | CouponId/BatchId/Code (VO)/IsUsed — public `Create` |
 | `CouponUsage` | `BaseEntity<Guid>` | CouponId/UserId/OrderId/UsedAt |
-| `CouponReservation` | `BaseEntity<Guid>` | CouponId/UserId/ReservationToken/ReservedAt/ExpiredAt/Status (plain string, no enum requested) |
+| `CouponReservation` | `BaseEntity<Guid>` | CouponId/UserId/ReservationToken/ReservedAt/ExpiredAt/Status (`ReservationStatus` enum, Phase 2.6 — was a plain string) |
 | `CouponHistory` | `BaseEntity<Guid>` | CouponId/Action/OperatorId — `CreatedAt` inherited from `BaseEntity`, not redeclared |
 | `CouponVersion` | `BaseEntity<Guid>` | CouponId/Version/Snapshot/PublishedAt |
 | `CouponApproval` | `BaseEntity<Guid>` | Placeholder review fields only — real workflow is a later Phase 2.x |
@@ -45,6 +45,10 @@
 
 - `(Code)` unique · `(Status)` · `(Visibility, Status)` · `(PromotionId)` · `(CampaignId)` · `(StartTime, EndTime)` · `(TenantId, Code)` unique
 - `CouponUsage`: `(CouponId)`, `(UserId)`, `(OrderId)`
+
+## Phase 2.6 correction
+
+`CouponReservation.Status` converted from a free `string` (default `"Reserved"`) to the new `ReservationStatus` enum (Reserved/Released/Expired/Consumed). `Coupon.PromotionId`/`CampaignId`/`BatchId` navigations, `EntityCode`/`Period`/`CouponUsageLimit` usage, and `CouponStatus` (no `Rejected` value added — `Cancel()` already provides a working exit path from `PendingApproval`, so adding a new terminal status would invent an unrequested lifecycle state) were all re-verified and left unchanged.
 
 ## Reconciliation notes
 

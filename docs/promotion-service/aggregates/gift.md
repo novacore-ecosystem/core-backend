@@ -8,9 +8,9 @@
 
 `GiftInventory`, `GiftReservation`, `GiftClaim`, `GiftUsage` are **not** part of the navigation graph (no Navigation section given for any of them) — all four get a public `Create`, related by `GiftItemId` (or, for `GiftClaim`, `ReservationId`) only.
 
-## No Value Objects requested
+## `Code` now uses `EntityCode` (Phase 2.6 correction)
 
-Same as Reward/Distribution (Phase 2.3) — no `ValueObjects` section was given, so `GiftProgram.Code` stays a plain `string`.
+Same original gap as Reward/Distribution (Phase 2.3) — no `ValueObjects` section was given, so `GiftProgram.Code` stayed a plain `string` through Phase 2.5. Now uses the shared `EntityCode` Value Object, same as every other aggregate root.
 
 ## `Quantity` reused for every stock/reservation count
 
@@ -20,7 +20,7 @@ Same as Reward/Distribution (Phase 2.3) — no `ValueObjects` section was given,
 
 | Entity | Shape | Notes |
 |---|---|---|
-| `GiftProgram` | `AggregateRoot<Guid>` | Code (plain string)/Name/Description/Status/StartTime/EndTime |
+| `GiftProgram` | `AggregateRoot<Guid>` | Code (`EntityCode`, Phase 2.6 — was plain string)/Name/Description/Status/StartTime/EndTime |
 | `GiftItem` | `BaseEntity<Guid>` | ProgramId/ProductId/VariantId/Quantity (shared VO) |
 | `GiftInventory` | `BaseEntity<Guid>` | GiftItemId/WarehouseId/AvailableQuantity (shared VO) — public `Create` |
 | `GiftReservation` | `BaseEntity<Guid>` | GiftItemId/UserId/OrderId/ReservedQuantity (shared VO)/ReservedAt — public `Create` |

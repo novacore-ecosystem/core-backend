@@ -33,4 +33,4 @@
 
 ## Current status
 
-See [planning/PROGRESS.md](planning/PROGRESS.md). **Phase 0, 1, and 2 (Domain Model) complete, 3/7. The Domain model is now frozen — future phases should no longer modify it unless a design defect is discovered. Ready for Phase 3 (Persistence).**
+See [planning/PROGRESS.md](planning/PROGRESS.md). **Phase 0, 1, and 2 (Domain Model) complete, 3/7 — including 2.6, the Final Domain Correction & Freeze pass. The Domain model is now frozen — future phases should no longer modify it unless a design defect is discovered. Ready for Phase 3 (Persistence).**

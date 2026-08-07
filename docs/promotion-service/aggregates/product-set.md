@@ -19,7 +19,7 @@
 | `ProductSet` | `AggregateRoot<Guid>` | Code/Name/Description/Status/SetType |
 | `ProductSetItem` | `BaseEntity<Guid>` | ProductSetId/ProductId/VariantId/Quantity (shared VO) |
 | `ProductBundle` | `BaseEntity<Guid>` | ProductSetId/Name/DisplayOrder. Not an Aggregate Root, but translatable (Phase 2.5) — exposes its own `Translate(languageCode, name)` directly (Name-only, no Description field) |
-| `BundlePrice` | `BaseEntity<Guid>` | BundleId/Currency/Price (shared `Money` VO) — public `Create` |
+| `BundlePrice` | `BaseEntity<Guid>` | BundleId/Currency (local `Currency` VO, Phase 2.6 — was plain string)/Price (shared `Money` VO) — public `Create` |
 | `BundleRule` | `BaseEntity<Guid>` | BundleId/RuleType/Configuration (opaque string blob) — public `Create` |
 | `BundleGift` | `BaseEntity<Guid>` | BundleId/ProductId/Quantity (shared VO) — public `Create` |
 | `ProductSetTranslation` | `BaseEntity<Guid>` | Added Phase 2.5: `Id = ProductSet.Id`, composite `(Id, LanguageCode)`. Exposed via `ProductSet.Translate(languageCode, name, description)` — upsert |
@@ -39,6 +39,10 @@
 ## Indexes (design only — written in Phase 3)
 
 `(Code)` unique · `(Status)`
+
+## Phase 2.6 correction
+
+`BundlePrice.Currency` converted from `string` to the new local `Currency` Value Object (see [../value-objects/README.md](../value-objects/README.md)).
 
 ## Reconciliation notes
 

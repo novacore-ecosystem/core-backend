@@ -1,0 +1,61 @@
+# Task 4: Promotion Service — Phase 2.6 Final Domain Correction & Freeze
+
+**Status:** Done — this closes Phase 2 (Domain Model) for good. Phase 3 (Persistence) is current.
+**Category:** Domain-layer correction pass (relationship completeness, enum/VO completeness, structural consistency), no business logic, single final build
+
+## What was done
+
+A 4-way parallel audit (one pass per aggregate-group cluster: Campaigns+Promotions, Coupons+Vouchers, Loyalty+Rewards+Distributions, Recommendations+ProductSets+Gifts+Approvals+Validations) scanned all 103 entities against the prompt's 7-point checklist before any edit was made. Findings were triaged against existing codebase precedent before acting — several audit suggestions were deliberately **not** applied because they would have reversed decisions already documented as intentional elsewhere in the same Domain project (see "Findings reviewed but not applied" below).
+
+**Priority 1 — Relationship/Navigation completeness (the prompt's own "most important requirement"):**
+- **Fixed 5 uninstantiable entities**: `CampaignBudget`, `CampaignApproval`, `PromotionRuleGroup`, `PromotionPriority`, `PromotionExclusion` all had `internal static Create` with **zero callers anywhere in the codebase** (verified by grep across the whole `src/` tree) — none is owned via an `ICollection<T>` on a parent, so nothing could legally construct them. All five changed to `public static Create`.
+- **Completed the `PromotionRule` → `PromotionCondition` ownership path**: `PromotionCondition.Create`'s own doc comment always read "Only PromotionRule (via the owning Promotion) constructs a PromotionCondition," but `PromotionRule` had no `Conditions` collection or `AddCondition`/`RemoveCondition` method — the entity was completely orphaned despite its own documentation claiming otherwise. `PromotionRule` now owns `ICollection<PromotionCondition> Conditions` + `AddCondition`/`RemoveCondition`; `PromotionCondition.Create` stays `internal` (this one genuinely is owned).
+- **Added 3 navigation properties**: `Campaign.Budget` (→ `CampaignBudget`), `PromotionRule.RuleGroup` (→ `PromotionRuleGroup`), `RewardDistribution.DistributionJob` (→ `DistributionJob`, a cross-aggregate-group reference) — all forward references to independent, related-but-not-owned entities, matching the existing `Coupon.Campaign`/`Coupon.Promotion` pattern (declared, resolved at the Persistence layer via FK, no Domain-side wiring needed).
+- **Deliberately not extended service-wide**: the prompt's own relationship-example list names ~28 pairs across nearly every group (`Campaign→CampaignSchedule`, `Coupon→CouponUsage`, `Voucher→VoucherReservation`, `RewardProgram→RewardDistribution`, etc.) that could each get a child→parent back-reference navigation. Three of the four parallel audits independently confirmed that **every one of these already has the parent-side `ICollection<Child>`**, and that the child holding only the scalar FK (no back-reference object) is the established, consistent, one-directional convention used throughout the entire 103-entity Domain — not an oversight local to one or two groups. Reversing it broadly would be a large, speculative refactor of an already-working pattern, not a correction of a defect; only the three targeted additions above (plus the completed `PromotionCondition` path) were made.
+
+**Priority 2 — Enum/Value Object completeness:**
+- **11 string fields converted to enums** (eliminating "accidental string-based domain enumerations" per the prompt's own framing): `PromotionRuleGroup.LogicOperator` → `PromotionRuleGroupOperator`, `PromotionCondition.Operator` → `PromotionConditionOperator`, `PromotionTarget.TargetType` → `PromotionTargetType` (placeholder), `PromotionBenefit.BenefitType` → `PromotionBenefitType` (placeholder), `PromotionConstraint.ConstraintType` → `PromotionConstraintType` (placeholder), `PromotionUsageLimit.Scope` → `PromotionUsageScope` (real values, already named in `promotion.md`), `CouponReservation.Status` → `ReservationStatus`, `ApprovalStep.Status` → `ApprovalStepStatus`, `ApprovalDecision.Decision` → `ApprovalDecisionType`, `PromotionValidationResult.Status` → `ValidationResultStatus`, `PromotionSimulationResult.Status` → `SimulationResultStatus`.
+- **Deliberately left as `string`**: genuinely open-ended classifier fields (`PointRule.RuleType`, `RecommendationRule.RuleType`, `BundleRule.RuleType`, `PromotionValidationPolicy.RuleType`, `ApprovalWorkflow.WorkflowType`) — these are extensible plugin-style taxonomies with no closed value set implied anywhere in any phase brief, so converting them would invent an unrequested business rule, not fix an omission.
+- **Closed the `EntityCode` gap**: `RewardProgram.Code`, `DistributionJob.Code`, `GiftProgram.Code` now use the shared `EntityCode` Value Object — the last three aggregate roots whose `Code` was still a bare `string` (flagged since Phase 2.5, not fixed until now).
+- **New local `Currency` Value Object** (`Promotion.Domain/ValueObjects/Currency.cs`, mirrors `EntityCode`'s shape — 3-letter uppercase ISO-4217, `IsValid`/`TryCreate`/`Create`): replaces the bare `string` previously duplicated 4 times (`Promotion.Currency`, `Voucher.Currency`, `CampaignBudget.CurrencyCode`, `BundlePrice.Currency`). Local because Payment.Domain's own `Currency` lives in a different microservice and cannot be referenced across a service boundary.
+- **`PointAccount`'s five balance fields** (`AvailablePoints`/`PendingPoints`/`ExpiredPoints`/`LifetimeEarned`/`LifetimeSpent`) converted from plain `int` to the shared `Quantity` Value Object — same non-negative-count shape `GiftInventory.AvailableQuantity` already used.
+
+**Findings reviewed but deliberately not applied** (re-confirmed as intentional, not silently changed):
+- `Period`/`CouponUsageLimit` remain unadopted at the `Coupon`/`Voucher` root level. An audit flagged this as a gap since both VOs' doc comments call themselves "reserved" for exactly this use — but `Campaign`/`Promotion` (the aggregates `Period` was itself consolidated from) also keep their own root-level `StartTime`/`EndTime` as flat scalars and only use `Period` for a genuinely reusable sub-entity shape (`CampaignSchedule.Period`). Adopting it at the `Coupon`/`Voucher` root would make them *inconsistent* with `Campaign`/`Promotion`, not more consistent.
+- `CouponStatus`/`VoucherStatus` did **not** get a new `Rejected` value. An audit flagged the missing exit path from `PendingApproval` on approval failure — but `Cancel()` is already a valid transition from `PendingApproval` on both aggregates (not in either method's throw-guard list), so a working exit path already exists; adding a new terminal status would invent an unrequested business state the prompt explicitly warns against ("Do NOT invent additional business states merely because they are technically possible").
+- `ApprovalAudit.WorkflowId` did **not** get a concrete `Workflow` navigation, despite being a same-project, concretely-typed FK (unlike its sibling `PromotionAudit.AggregateId`/`RuleAudit.RuleId`/`ExecutionAudit.ExecutionId`, which are genuinely polymorphic). All four Audit entities are explicitly documented, twice, as one deliberate uniform design ("same shape as every other `*History` entity... generic... not tied to a single owning aggregate") — singling out `ApprovalAudit` for a concrete nav would break that documented uniformity within the same 4-entity group.
+- `ApprovalStep.Workflow` back-navigation was **not** added, for the same reason as the broader "no service-wide back-reference sweep" decision above — `ApprovalStep` is an owned child exactly like `CampaignSchedule`/`CouponUsage`, and treating it differently would be inconsistent, not corrective.
+
+**Priority 3 — Translation completeness:** re-verified only, no changes. All 10 translatable aggregates (Campaign, Promotion, Coupon, Voucher, LoyaltyProgram, RewardProgram, GiftProgram, RecommendationProgram, ProductSet, ProductBundle) correctly implement the single-upsert `Translate(...)` pattern; Approvals/Validations/Audits correctly have none.
+
+**Priority 4 — Entity structural consistency:** file ordering, region structure, and property/method placement were re-verified consistent across all 13 aggregate groups by all four parallel audits — no changes needed. The Validation/Audit groups' missing `ITenantEntity`/`TenantId` (9 entities total) was re-confirmed as a genuine, still-unresolved data-isolation gap — re-flagged more strongly in `docs/promotion-service/aggregates/validation.md` and `TODO.md` rather than silently fixed, since reversing a twice-already-documented deliberate decision midstream, this late, without explicit sign-off would be a bigger judgment call than this pass should make unilaterally.
+
+**Priority 5 — Documentation/comment quality:** all four audits independently found no property-level comment issues (no multi-line blocks that should be single-line, no comments restating an obvious property name) — the codebase was already clean on this front. Stale class/method-level comments describing now-corrected behavior (e.g. "Decision is a plain string, no enum requested") were updated alongside their corresponding code change.
+
+**Priority 6 — Documentation update:** updated `docs/promotion-service/enums/README.md` and `value-objects/README.md` (new catalogue entries + Phase 2.6 sections), all 11 affected aggregate docs (`campaign.md`, `promotion.md`, `coupon.md`, `voucher.md`, `loyalty.md`, `reward.md`, `distribution.md`, `gift.md`, `product-set.md`, `approval.md`, `validation.md`), `Promotion.Domain/TODO.md` (rewritten with the full Phase 2.6 changelog and an updated "known open items" list), `docs/promotion-service/README.md`, and `docs/promotion-service/planning/PROGRESS.md`.
+
+**Build**: `dotnet build src/Services/Promotion/Promotion.Domain/Promotion.Domain.csproj` — the single final Domain-only build the prompt required. **Succeeded, 0 errors**, first attempt.
+
+## Objective
+
+Final correction pass over the entire Phase 2 Domain implementation — close structural omissions (missing navigations, string fields that are really enums, incomplete Value Object adoption) found across 5 prior implementation prompts, without redesigning architecture or adding any business capability, before Phase 3 (Persistence) locks in the schema.
+
+## Scope
+
+**Built/changed this task:** 11 new enum files, 1 new Value Object file, edits to 24 existing entity files across 8 aggregate groups (Campaigns, Promotions, Coupons, Vouchers, Loyalty, Rewards, Distributions, Gifts, ProductSets, Approvals, Validations), 13 documentation file updates, 1 verification build.
+
+**Explicitly not built:** any repository/persistence-service/read-service method; any business rule (discount calculation, eligibility evaluation, stacking resolution, approval routing); any Persistence/CQRS/API/Search code; a service-wide child→parent navigation sweep (deliberately scoped down after cross-checking against established convention — see "Priority 1" above).
+
+## Dependencies
+
+Phase 2.5 (Task 3, `2026-08-07`). Phase 3 (Persistence) depends on this frozen Domain model.
+
+## Estimated complexity
+
+Large (cross-cutting correction pass touching 24 previously-implemented entity files plus 12 new files, one full audit cycle across 4 parallel research passes, one final build).
+
+## Risks
+
+- The Domain model is declared frozen again after this pass — any defect found during Phase 3 (Persistence) modeling now requires an explicit "this is a design defect" justification to reopen Domain.
+- The Validation/Audit groups' missing `ITenantEntity` remains unresolved by design (flagged, not fixed) — this is the single highest-risk open item, since retrofitting tenant isolation after Phase 3's schema/migrations lock in will be materially more expensive than fixing it now. If Phase 3 proceeds without an explicit architect decision on this, cross-tenant data leakage on these 9 tables is architecturally possible from day one.
+- Three placeholder enums (`PromotionTargetType`, `PromotionBenefitType`, `PromotionConstraintType`) were added with a conventional-but-unconfirmed value set, same caveat as the pre-existing `CampaignType`/`PromotionType` placeholders — confirm with the architect before treating any of the five as final.

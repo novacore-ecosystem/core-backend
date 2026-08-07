@@ -18,7 +18,7 @@ The phase brief listed `VoucherBatch` under Voucher's Entities but — unlike ev
 
 ## `Money` reused, not duplicated
 
-`Voucher.Amount`/`Balance`, and every Money-valued child field (`VoucherWallet`'s three balances, `VoucherReservation.ReservedAmount`, `VoucherRedemption.RedeemedAmount`, `VoucherTransfer.Amount`, `VoucherExpiration.ExpiredAmount`) use the shared `BuildingBlock.Domain.ValueObjects.Money` directly — no new Voucher-local Money VO was created, since the shared one (which deliberately has no currency field, per Payment Service's own precedent) fits exactly. `Voucher.Currency` stays a separate scalar, same split Payment Service already uses.
+`Voucher.Amount`/`Balance`, and every Money-valued child field (`VoucherWallet`'s three balances, `VoucherReservation.ReservedAmount`, `VoucherRedemption.RedeemedAmount`, `VoucherTransfer.Amount`, `VoucherExpiration.ExpiredAmount`) use the shared `BuildingBlock.Domain.ValueObjects.Money` directly — no new Voucher-local Money VO was created, since the shared one (which deliberately has no currency field, per Payment Service's own precedent) fits exactly. `Voucher.Currency` stays a separate scalar (now the local `Currency` Value Object, Phase 2.6 — was a bare `string`), same split Payment Service already uses.
 
 ## Entities
 
@@ -50,6 +50,10 @@ The phase brief listed `VoucherBatch` under Voucher's Entities but — unlike ev
 ## Indexes (design only — written in Phase 3)
 
 `(Code)` unique · `(OwnerId)` · `(Status)` · `(PromotionId)` · `(CampaignId)` · `(WalletId)`
+
+## Phase 2.6 correction
+
+`Voucher.Currency` converted from `string` to the new local `Currency` Value Object. No other changes — `VoucherReservation` correctly has no `Status` field (release is modeled by row removal via `Voucher.ReleaseReservation`), which is why `CouponReservation.Status` was converted to an enum rather than removed for parity: the two aggregates model reservation release differently on purpose.
 
 ## Reconciliation notes
 

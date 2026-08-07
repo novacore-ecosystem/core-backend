@@ -21,19 +21,25 @@ Same as Gift/Reward/Distribution — `ApprovalWorkflow` has no `ValueObjects` se
 | Entity | Shape | Notes |
 |---|---|---|
 | `ApprovalWorkflow` | `AggregateRoot<Guid>` | WorkflowType (plain string)/Status |
-| `ApprovalStep` | `BaseEntity<Guid>` | WorkflowId/StepOrder/ApproverRole/Status (plain string, distinct from `ApprovalWorkflowStatus`) |
+| `ApprovalStep` | `BaseEntity<Guid>` | WorkflowId/StepOrder/ApproverRole/Status (`ApprovalStepStatus` enum, Phase 2.6 — was plain string), distinct from `ApprovalWorkflowStatus` |
 | `ApprovalAssignment` | `BaseEntity<Guid>` | StepId/UserId/AssignedAt — public `Create` |
-| `ApprovalDecision` | `BaseEntity<Guid>` | StepId/Decision (plain string, no enum requested)/DecidedAt — public `Create` |
+| `ApprovalDecision` | `BaseEntity<Guid>` | StepId/Decision (`ApprovalDecisionType` enum, Phase 2.6 — was plain string)/DecidedAt — public `Create` |
 | `ApprovalComment` | `BaseEntity<Guid>` | StepId/Comment — `CreatedAt` inherited, public `Create` |
 | `ApprovalHistory` | `BaseEntity<Guid>` | WorkflowId/Action/OperatorId — `CreatedAt` inherited, public `Create` |
 
 ## Enums
 
 - `ApprovalWorkflowStatus` — Draft/Pending/Approved/Rejected/Cancelled (given explicitly).
+- `ApprovalStepStatus` — Pending/Approved/Rejected/Skipped (Phase 2.6 — was a plain string).
+- `ApprovalDecisionType` — Approved/Rejected (Phase 2.6 — was a plain string).
 
 ## Indexes (design only — written in Phase 3)
 
 `(Status)`
+
+## Phase 2.6 correction
+
+`ApprovalStep.Status` and `ApprovalDecision.Decision` converted from plain strings to their own enums, closing the "no enum requested" gap both entities' original comments called out. `ApprovalStep.Workflow` back-navigation was deliberately **not** added — `ApprovalStep` stays FK-only to `ApprovalWorkflow`, matching the one-directional navigation convention used consistently by every other owned child across the whole Domain (Campaign's schedules/tags/attachments, Coupon's usages/reservations, etc.) rather than special-casing this one relationship. `ApprovalAudit.WorkflowId` (Audits group) was considered for a concrete `Workflow` navigation but rejected for the same reason — it would break the deliberate uniformity of the four Audit entities, which are documented as generic "same shape as every other `*History` entity, just not tied to a single owning aggregate."
 
 ## Reconciliation notes
 

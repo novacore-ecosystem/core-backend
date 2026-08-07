@@ -41,6 +41,13 @@ See [../value-objects/README.md](../value-objects/README.md) for the full consol
 - `(Type, Status)`
 - `(TenantId, Code)` unique
 
+## Phase 2.6 correction
+
+- **`CampaignBudget`/`CampaignApproval` were uninstantiable** — both had `internal static Create` with zero callers anywhere (neither is owned via an `ICollection<T>` on `Campaign`, so nothing could ever legally construct them). Both are now `public static Create`, matching their actual independent-entity shape.
+- **`Campaign.Budget` navigation added** — `Campaign.BudgetId` now has a matching `CampaignBudget? Budget` reference navigation (resolved at the Persistence layer via FK, same pattern as `Coupon.Campaign`/`Coupon.Promotion`). `CampaignApproval` stays FK-only, unchanged — it remains the Phase 2.4 `ApprovalWorkflow` wiring's known open item, out of scope for this pass.
+- **`CampaignBudget.CurrencyCode`** now uses the new local `Currency` Value Object instead of a bare `string` — see [../value-objects/README.md](../value-objects/README.md).
+- `CampaignChannel.Channel` remains a plain `string` — re-confirmed as a deliberate deferral (a `ChannelType` enum was already flagged in this doc, not invented here either).
+
 ## Reconciliation notes
 
 - **No `CreateCampaignData` (EntityData)** — no child collection is structurally mandatory at creation (no stated "≥1 X" rule), so `Campaign.Create` takes flat scalar parameters (Rule 2) and every child is added via a separate `Add{Child}` method afterward, same as `ProductBrand`.

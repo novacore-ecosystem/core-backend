@@ -8,9 +8,9 @@
 
 `DistributionItem`, `DistributionExecution`, `DistributionRetry`, `DistributionHistory` are **not** part of the navigation graph (no Navigation section given for any of them), so all four have a **public** `Create` and are related by id only (`BatchId`/`ItemId`/`ExecutionId`/`JobId` respectively) — same reconciliation as Loyalty/Reward.
 
-## No Value Objects requested
+## `Code` now uses `EntityCode` (Phase 2.6 correction)
 
-Same as `RewardProgram` — no `ValueObjects` section was given, so `DistributionJob.Code` stays a plain `string`.
+Same original gap as `RewardProgram` — no `ValueObjects` section was given, so `DistributionJob.Code` stayed a plain `string` through Phase 2.5. Now uses the shared `EntityCode` Value Object, same as every other aggregate root.
 
 ## `DistributionItem.RewardType` reuses the Reward aggregate's enum
 
@@ -20,7 +20,7 @@ Same as `RewardProgram` — no `ValueObjects` section was given, so `Distributio
 
 | Entity | Shape | Notes |
 |---|---|---|
-| `DistributionJob` | `AggregateRoot<Guid>` | Code (plain string)/Name/Status/Strategy/ScheduledAt/StartedAt/CompletedAt |
+| `DistributionJob` | `AggregateRoot<Guid>` | Code (`EntityCode`, Phase 2.6 — was plain string)/Name/Status/Strategy/ScheduledAt/StartedAt/CompletedAt |
 | `DistributionBatch` | `BaseEntity<Guid>` | JobId/BatchNo/TotalItems/ProcessedItems/FailedItems |
 | `DistributionItem` | `BaseEntity<Guid>` | BatchId/UserId/RewardType (reused)/ReferenceId/Status — public `Create` |
 | `DistributionExecution` | `BaseEntity<Guid>` | ItemId/ExecutionKey/ExecutedAt — public `Create` |
@@ -39,4 +39,4 @@ Same as `RewardProgram` — no `ValueObjects` section was given, so `Distributio
 
 ## Reconciliation notes
 
-No `EntityData`/`UpdateData` wrapper types created (Domain Rule 2).
+No `EntityData`/`UpdateData` wrapper types created (Domain Rule 2). `RewardDistribution` (Reward aggregate) now carries a forward `DistributionJob` navigation to this aggregate's root (Phase 2.6) — `DistributionJob` itself gains no reverse collection, since `RewardDistribution` is owned by `RewardProgram`, not by `DistributionJob`.

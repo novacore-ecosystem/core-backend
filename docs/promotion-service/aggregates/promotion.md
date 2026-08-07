@@ -58,6 +58,15 @@ Despite being listed under "Entities," `PromotionMetadata` is implemented as a `
 - `(Type, Status)`
 - `(Priority)`
 
+## Phase 2.6 correction
+
+- **`PromotionRuleGroup`/`PromotionPriority`/`PromotionExclusion` were uninstantiable** — all three had `internal static Create` with zero callers (none is owned via an `ICollection<T>`). All three are now `public static Create`.
+- **`PromotionCondition` is now actually reachable** — its own doc comment always said "Only PromotionRule may construct a PromotionCondition," but `PromotionRule` had no `Conditions` collection or `AddCondition` method to do so. `PromotionRule` now owns `ICollection<PromotionCondition> Conditions` + `AddCondition`/`RemoveCondition`, completing the pattern its own comment already documented. `PromotionCondition.Create` stays `internal` (genuinely owned by `PromotionRule`, unlike the three above).
+- **`PromotionRule.RuleGroup` navigation added** — forward reference to `PromotionRuleGroup`, matching the `Coupon.Campaign`/`Coupon.Promotion` pattern for a reference to an independent, related-but-not-owned entity.
+- **Five string fields converted to enums**: `PromotionRuleGroup.LogicOperator` → `PromotionRuleGroupOperator`, `PromotionCondition.Operator` → `PromotionConditionOperator`, `PromotionTarget.TargetType` → `PromotionTargetType` (placeholder), `PromotionBenefit.BenefitType` → `PromotionBenefitType` (placeholder), `PromotionConstraint.ConstraintType` → `PromotionConstraintType` (placeholder), `PromotionUsageLimit.Scope` → `PromotionUsageScope` (real values, already named in this doc). See [../enums/README.md](../enums/README.md).
+- **`Promotion.Currency`** now uses the new local `Currency` Value Object instead of a bare `string`.
+- `CampaignStatus` has a `Scheduled` value that `PromotionStatus` doesn't — flagged as a lifecycle asymmetry worth an architect decision, not changed here (adding a new status would invent a business state the design never specified).
+
 ## Reconciliation notes
 
 Same as Campaign's — no `PromotionData`/`UpdateData`/`PromotionTranslationData` wrapper created; `Promotion.Create` takes flat scalar parameters, every child is added via a separate method, every update/translate method takes flat parameters (`ProductBrand.UpdateDetails` precedent).

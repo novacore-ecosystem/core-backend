@@ -13,7 +13,7 @@
 | Entity | Shape | Notes |
 |---|---|---|
 | `LoyaltyProgram` | `AggregateRoot<Guid>` | Code/Name/Description/Status/StartTime/EndTime/IsDefault/IsEnabled — **no TimeZone property**, unlike every prior aggregate |
-| `PointAccount` | `BaseEntity<Guid>` | UserId/ProgramId/AvailablePoints/PendingPoints/ExpiredPoints/LifetimeEarned/LifetimeSpent |
+| `PointAccount` | `BaseEntity<Guid>` | UserId/ProgramId/AvailablePoints/PendingPoints/ExpiredPoints/LifetimeEarned/LifetimeSpent (all `Quantity` VO, Phase 2.6 — were plain `int`) |
 | `PointTransaction` | `BaseEntity<Guid>` | AccountId/Type/Source/ReferenceId/Points/BalanceAfter — public `Create` |
 | `PointLedger` | `BaseEntity<Guid>` | TransactionId/Debit/Credit/Balance — public `Create` |
 | `PointExpiration` | `BaseEntity<Guid>` | AccountId/Points/ExpiredAt — public `Create` |
@@ -38,6 +38,10 @@
 - `LoyaltyProgram`: `(Code)` unique · `(Status)` · `(TenantId, Code)` unique
 - `PointAccount`: `(UserId, ProgramId)` unique
 - `PointTransaction`: `(AccountId)` · `(ReferenceId)` · `(Type)`
+
+## Phase 2.6 correction
+
+`PointAccount`'s five balance fields now use the shared `Quantity` Value Object (non-negative counts) instead of plain `int` — same shape `GiftInventory.AvailableQuantity` already used.
 
 ## Reconciliation notes
 

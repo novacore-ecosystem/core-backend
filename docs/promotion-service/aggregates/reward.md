@@ -8,9 +8,9 @@
 
 `RewardExecution`, `RewardReservation`, `RewardClaim`, `RewardHistory` are **not** part of the navigation graph (no Navigation section given for any of them), so all four have a **public** `Create` and are related by id only. None of them reference a `RewardId` pointing at a dedicated "Reward" entity — no such entity exists in this pass (only `RewardProgram`/`RewardDefinition`/`RewardDistribution` do); `RewardId` is kept as a loose `Guid` reference for whatever "issued reward" concept a later phase formalizes.
 
-## No Value Objects requested (a first for this roadmap)
+## `Code` now uses `EntityCode` (Phase 2.6 correction)
 
-Unlike every prior aggregate (Campaign, Promotion, Coupon, Voucher, Loyalty), the brief gave `RewardProgram` **no `ValueObjects` section**. `Code` is kept as a plain `string`, not wrapped in a `RewardProgramCode`-shaped VO — respecting the literal omission rather than inventing an unrequested type. Flagging this explicitly since it breaks an otherwise 100%-consistent pattern; if it turns out to be a brief oversight rather than a deliberate simplification, adding the VO later is a pure-additive, non-breaking change.
+Unlike every prior aggregate (Campaign, Promotion, Coupon, Voucher, Loyalty), the original brief gave `RewardProgram` **no `ValueObjects` section**, so `Code` stayed a plain `string` through Phase 2.5. The Phase 2.6 Final Domain Correction closed this gap — `RewardProgram.Code` now uses the shared `EntityCode` Value Object, same as every other aggregate root.
 
 ## `RewardDistribution.Status` reuses `DistributionStatus`
 
@@ -20,9 +20,9 @@ Unlike every prior aggregate (Campaign, Promotion, Coupon, Voucher, Loyalty), th
 
 | Entity | Shape | Notes |
 |---|---|---|
-| `RewardProgram` | `AggregateRoot<Guid>` | Code (plain string)/Name/Description/Status/StartTime/EndTime |
+| `RewardProgram` | `AggregateRoot<Guid>` | Code (`EntityCode`, Phase 2.6 — was plain string)/Name/Description/Status/StartTime/EndTime |
 | `RewardDefinition` | `BaseEntity<Guid>` | ProgramId/RewardType/Configuration (opaque string blob) |
-| `RewardDistribution` | `BaseEntity<Guid>` | ProgramId/DistributionJobId/Status (`DistributionStatus`, reused)/ScheduledAt/ExecutedAt |
+| `RewardDistribution` | `BaseEntity<Guid>` | ProgramId/DistributionJobId/Status (`DistributionStatus`, reused)/ScheduledAt/ExecutedAt — `DistributionJob` navigation added Phase 2.6 (forward reference to the independent root, same pattern as `Coupon.Campaign`) |
 | `RewardExecution` | `BaseEntity<Guid>` | DistributionId/UserId/ExecutionKey/Status/ExecutedAt — public `Create` |
 | `RewardReservation` | `BaseEntity<Guid>` | RewardId/UserId/ReservedAt/ExpiredAt — public `Create` |
 | `RewardClaim` | `BaseEntity<Guid>` | RewardId/UserId/ClaimedAt — public `Create` |
@@ -41,4 +41,4 @@ Unlike every prior aggregate (Campaign, Promotion, Coupon, Voucher, Loyalty), th
 
 ## Reconciliation notes
 
-No `EntityData`/`UpdateData`/`RewardProgramTranslationData` wrapper types created (Domain Rule 2). `RewardProgram.Code` remains a plain `string` (no VO section given) — the new `EntityCode` consolidation (Phase 2.5) did not change this since there was never a `RewardProgramCode` to merge.
+No `EntityData`/`UpdateData`/`RewardProgramTranslationData` wrapper types created (Domain Rule 2).
