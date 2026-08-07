@@ -4,16 +4,13 @@ namespace NovaCore.Promotion.Domain.Entities.Validations;
 public sealed class PromotionValidationResult : BaseEntity<Guid>, IAuditable
 {
     public Guid PolicyId { get; private set; }
-    public string Status { get; private set; } = string.Empty;
+    public ValidationResultStatus Status { get; private set; }
     public string? Message { get; private set; }
 
     private PromotionValidationResult() { }
 
-    public static PromotionValidationResult Create(Guid policyId, string status, string? message = null)
+    public static PromotionValidationResult Create(Guid policyId, ValidationResultStatus status, string? message = null)
     {
-        if (string.IsNullOrWhiteSpace(status))
-            throw ExceptionFactory.RequiredField("Result status cannot be empty.");
-
         return new PromotionValidationResult
         {
             Id = Guid.CreateVersion7(),

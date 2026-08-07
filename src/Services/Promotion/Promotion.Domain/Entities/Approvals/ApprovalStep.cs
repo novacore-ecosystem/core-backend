@@ -1,12 +1,12 @@
 namespace NovaCore.Promotion.Domain.Entities.Approvals;
 
-/// <summary>A single ordered step in an ApprovalWorkflow - Status is a plain string, distinct from the workflow-level ApprovalWorkflowStatus (no dedicated step-status enum requested).</summary>
+/// <summary>A single ordered step in an ApprovalWorkflow - Status is its own ApprovalStepStatus enum, distinct from the workflow-level ApprovalWorkflowStatus.</summary>
 public sealed class ApprovalStep : BaseEntity<Guid>, IAuditable
 {
     public Guid WorkflowId { get; private set; }
     public int StepOrder { get; private set; }
     public string ApproverRole { get; private set; } = string.Empty;
-    public string? Status { get; private set; }
+    public ApprovalStepStatus Status { get; private set; } = ApprovalStepStatus.Pending;
 
     private ApprovalStep() { }
 
@@ -25,11 +25,8 @@ public sealed class ApprovalStep : BaseEntity<Guid>, IAuditable
         };
     }
 
-    public void UpdateStatus(string status)
+    public void UpdateStatus(ApprovalStepStatus status)
     {
-        if (string.IsNullOrWhiteSpace(status))
-            throw ExceptionFactory.RequiredField("Step status cannot be empty.");
-
         Status = status;
     }
 }

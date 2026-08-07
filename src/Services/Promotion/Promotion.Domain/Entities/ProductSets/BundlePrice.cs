@@ -4,16 +4,13 @@ namespace NovaCore.Promotion.Domain.Entities.ProductSets;
 public sealed class BundlePrice : BaseEntity<Guid>, IAuditable
 {
     public Guid BundleId { get; private set; }
-    public string Currency { get; private set; } = string.Empty;
+    public Currency Currency { get; private set; } = default!;
     public Money Price { get; private set; } = default!;
 
     private BundlePrice() { }
 
-    public static BundlePrice Create(Guid bundleId, string currency, Money price)
+    public static BundlePrice Create(Guid bundleId, Currency currency, Money price)
     {
-        if (string.IsNullOrWhiteSpace(currency))
-            throw ExceptionFactory.RequiredField("Currency cannot be empty.");
-
         return new BundlePrice
         {
             Id = Guid.CreateVersion7(),

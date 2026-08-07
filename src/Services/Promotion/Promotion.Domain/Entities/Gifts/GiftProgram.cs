@@ -3,12 +3,12 @@ namespace NovaCore.Promotion.Domain.Entities.Gifts;
 /// <summary>
 /// Aggregate root for a GiftProgram - owns Items. GiftInventory/GiftReservation/GiftClaim/
 /// GiftUsage are related by id only, not navigated from here - see
-/// docs/promotion-service/aggregates/gift.md. No ValueObjects section was given for this
-/// aggregate, same as Reward/Distribution/Gift's siblings this phase - Code stays a plain string.
+/// docs/promotion-service/aggregates/gift.md. Code now uses the shared EntityCode Value Object,
+/// same as every other aggregate root (Phase 2.6 correction).
 /// </summary>
 public sealed class GiftProgram : AggregateRoot<Guid>, IAuditable, ITenantEntity
 {
-    public string Code { get; private set; } = string.Empty;
+    public EntityCode Code { get; private set; } = default!;
     public string Name { get; private set; } = string.Empty;
     public string? Description { get; private set; }
     public ProgramStatus Status { get; private set; }
@@ -30,13 +30,12 @@ public sealed class GiftProgram : AggregateRoot<Guid>, IAuditable, ITenantEntity
     private GiftProgram() { }
 
     public static GiftProgram Create(
-        string code,
+        EntityCode code,
         string name,
         DateTime startTime,
         DateTime endTime,
         string? description = null)
     {
-        ValidateCode(code);
         ValidateName(name);
         ValidatePeriod(startTime, endTime);
 
@@ -76,12 +75,6 @@ public sealed class GiftProgram : AggregateRoot<Guid>, IAuditable, ITenantEntity
     {
         if (!IsValidName(name))
             throw ExceptionFactory.RequiredField("Gift program name cannot be empty.");
-    }
-
-    private static void ValidateCode(string code)
-    {
-        if (string.IsNullOrWhiteSpace(code))
-            throw ExceptionFactory.RequiredField("Gift program code cannot be empty.");
     }
 
     private static void ValidatePeriod(DateTime startTime, DateTime endTime)

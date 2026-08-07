@@ -5,15 +5,12 @@ public sealed class PromotionSimulationResult : BaseEntity<Guid>, IAuditable
 {
     public Guid ScenarioId { get; private set; }
     public string? Output { get; private set; }
-    public string Status { get; private set; } = string.Empty;
+    public SimulationResultStatus Status { get; private set; }
 
     private PromotionSimulationResult() { }
 
-    public static PromotionSimulationResult Create(Guid scenarioId, string status, string? output = null)
+    public static PromotionSimulationResult Create(Guid scenarioId, SimulationResultStatus status, string? output = null)
     {
-        if (string.IsNullOrWhiteSpace(status))
-            throw ExceptionFactory.RequiredField("Result status cannot be empty.");
-
         return new PromotionSimulationResult
         {
             Id = Guid.CreateVersion7(),
