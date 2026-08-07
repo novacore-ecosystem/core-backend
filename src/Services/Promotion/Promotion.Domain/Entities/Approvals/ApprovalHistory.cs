@@ -7,6 +7,8 @@ public sealed class ApprovalHistory : BaseEntity<Guid>, IAuditable
     public string Action { get; private set; } = string.Empty;
     public Guid? OperatorId { get; private set; }
 
+    public ApprovalWorkflow Workflow { get; private set; } = default!;
+
     private ApprovalHistory() { }
 
     public static ApprovalHistory Create(Guid workflowId, string action, Guid? operatorId)

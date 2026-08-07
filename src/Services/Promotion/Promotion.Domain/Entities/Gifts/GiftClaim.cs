@@ -6,6 +6,8 @@ public sealed class GiftClaim : BaseEntity<Guid>, IAuditable
     public Guid ReservationId { get; private set; }
     public DateTime ClaimedAt { get; private set; }
 
+    public GiftReservation Reservation { get; private set; } = default!;
+
     private GiftClaim() { }
 
     public static GiftClaim Create(Guid reservationId)

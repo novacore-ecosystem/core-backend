@@ -7,6 +7,8 @@ public sealed class ApprovalAssignment : BaseEntity<Guid>, IAuditable
     public Guid UserId { get; private set; }
     public DateTime AssignedAt { get; private set; }
 
+    public ApprovalStep Step { get; private set; } = default!;
+
     private ApprovalAssignment() { }
 
     public static ApprovalAssignment Create(Guid stepId, Guid userId)

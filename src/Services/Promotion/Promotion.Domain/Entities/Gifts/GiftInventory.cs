@@ -7,6 +7,8 @@ public sealed class GiftInventory : BaseEntity<Guid>, IAuditable
     public Guid WarehouseId { get; private set; }
     public Quantity AvailableQuantity { get; private set; } = default!;
 
+    public GiftItem GiftItem { get; private set; } = default!;
+
     private GiftInventory() { }
 
     public static GiftInventory Create(Guid giftItemId, Guid warehouseId, Quantity availableQuantity)

@@ -7,6 +7,8 @@ public sealed class PromotionSimulationResult : BaseEntity<Guid>, IAuditable
     public string? Output { get; private set; }
     public SimulationResultStatus Status { get; private set; }
 
+    public PromotionSimulationScenario Scenario { get; private set; } = default!;
+
     private PromotionSimulationResult() { }
 
     public static PromotionSimulationResult Create(Guid scenarioId, SimulationResultStatus status, string? output = null)

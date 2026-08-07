@@ -7,6 +7,8 @@ public sealed class BundleRule : BaseEntity<Guid>, IAuditable
     public string RuleType { get; private set; } = string.Empty;
     public string? Configuration { get; private set; }
 
+    public ProductBundle Bundle { get; private set; } = default!;
+
     private BundleRule() { }
 
     public static BundleRule Create(Guid bundleId, string ruleType, string? configuration)

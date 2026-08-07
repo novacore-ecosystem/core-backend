@@ -19,6 +19,7 @@ public sealed class RecommendationProgram : AggregateRoot<Guid>, IAuditable, ITe
 
     public ICollection<RecommendationRule> Rules { get; private set; } = [];
     public ICollection<RecommendationProduct> Products { get; private set; } = [];
+    public ICollection<RecommendationHistory> History { get; private set; } = [];
     public ICollection<RecommendationProgramTranslation> Translations { get; private set; } = [];
 
     public Guid TenantId { get; private set; }

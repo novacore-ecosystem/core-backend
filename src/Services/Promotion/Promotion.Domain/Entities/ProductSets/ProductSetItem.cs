@@ -8,6 +8,8 @@ public sealed class ProductSetItem : BaseEntity<Guid>, IAuditable
     public Guid? VariantId { get; private set; }
     public Quantity Quantity { get; private set; } = default!;
 
+    public ProductSet ProductSet { get; private set; } = default!;
+
     private ProductSetItem() { }
 
     /// <summary>Only ProductSet may construct a ProductSetItem - see ProductSet.AddItem.</summary>

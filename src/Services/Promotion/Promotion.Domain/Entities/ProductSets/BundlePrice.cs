@@ -7,6 +7,8 @@ public sealed class BundlePrice : BaseEntity<Guid>, IAuditable
     public Currency Currency { get; private set; } = default!;
     public Money Price { get; private set; } = default!;
 
+    public ProductBundle Bundle { get; private set; } = default!;
+
     private BundlePrice() { }
 
     public static BundlePrice Create(Guid bundleId, Currency currency, Money price)

@@ -7,6 +7,9 @@ public sealed class PromotionSimulationScenario : BaseEntity<Guid>, IAuditable
     public string Name { get; private set; } = string.Empty;
     public string? Input { get; private set; }
 
+    public PromotionSimulation Simulation { get; private set; } = default!;
+    public ICollection<PromotionSimulationResult> Results { get; private set; } = [];
+
     private PromotionSimulationScenario() { }
 
     public static PromotionSimulationScenario Create(Guid simulationId, string name, string? input = null)

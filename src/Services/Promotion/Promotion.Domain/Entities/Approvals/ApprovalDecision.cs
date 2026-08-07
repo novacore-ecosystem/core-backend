@@ -7,6 +7,8 @@ public sealed class ApprovalDecision : BaseEntity<Guid>, IAuditable
     public ApprovalDecisionType Decision { get; private set; }
     public DateTime DecidedAt { get; private set; }
 
+    public ApprovalStep Step { get; private set; } = default!;
+
     private ApprovalDecision() { }
 
     public static ApprovalDecision Create(Guid stepId, ApprovalDecisionType decision)

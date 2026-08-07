@@ -8,6 +8,8 @@ public sealed class RecommendationProduct : BaseEntity<Guid>, IAuditable
     public decimal Score { get; private set; }
     public int DisplayOrder { get; private set; }
 
+    public RecommendationProgram Program { get; private set; } = default!;
+
     private RecommendationProduct() { }
 
     /// <summary>Only RecommendationProgram may construct a RecommendationProduct - see RecommendationProgram.AddProduct.</summary>

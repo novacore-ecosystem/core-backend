@@ -8,6 +8,11 @@ public sealed class GiftItem : BaseEntity<Guid>, IAuditable
     public Guid? VariantId { get; private set; }
     public Quantity Quantity { get; private set; } = default!;
 
+    public GiftProgram Program { get; private set; } = default!;
+    public ICollection<GiftInventory> Inventories { get; private set; } = [];
+    public ICollection<GiftReservation> Reservations { get; private set; } = [];
+    public ICollection<GiftUsage> Usages { get; private set; } = [];
+
     private GiftItem() { }
 
     /// <summary>Only GiftProgram may construct a GiftItem - see GiftProgram.AddItem.</summary>

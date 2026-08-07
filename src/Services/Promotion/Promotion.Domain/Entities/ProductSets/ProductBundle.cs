@@ -14,6 +14,10 @@ public sealed class ProductBundle : BaseEntity<Guid>, IAuditable
     public string Name { get; private set; } = string.Empty;
     public int DisplayOrder { get; private set; }
 
+    public ProductSet ProductSet { get; private set; } = default!;
+    public ICollection<BundlePrice> Prices { get; private set; } = [];
+    public ICollection<BundleRule> Rules { get; private set; } = [];
+    public ICollection<BundleGift> Gifts { get; private set; } = [];
     public ICollection<ProductBundleTranslation> Translations { get; private set; } = [];
 
     private ProductBundle() { }

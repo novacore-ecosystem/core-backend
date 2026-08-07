@@ -6,6 +6,8 @@ public sealed class ApprovalComment : BaseEntity<Guid>, IAuditable
     public Guid StepId { get; private set; }
     public string Comment { get; private set; } = string.Empty;
 
+    public ApprovalStep Step { get; private set; } = default!;
+
     private ApprovalComment() { }
 
     public static ApprovalComment Create(Guid stepId, string comment)

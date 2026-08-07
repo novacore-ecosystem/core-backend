@@ -8,6 +8,8 @@ public sealed class GiftUsage : BaseEntity<Guid>, IAuditable
     public Guid? OrderId { get; private set; }
     public DateTime UsedAt { get; private set; }
 
+    public GiftItem GiftItem { get; private set; } = default!;
+
     private GiftUsage() { }
 
     public static GiftUsage Create(Guid giftItemId, Guid userId, Guid? orderId)

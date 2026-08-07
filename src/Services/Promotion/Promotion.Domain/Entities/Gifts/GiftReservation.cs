@@ -9,6 +9,9 @@ public sealed class GiftReservation : BaseEntity<Guid>, IAuditable
     public Quantity ReservedQuantity { get; private set; } = default!;
     public DateTime ReservedAt { get; private set; }
 
+    public GiftItem GiftItem { get; private set; } = default!;
+    public ICollection<GiftClaim> Claims { get; private set; } = [];
+
     private GiftReservation() { }
 
     public static GiftReservation Create(Guid giftItemId, Guid userId, Quantity reservedQuantity, Guid? orderId = null)

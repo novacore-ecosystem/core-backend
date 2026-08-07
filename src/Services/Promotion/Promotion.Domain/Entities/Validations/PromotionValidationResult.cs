@@ -7,6 +7,8 @@ public sealed class PromotionValidationResult : BaseEntity<Guid>, IAuditable
     public ValidationResultStatus Status { get; private set; }
     public string? Message { get; private set; }
 
+    public PromotionValidationPolicy Policy { get; private set; } = default!;
+
     private PromotionValidationResult() { }
 
     public static PromotionValidationResult Create(Guid policyId, ValidationResultStatus status, string? message = null)

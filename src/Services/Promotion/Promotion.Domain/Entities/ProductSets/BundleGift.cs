@@ -7,6 +7,8 @@ public sealed class BundleGift : BaseEntity<Guid>, IAuditable
     public Guid ProductId { get; private set; }
     public Quantity Quantity { get; private set; } = default!;
 
+    public ProductBundle Bundle { get; private set; } = default!;
+
     private BundleGift() { }
 
     public static BundleGift Create(Guid bundleId, Guid productId, Quantity quantity)

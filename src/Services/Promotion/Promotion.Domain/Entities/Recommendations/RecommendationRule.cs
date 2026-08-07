@@ -8,6 +8,8 @@ public sealed class RecommendationRule : BaseEntity<Guid>, IAuditable
     public string? Configuration { get; private set; }
     public int Priority { get; private set; }
 
+    public RecommendationProgram Program { get; private set; } = default!;
+
     private RecommendationRule() { }
 
     /// <summary>Only RecommendationProgram may construct a RecommendationRule - see RecommendationProgram.AddRule.</summary>

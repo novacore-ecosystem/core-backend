@@ -8,6 +8,10 @@ public sealed class ApprovalStep : BaseEntity<Guid>, IAuditable
     public string ApproverRole { get; private set; } = string.Empty;
     public ApprovalStepStatus Status { get; private set; } = ApprovalStepStatus.Pending;
 
+    public ICollection<ApprovalAssignment> Assignments { get; private set; } = [];
+    public ICollection<ApprovalDecision> Decisions { get; private set; } = [];
+    public ICollection<ApprovalComment> Comments { get; private set; } = [];
+
     private ApprovalStep() { }
 
     /// <summary>Only ApprovalWorkflow may construct an ApprovalStep - see ApprovalWorkflow.AddStep.</summary>

@@ -14,6 +14,7 @@ public sealed class ApprovalWorkflow : AggregateRoot<Guid>, IAuditable, ITenantE
     public ApprovalWorkflowStatus Status { get; private set; }
 
     public ICollection<ApprovalStep> Steps { get; private set; } = [];
+    public ICollection<ApprovalHistory> History { get; private set; } = [];
 
     public Guid TenantId { get; private set; }
 

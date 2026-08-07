@@ -14,6 +14,8 @@ public sealed class PromotionValidationPolicy : BaseEntity<Guid>, IAuditable
     public string? Configuration { get; private set; }
     public int Priority { get; private set; }
 
+    public ICollection<PromotionValidationResult> Results { get; private set; } = [];
+
     private PromotionValidationPolicy() { }
 
     public static PromotionValidationPolicy Create(string name, string ruleType, string? configuration = null, int priority = 0)
