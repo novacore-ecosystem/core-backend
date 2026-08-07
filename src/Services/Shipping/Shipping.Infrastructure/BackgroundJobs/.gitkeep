@@ -1,0 +1,6 @@
+# Foundation phase: intentionally empty.
+#
+# Nothing external needs reacting to yet (ShippingService is only ever called into
+# in this phase), and no recurring work exists. The folder is created so the first
+# consumer / background job lands in the conventional place without restructuring.
+# See docs/services/shipping-service.md, "Planned phases".

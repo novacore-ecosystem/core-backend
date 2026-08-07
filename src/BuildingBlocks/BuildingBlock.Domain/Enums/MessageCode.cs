@@ -166,11 +166,45 @@ public enum MessageCode
     [MessageCode("806", "Invalid coupon code")]
     InvalidCouponCode = 806,
 
-    // Promotion Service (900-999)
-    [MessageCode("900", "Coupon is disabled")]
-    CouponDisabled = 900,
-    [MessageCode("901", "Coupon is not currently active")]
-    CouponNotActive = 901,
-    [MessageCode("902", "Coupon usage limit has been reached")]
-    CouponUsageLimitReached = 902,
+    // Shipping Service (900-999)
+    [MessageCode("900", "Shipment not found")]
+    ShipmentNotFound = 900,
+    [MessageCode("901", "Invalid shipment status")]
+    InvalidShipmentStatus = 901,
+    [MessageCode("902", "Shipment is already cancelled")]
+    ShipmentAlreadyCancelled = 902,
+    [MessageCode("903", "Shipment manifest cannot be modified")]
+    ShipmentManifestLocked = 903,
+    [MessageCode("904", "Transportation not found")]
+    TransportationNotFound = 904,
+    [MessageCode("905", "Invalid transportation status")]
+    InvalidTransportationStatus = 905,
+    [MessageCode("906", "Transportation is already assigned")]
+    TransportationAlreadyAssigned = 906,
+    [MessageCode("907", "Shipping provider not found")]
+    ShippingProviderNotFound = 907,
+    [MessageCode("908", "Shipping provider is not active")]
+    ShippingProviderInactive = 908,
+    [MessageCode("909", "Invalid shipping address")]
+    InvalidShippingAddress = 909,
+    [MessageCode("910", "Transportation cost rule not found")]
+    TransportationCostRuleNotFound = 910,
+    [MessageCode("911", "Pickup not found")]
+    PickupNotFound = 911,
+    [MessageCode("912", "Delivery not found")]
+    DeliveryNotFound = 912,
+    [MessageCode("913", "Return shipment not found")]
+    ReturnShipmentNotFound = 913,
+    [MessageCode("914", "Carrier integration not found")]
+    CarrierIntegrationNotFound = 914,
+    [MessageCode("915", "Carrier integration is not configured")]
+    CarrierIntegrationNotConfigured = 915,
+
+    // Promotion Service (1000-1099)
+    [MessageCode("1000", "Coupon is disabled")]
+    CouponDisabled = 1000,
+    [MessageCode("1001", "Coupon is not currently active")]
+    CouponNotActive = 1001,
+    [MessageCode("1002", "Coupon usage limit has been reached")]
+    CouponUsageLimitReached = 1002,
 }
