@@ -15,6 +15,9 @@ public sealed class CouponBatch : BaseEntity<Guid>, IAuditable
     public int UsedCount { get; private set; }
     public int FailedCount { get; private set; }
 
+    public ICollection<Coupon> Coupons { get; private set; } = [];
+    public ICollection<CouponCode> Codes { get; private set; } = [];
+
     private CouponBatch() { }
 
     public static CouponBatch Create(string name, string? source = null)

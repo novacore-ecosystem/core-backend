@@ -8,6 +8,8 @@ public sealed class VoucherIssue : BaseEntity<Guid>, IAuditable
     public Guid? DistributionId { get; private set; }
     public DateTime IssuedAt { get; private set; }
 
+    public Voucher Voucher { get; private set; } = default!;
+
     private VoucherIssue() { }
 
     /// <summary>Only Voucher may construct a VoucherIssue - see Voucher.AddIssue.</summary>

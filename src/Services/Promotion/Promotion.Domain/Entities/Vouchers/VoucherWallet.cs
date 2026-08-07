@@ -12,6 +12,8 @@ public sealed class VoucherWallet : BaseEntity<Guid>, IAuditable
     public Money AvailableBalance { get; private set; } = default!;
     public Money ReservedBalance { get; private set; } = default!;
 
+    public ICollection<Voucher> Vouchers { get; private set; } = [];
+
     private VoucherWallet() { }
 
     public static VoucherWallet Create(Guid userId)

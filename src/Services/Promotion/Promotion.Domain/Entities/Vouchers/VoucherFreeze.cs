@@ -8,6 +8,8 @@ public sealed class VoucherFreeze : BaseEntity<Guid>, IAuditable
     public DateTime FrozenAt { get; private set; }
     public DateTime? ReleasedAt { get; private set; }
 
+    public Voucher Voucher { get; private set; } = default!;
+
     private VoucherFreeze() { }
 
     public static VoucherFreeze Create(Guid voucherId, string? reason)

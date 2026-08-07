@@ -7,6 +7,8 @@ public sealed class VoucherExpiration : BaseEntity<Guid>, IAuditable
     public Money ExpiredAmount { get; private set; } = default!;
     public DateTime ExpiredAt { get; private set; }
 
+    public Voucher Voucher { get; private set; } = default!;
+
     private VoucherExpiration() { }
 
     public static VoucherExpiration Create(Guid voucherId, Money expiredAmount)

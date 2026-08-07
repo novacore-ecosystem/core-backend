@@ -1,10 +1,8 @@
 namespace NovaCore.Promotion.Domain.Entities.Coupons;
 
 /// <summary>
-/// Structural record of a Coupon's approval review. Related to Coupon via CouponId only (not a
-/// Coupon navigation collection - not listed in the requested Navigation set). No real approval
-/// workflow yet - same deferral as CampaignApproval, owned by a later Phase 2.x (Approval +
-/// Validation + Audit).
+/// Structural record of a Coupon's approval review. No real approval workflow yet - same deferral
+/// as CampaignApproval, owned by a later Phase 2.x (Approval + Validation + Audit).
 /// </summary>
 public sealed class CouponApproval : BaseEntity<Guid>, IAuditable
 {
@@ -13,6 +11,8 @@ public sealed class CouponApproval : BaseEntity<Guid>, IAuditable
     public Guid? ReviewerId { get; private set; }
     public DateTime? ApprovedAt { get; private set; }
     public string? Comment { get; private set; }
+
+    public Coupon Coupon { get; private set; } = default!;
 
     private CouponApproval() { }
 

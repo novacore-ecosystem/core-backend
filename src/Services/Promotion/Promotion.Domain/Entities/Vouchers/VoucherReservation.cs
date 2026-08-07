@@ -10,6 +10,8 @@ public sealed class VoucherReservation : BaseEntity<Guid>, IAuditable
     public DateTime ReservedAt { get; private set; }
     public DateTime? ExpiredAt { get; private set; }
 
+    public Voucher Voucher { get; private set; } = default!;
+
     private VoucherReservation() { }
 
     /// <summary>Only Voucher may construct a VoucherReservation - see Voucher.AddReservation.</summary>

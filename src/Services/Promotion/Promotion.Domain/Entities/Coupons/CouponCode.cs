@@ -4,8 +4,7 @@ namespace NovaCore.Promotion.Domain.Entities.Coupons;
 /// An individually issued, redeemable code under a Coupon (e.g. one of many unique codes
 /// generated in a CouponBatch import) - distinct from Coupon.Code (the coupon's own/template
 /// code, though both now share the EntityCode Value Object after the Phase 2.5 consolidation).
-/// Not a Coupon navigation collection (not listed in the requested Navigation set), so
-/// construction is public, not internal.
+/// Construction stays public, not internal - no Coupon aggregate method creates it directly.
 /// </summary>
 public sealed class CouponCode : BaseEntity<Guid>, IAuditable
 {
@@ -13,6 +12,9 @@ public sealed class CouponCode : BaseEntity<Guid>, IAuditable
     public Guid? BatchId { get; private set; }
     public EntityCode Code { get; private set; } = default!;
     public bool IsUsed { get; private set; }
+
+    public Coupon Coupon { get; private set; } = default!;
+    public CouponBatch? Batch { get; private set; }
 
     private CouponCode() { }
 

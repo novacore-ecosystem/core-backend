@@ -10,6 +10,8 @@ public sealed class CouponReservation : BaseEntity<Guid>, IAuditable
     public DateTime? ExpiredAt { get; private set; }
     public ReservationStatus Status { get; private set; } = ReservationStatus.Reserved;
 
+    public Coupon Coupon { get; private set; } = default!;
+
     private CouponReservation() { }
 
     /// <summary>Only Coupon may construct a CouponReservation - see Coupon.AddReservation.</summary>

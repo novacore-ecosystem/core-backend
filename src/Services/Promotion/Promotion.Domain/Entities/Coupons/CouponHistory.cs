@@ -7,6 +7,8 @@ public sealed class CouponHistory : BaseEntity<Guid>, IAuditable
     public string Action { get; private set; } = string.Empty;
     public Guid? OperatorId { get; private set; }
 
+    public Coupon Coupon { get; private set; } = default!;
+
     private CouponHistory() { }
 
     /// <summary>Only Coupon may construct a CouponHistory - see Coupon.RecordHistory.</summary>

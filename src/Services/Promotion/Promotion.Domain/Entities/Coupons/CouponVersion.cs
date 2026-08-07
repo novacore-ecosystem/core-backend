@@ -8,6 +8,8 @@ public sealed class CouponVersion : BaseEntity<Guid>, IAuditable
     public string? Snapshot { get; private set; }
     public DateTime? PublishedAt { get; private set; }
 
+    public Coupon Coupon { get; private set; } = default!;
+
     private CouponVersion() { }
 
     /// <summary>Only Coupon may construct a CouponVersion - see Coupon.AddVersion.</summary>

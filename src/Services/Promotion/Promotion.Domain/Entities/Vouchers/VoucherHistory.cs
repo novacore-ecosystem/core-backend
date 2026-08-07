@@ -7,6 +7,8 @@ public sealed class VoucherHistory : BaseEntity<Guid>, IAuditable
     public string Action { get; private set; } = string.Empty;
     public Guid? OperatorId { get; private set; }
 
+    public Voucher Voucher { get; private set; } = default!;
+
     private VoucherHistory() { }
 
     /// <summary>Only Voucher may construct a VoucherHistory - see Voucher.RecordHistory.</summary>

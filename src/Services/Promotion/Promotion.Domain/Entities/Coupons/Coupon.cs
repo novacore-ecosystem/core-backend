@@ -4,11 +4,12 @@ namespace NovaCore.Promotion.Domain.Entities.Coupons;
 
 /// <summary>
 /// Aggregate root for a Coupon - always belongs to a Promotion, optionally to a Campaign and to a
-/// CouponBatch. CouponCode (individual issued codes) and CouponApproval are related by CouponId
-/// only (not a navigation collection here) - see docs/promotion-service/aggregates/coupon.md. The
-/// former CouponCode entity/Value Object name collision (Phase 2.2) no longer applies - the
-/// per-aggregate Code Value Object was consolidated into the shared EntityCode during the Phase
-/// 2.5 Domain Standardization Review, so no alias is needed here anymore.
+/// CouponBatch. CouponCode (individual issued codes) and CouponApproval now also have Codes/Approvals
+/// navigation collections here (Phase 3.1 reversed the earlier FK-only decision) - see
+/// docs/promotion-service/aggregates/coupon.md. The former CouponCode entity/Value Object name
+/// collision (Phase 2.2) no longer applies - the per-aggregate Code Value Object was consolidated
+/// into the shared EntityCode during the Phase 2.5 Domain Standardization Review, so no alias is
+/// needed here anymore.
 /// </summary>
 public sealed class Coupon : AggregateRoot<Guid>, IAuditable, ITenantEntity
 {
@@ -36,6 +37,8 @@ public sealed class Coupon : AggregateRoot<Guid>, IAuditable, ITenantEntity
     public ICollection<CouponUsage> Usages { get; private set; } = [];
     public ICollection<CouponHistory> History { get; private set; } = [];
     public ICollection<CouponVersion> Versions { get; private set; } = [];
+    public ICollection<CouponCode> Codes { get; private set; } = [];
+    public ICollection<CouponApproval> Approvals { get; private set; } = [];
     public ICollection<CouponTranslation> Translations { get; private set; } = [];
 
     public Guid TenantId { get; private set; }

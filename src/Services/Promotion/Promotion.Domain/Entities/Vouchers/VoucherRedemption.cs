@@ -8,6 +8,8 @@ public sealed class VoucherRedemption : BaseEntity<Guid>, IAuditable
     public Money RedeemedAmount { get; private set; } = default!;
     public DateTime RedeemedAt { get; private set; }
 
+    public Voucher Voucher { get; private set; } = default!;
+
     private VoucherRedemption() { }
 
     /// <summary>Only Voucher may construct a VoucherRedemption - see Voucher.AddRedemption.</summary>

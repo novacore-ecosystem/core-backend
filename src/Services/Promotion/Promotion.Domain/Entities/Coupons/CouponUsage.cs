@@ -8,6 +8,8 @@ public sealed class CouponUsage : BaseEntity<Guid>, IAuditable
     public Guid? OrderId { get; private set; }
     public DateTime UsedAt { get; private set; }
 
+    public Coupon Coupon { get; private set; } = default!;
+
     private CouponUsage() { }
 
     /// <summary>Only Coupon may construct a CouponUsage - see Coupon.RecordUsage.</summary>

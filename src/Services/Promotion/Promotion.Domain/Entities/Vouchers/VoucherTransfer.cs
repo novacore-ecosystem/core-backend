@@ -9,6 +9,8 @@ public sealed class VoucherTransfer : BaseEntity<Guid>, IAuditable
     public Money Amount { get; private set; } = default!;
     public DateTime TransferredAt { get; private set; }
 
+    public Voucher Voucher { get; private set; } = default!;
+
     private VoucherTransfer() { }
 
     /// <summary>Only Voucher may construct a VoucherTransfer - see Voucher.AddTransfer.</summary>
