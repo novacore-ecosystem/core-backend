@@ -1,9 +1,11 @@
 namespace NovaCore.Promotion.Domain.Entities.Promotions;
 
 /// <summary>
-/// Aggregate root for a Promotion - optionally belongs to a Campaign (CampaignId). PromotionRuleGroup/
-/// PromotionCondition/PromotionPriority/PromotionExclusion are related by PromotionId/RuleId only
-/// (no navigation collection here) - see docs/promotion-service/aggregates/promotion.md.
+/// Aggregate root for a Promotion - optionally belongs to a Campaign (CampaignId).
+/// PromotionRuleGroup/PromotionPriority/PromotionExclusion are independently constructible and
+/// related by PromotionId only (no Promotion navigation collection here) - see
+/// docs/promotion-service/aggregates/promotion.md. PromotionCondition is owned by PromotionRule,
+/// not by Promotion directly (Phase 2.6 correction - see PromotionRule.AddCondition).
 /// </summary>
 public sealed class Promotion : AggregateRoot<Guid>, IAuditable, ITenantEntity
 {
@@ -17,7 +19,7 @@ public sealed class Promotion : AggregateRoot<Guid>, IAuditable, ITenantEntity
     public int Version { get; private set; }
     public DateTime StartTime { get; private set; }
     public DateTime EndTime { get; private set; }
-    public string Currency { get; private set; } = string.Empty;
+    public Currency Currency { get; private set; } = default!;
     public string TimeZone { get; private set; } = string.Empty;
     public bool IsEnabled { get; private set; }
 
@@ -49,7 +51,7 @@ public sealed class Promotion : AggregateRoot<Guid>, IAuditable, ITenantEntity
         PromotionType type,
         DateTime startTime,
         DateTime endTime,
-        string currency,
+        Currency currency,
         string timeZone,
         Guid? campaignId = null,
         string? description = null,
@@ -57,7 +59,6 @@ public sealed class Promotion : AggregateRoot<Guid>, IAuditable, ITenantEntity
     {
         ValidateName(name);
         ValidatePeriod(startTime, endTime, timeZone);
-        ValidateCurrency(currency);
 
         return new Promotion
         {
@@ -133,12 +134,6 @@ public sealed class Promotion : AggregateRoot<Guid>, IAuditable, ITenantEntity
         if (endTime <= startTime)
             throw ExceptionFactory.InvalidRange("End time must be after start time.");
     }
-
-    private static void ValidateCurrency(string currency)
-    {
-        if (string.IsNullOrWhiteSpace(currency))
-            throw ExceptionFactory.RequiredField("Currency cannot be empty.");
-    }
     #endregion
 
     #region Status
@@ -198,7 +193,7 @@ public sealed class Promotion : AggregateRoot<Guid>, IAuditable, ITenantEntity
     #endregion
 
     #region Target
-    public void AddTarget(string targetType, string targetKey)
+    public void AddTarget(PromotionTargetType targetType, string targetKey)
     {
         Targets.Add(PromotionTarget.Create(Id, targetType, targetKey));
     }
@@ -213,7 +208,7 @@ public sealed class Promotion : AggregateRoot<Guid>, IAuditable, ITenantEntity
     #endregion
 
     #region Benefit
-    public void AddBenefit(string benefitType, decimal value)
+    public void AddBenefit(PromotionBenefitType benefitType, decimal value)
     {
         Benefits.Add(PromotionBenefit.Create(Id, benefitType, value, Benefits.Count));
     }
@@ -228,7 +223,7 @@ public sealed class Promotion : AggregateRoot<Guid>, IAuditable, ITenantEntity
     #endregion
 
     #region Constraint
-    public void AddConstraint(string constraintType, string value)
+    public void AddConstraint(PromotionConstraintType constraintType, string value)
     {
         Constraints.Add(PromotionConstraint.Create(Id, constraintType, value));
     }
@@ -243,7 +238,7 @@ public sealed class Promotion : AggregateRoot<Guid>, IAuditable, ITenantEntity
     #endregion
 
     #region UsageLimit
-    public void AddUsageLimit(string scope, int maxUsage)
+    public void AddUsageLimit(PromotionUsageScope scope, int maxUsage)
     {
         UsageLimits.Add(PromotionUsageLimit.Create(Id, scope, maxUsage));
     }

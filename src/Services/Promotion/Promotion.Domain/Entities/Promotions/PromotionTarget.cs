@@ -4,17 +4,14 @@ namespace NovaCore.Promotion.Domain.Entities.Promotions;
 public sealed class PromotionTarget : BaseEntity<Guid>, IAuditable
 {
     public Guid PromotionId { get; private set; }
-    public string TargetType { get; private set; } = string.Empty;
+    public PromotionTargetType TargetType { get; private set; }
     public string TargetKey { get; private set; } = string.Empty;
 
     private PromotionTarget() { }
 
     /// <summary>Only Promotion may construct a PromotionTarget - see Promotion.AddTarget.</summary>
-    internal static PromotionTarget Create(Guid promotionId, string targetType, string targetKey)
+    internal static PromotionTarget Create(Guid promotionId, PromotionTargetType targetType, string targetKey)
     {
-        if (string.IsNullOrWhiteSpace(targetType))
-            throw ExceptionFactory.RequiredField("Target type cannot be empty.");
-
         if (string.IsNullOrWhiteSpace(targetKey))
             throw ExceptionFactory.RequiredField("Target key cannot be empty.");
 

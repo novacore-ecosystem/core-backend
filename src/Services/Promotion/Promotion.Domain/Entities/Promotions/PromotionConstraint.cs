@@ -4,17 +4,14 @@ namespace NovaCore.Promotion.Domain.Entities.Promotions;
 public sealed class PromotionConstraint : BaseEntity<Guid>, IAuditable
 {
     public Guid PromotionId { get; private set; }
-    public string ConstraintType { get; private set; } = string.Empty;
+    public PromotionConstraintType ConstraintType { get; private set; }
     public string Value { get; private set; } = string.Empty;
 
     private PromotionConstraint() { }
 
     /// <summary>Only Promotion may construct a PromotionConstraint - see Promotion.AddConstraint.</summary>
-    internal static PromotionConstraint Create(Guid promotionId, string constraintType, string value)
+    internal static PromotionConstraint Create(Guid promotionId, PromotionConstraintType constraintType, string value)
     {
-        if (string.IsNullOrWhiteSpace(constraintType))
-            throw ExceptionFactory.RequiredField("Constraint type cannot be empty.");
-
         return new PromotionConstraint
         {
             Id = Guid.CreateVersion7(),

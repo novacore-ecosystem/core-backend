@@ -2,8 +2,11 @@ namespace NovaCore.Promotion.Domain.Entities.Campaigns;
 
 /// <summary>
 /// Aggregate root for a marketing Campaign - the umbrella a Promotion may optionally belong to
-/// (Promotion.CampaignId). CampaignBudget/CampaignApproval are related by CampaignId only (no
-/// navigation collection here) - see docs/promotion-service/aggregates/campaign.md.
+/// (Promotion.CampaignId). CampaignApproval is related by CampaignId only (no navigation
+/// collection here) - see docs/promotion-service/aggregates/campaign.md. CampaignBudget is
+/// independently constructible but referenced from Campaign via BudgetId + the Budget navigation
+/// below (Phase 2.6 correction - Budget resolves at the Persistence layer via FK, same as
+/// Coupon.Campaign/Coupon.Promotion).
 /// </summary>
 public sealed class Campaign : AggregateRoot<Guid>, IAuditable, ITenantEntity
 {
@@ -20,6 +23,7 @@ public sealed class Campaign : AggregateRoot<Guid>, IAuditable, ITenantEntity
     public int DisplayOrder { get; private set; }
     public bool IsEnabled { get; private set; }
 
+    public CampaignBudget? Budget { get; private set; }
     public ICollection<CampaignSchedule> Schedules { get; private set; } = [];
     public ICollection<CampaignAudience> Audiences { get; private set; } = [];
     public ICollection<CampaignChannel> Channels { get; private set; } = [];

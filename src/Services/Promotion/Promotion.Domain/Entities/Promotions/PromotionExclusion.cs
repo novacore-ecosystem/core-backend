@@ -13,7 +13,7 @@ public sealed class PromotionExclusion : BaseEntity
 
     private PromotionExclusion() { }
 
-    internal static PromotionExclusion Create(Guid promotionId, Guid excludedPromotionId)
+    public static PromotionExclusion Create(Guid promotionId, Guid excludedPromotionId)
     {
         return new PromotionExclusion
         {

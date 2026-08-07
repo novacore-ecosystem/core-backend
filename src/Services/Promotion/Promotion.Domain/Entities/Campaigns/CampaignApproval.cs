@@ -18,7 +18,7 @@ public sealed class CampaignApproval : BaseEntity<Guid>, IAuditable
 
     private CampaignApproval() { }
 
-    internal static CampaignApproval Create(Guid campaignId)
+    public static CampaignApproval Create(Guid campaignId)
     {
         return new CampaignApproval
         {

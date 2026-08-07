@@ -5,19 +5,16 @@ public sealed class PromotionCondition : BaseEntity<Guid>, IAuditable
 {
     public Guid RuleId { get; private set; }
     public string Field { get; private set; } = string.Empty;
-    public string Operator { get; private set; } = string.Empty;
+    public PromotionConditionOperator Operator { get; private set; }
     public string Value { get; private set; } = string.Empty;
 
     private PromotionCondition() { }
 
-    /// <summary>Only PromotionRule (via the owning Promotion) constructs a PromotionCondition.</summary>
-    internal static PromotionCondition Create(Guid ruleId, string field, string operatorSymbol, string value)
+    /// <summary>Only PromotionRule constructs a PromotionCondition - see PromotionRule.AddCondition.</summary>
+    internal static PromotionCondition Create(Guid ruleId, string field, PromotionConditionOperator operatorSymbol, string value)
     {
         if (string.IsNullOrWhiteSpace(field))
             throw ExceptionFactory.RequiredField("Condition field cannot be empty.");
-
-        if (string.IsNullOrWhiteSpace(operatorSymbol))
-            throw ExceptionFactory.RequiredField("Condition operator cannot be empty.");
 
         return new PromotionCondition
         {

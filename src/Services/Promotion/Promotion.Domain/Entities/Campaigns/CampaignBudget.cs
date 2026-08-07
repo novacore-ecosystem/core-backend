@@ -12,15 +12,12 @@ public sealed class CampaignBudget : BaseEntity<Guid>, IAuditable
     public Guid CampaignId { get; private set; }
     public Money AllocatedAmount { get; private set; } = default!;
     public Money SpentAmount { get; private set; } = default!;
-    public string CurrencyCode { get; private set; } = string.Empty;
+    public Currency CurrencyCode { get; private set; } = default!;
 
     private CampaignBudget() { }
 
-    internal static CampaignBudget Create(Guid campaignId, Money allocatedAmount, string currencyCode)
+    public static CampaignBudget Create(Guid campaignId, Money allocatedAmount, Currency currencyCode)
     {
-        if (string.IsNullOrWhiteSpace(currencyCode))
-            throw ExceptionFactory.RequiredField("Currency code cannot be empty.");
-
         return new CampaignBudget
         {
             Id = Guid.CreateVersion7(),

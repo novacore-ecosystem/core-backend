@@ -9,6 +9,9 @@ public sealed class PromotionRule : BaseEntity<Guid>, IAuditable
     public int DisplayOrder { get; private set; }
     public bool IsEnabled { get; private set; }
 
+    public PromotionRuleGroup? RuleGroup { get; private set; }
+    public ICollection<PromotionCondition> Conditions { get; private set; } = [];
+
     private PromotionRule() { }
 
     /// <summary>Only Promotion may construct a PromotionRule - see Promotion.AddRule.</summary>
@@ -31,4 +34,19 @@ public sealed class PromotionRule : BaseEntity<Guid>, IAuditable
     public void Enable() => IsEnabled = true;
 
     public void Disable() => IsEnabled = false;
+
+    #region Condition
+    public void AddCondition(string field, PromotionConditionOperator operatorSymbol, string value)
+    {
+        Conditions.Add(PromotionCondition.Create(Id, field, operatorSymbol, value));
+    }
+
+    public void RemoveCondition(Guid conditionId)
+    {
+        var condition = Conditions.FirstOrDefault(c => c.Id == conditionId)
+            ?? throw ExceptionFactory.EntityNotFound<PromotionCondition>(conditionId);
+
+        Conditions.Remove(condition);
+    }
+    #endregion
 }

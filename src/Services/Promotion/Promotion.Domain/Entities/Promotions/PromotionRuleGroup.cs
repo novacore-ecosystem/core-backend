@@ -9,18 +9,15 @@ public sealed class PromotionRuleGroup : BaseEntity<Guid>, IAuditable
 {
     public Guid PromotionId { get; private set; }
     public string Name { get; private set; } = string.Empty;
-    public string LogicOperator { get; private set; } = "AND";
+    public PromotionRuleGroupOperator LogicOperator { get; private set; } = PromotionRuleGroupOperator.And;
     public int DisplayOrder { get; private set; }
 
     private PromotionRuleGroup() { }
 
-    internal static PromotionRuleGroup Create(Guid promotionId, string name, string logicOperator, int displayOrder)
+    public static PromotionRuleGroup Create(Guid promotionId, string name, PromotionRuleGroupOperator logicOperator, int displayOrder)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw ExceptionFactory.RequiredField("Rule group name cannot be empty.");
-
-        if (string.IsNullOrWhiteSpace(logicOperator))
-            throw ExceptionFactory.RequiredField("Logic operator cannot be empty.");
 
         return new PromotionRuleGroup
         {
