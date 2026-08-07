@@ -58,6 +58,7 @@ Every document below belongs to exactly one of four responsibilities. Don't mix 
 - [services/inventory-service.md](services/inventory-service.md) — Inventory Service
 - [services/order-service.md](services/order-service.md) — Order Service
 - [services/payment-service.md](services/payment-service.md) — Payment Service (foundation phase)
+- [services/shipping-service.md](services/shipping-service.md) — Shipping Service (foundation phase)
 - [services/audit-service.md](services/audit-service.md) — Audit Service (MongoDB-backed)
 - [services/gateway.md](services/gateway.md) — YARP API Gateway
 
