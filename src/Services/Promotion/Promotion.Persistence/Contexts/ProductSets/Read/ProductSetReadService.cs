@@ -1,8 +1,8 @@
 using NovaCore.Promotion.Application.Abstractions.Persistence.ProductSets;
-using NovaCore.Promotion.Persistence.Contexts.ProductSets.Repositories;
+using NovaCore.Promotion.Persistence.Engine;
 
 namespace NovaCore.Promotion.Persistence.Contexts.ProductSets.Read;
 
-public sealed class ProductSetReadService(IProductSetRepository productSetRepo) : IProductSetReadService
+public sealed class ProductSetReadService(PromotionDbContext dbContext) : IProductSetReadService
 {
 }

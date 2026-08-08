@@ -1,8 +1,8 @@
 using NovaCore.Promotion.Application.Abstractions.Persistence.Vouchers;
-using NovaCore.Promotion.Persistence.Contexts.Vouchers.Repositories;
+using NovaCore.Promotion.Persistence.Engine;
 
 namespace NovaCore.Promotion.Persistence.Contexts.Vouchers.Read;
 
-public sealed class VoucherReadService(IVoucherRepository voucherRepo) : IVoucherReadService
+public sealed class VoucherReadService(PromotionDbContext dbContext) : IVoucherReadService
 {
 }

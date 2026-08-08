@@ -1,8 +1,8 @@
 using NovaCore.Promotion.Application.Abstractions.Persistence.Promotions;
-using NovaCore.Promotion.Persistence.Contexts.Promotions.Repositories;
+using NovaCore.Promotion.Persistence.Engine;
 
 namespace NovaCore.Promotion.Persistence.Contexts.Promotions.Read;
 
-public sealed class PromotionReadService(IPromotionRepository promotionRepo) : IPromotionReadService
+public sealed class PromotionReadService(PromotionDbContext dbContext) : IPromotionReadService
 {
 }

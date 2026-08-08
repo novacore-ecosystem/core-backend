@@ -1,8 +1,8 @@
 using NovaCore.Promotion.Application.Abstractions.Persistence.Rewards;
-using NovaCore.Promotion.Persistence.Contexts.Rewards.Repositories;
+using NovaCore.Promotion.Persistence.Engine;
 
 namespace NovaCore.Promotion.Persistence.Contexts.Rewards.Read;
 
-public sealed class RewardProgramReadService(IRewardProgramRepository rewardProgramRepo) : IRewardProgramReadService
+public sealed class RewardProgramReadService(PromotionDbContext dbContext) : IRewardProgramReadService
 {
 }
