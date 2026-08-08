@@ -8,11 +8,12 @@
 - ✔ Phase 0 — Planning Freeze
 - ✔ Phase 1 — Bootstrap Service
 - ✔ Phase 2 — Domain Model
+- ✔ Phase 3 — Persistence
 
 **Current Phase**
-- ▶ Phase 3 — Persistence
+- ▶ Phase 4 — Application / CQRS / API Skeleton (renumbered from the original roadmap's Phase 5 — see the 2026-08-08 renumbering note below)
 
-**Current Prompt (Phase 2, all done)**
+**Prompt history (Phase 2, all done)**
 - ✔ 2.1 — Domain Foundation + Campaign/Promotion aggregates
 - ✔ 2.2 — Coupon + Voucher aggregates
 - ✔ 2.3 — Loyalty + Reward + Distribution aggregates
@@ -20,25 +21,22 @@
 - ✔ 2.5 — Domain Standardization Review + single Domain build
 - ✔ 2.6 — Final Domain Correction & Freeze (final Phase 2 prompt)
 
-**Current Prompt (Phase 3, in progress)**
+**Prompt history (Phase 3, all done)**
 - ✔ 3.1 — Entity Configuration + Domain Correction
 - ✔ 3.2 — Persistence Infrastructure Skeleton
 - ✔ 3.3 — Persistence Skeleton Implementation
 - ✔ 3.4 — Elasticsearch + Fuzzy Search Integration
-
-**Next:** Phase 3.5 — Persistence Finalization
+- ✔ 3.5 — Persistence Finalization (final Phase 3 prompt)
 
 **Overall Progress**
-3 / 7 Completed
+3 / 7 Completed (denominator counts numbered Phases 1-7 only, Phase 0 is the pre-numbered planning freeze — Phase 1, 2, 3 done = 3/7, consistent with every prior phase-close marker in this file)
 
 **Status**
-In Progress
+In Progress — Phase 3 (Persistence) closed, Phase 4 (Application/CQRS/API Skeleton) not yet started
 
 **Remaining Phases**
-- □ Phase 4 — Search Integration
-- □ Phase 5 — CQRS Skeleton
-- □ Phase 6 — Infrastructure Integration
-- □ Phase 7 — Migration Preparation
+- □ Phase 4 — Application / CQRS / API Skeleton (renumbered from the original roadmap's Phase 5 — CQRS Skeleton)
+- □ (later phases — Infrastructure Integration, Migration Preparation, etc.) — exact numbering/scope for these is authoritative from whatever prompt issues them next, per this file's own numbering-precedence policy above; not pre-guessed here
 
 **The Domain model is now frozen.** Future phases should not modify it unless a design defect is discovered.
 
@@ -67,3 +65,4 @@ In Progress
 - **2026-08-08** — Phase 3.2 (Persistence Infrastructure Skeleton — second Phase 3 prompt) completed: built the repository/Read/Write Persistence Service skeleton ahead of CQRS. Computed the full 103-entity ownership graph (which entities are reachable only via a parent's own `.Include()` vs. genuinely independent) and, after presenting the architect with three granularity options, confirmed **repository + Read/Write Persistence Service only for the 11 true Aggregate Roots** (`Campaign`, `Promotion`, `Coupon`, `Voucher`, `LoyaltyProgram`, `RewardProgram`, `DistributionJob`, `RecommendationProgram`, `ProductSet`, `GiftProgram`, `ApprovalWorkflow`) — not the full mechanical "every unowned entity" rule, which would have produced ~76 repository classes; the remaining entities resolve through the generic `IRepository<TEntity, Guid>` binding when a future feature needs them. Created 22 empty Application-layer Read/Write service interfaces (`Promotion.Application/Abstractions/Persistence/{Group}/`), 44 Persistence-layer files (`I{Root}Repository`/`{Root}Repo`/`{Root}ReadService`/`{Root}WriteService` × 11), rewired `Promotion.Persistence/DependencyInjection.cs`'s `AddRepositories()` to register all 11 explicitly alongside the existing generic scan, and replaced the placeholder `AddAuditHierarchy()` with the full per-entity registration for all 103 entities (`IsRoot`/`BelongsTo<TParent>`, mirroring Payment Service's own exhaustive precedent). Reused the existing `UnitOfWork`/`PromotionBaseRepository`/DbContext/tenant/audit/concurrency infrastructure verbatim — no new abstraction introduced, no Domain changes. Zero speculative query/command methods added (every Read/Write service body is intentionally empty, matching the prompt's own explicit policy) — Phase 5 adds methods to these same interfaces, not new ones. Updated [../persistence/persistence-strategy.md](../persistence/persistence-strategy.md)'s "Phase mapping" to record what 3.2 actually built. **Ran a single `Promotion.API` build (pulls in Domain/Application/Persistence/Infrastructure transitively) — succeeded, 0 errors** (26 expected `CS9113` "parameter is unread" warnings on the intentionally-empty Read/Write service constructors). See [../../tasks/2026-08-08/Task2_promotion-service-phase3.2-persistence-infrastructure-skeleton.md](../../tasks/2026-08-08/Task2_promotion-service-phase3.2-persistence-infrastructure-skeleton.md).
 - **2026-08-08** — Phase 3.3 (Persistence Skeleton Implementation — third Phase 3 prompt) completed: re-read [../../conventions/persistence-coding-conventions.md](../../conventions/persistence-coding-conventions.md) (the platform's settled Read/Write persistence-service shape, built from 7 reference services — not Payment, which predates it) against Phase 3.2's actual output and found one real deviation: all 11 `{Root}ReadService` classes injected `I{Root}Repository` (copying `Payment.Persistence`'s literal shape) instead of `PromotionDbContext` directly, which the convention doc requires so the Read side stays completely independent of the repository. Fixed all 11 constructors; Write Services were already correct (they use the repository, matching Write Service responsibility). No other structural gap found — repository markers, DI registration shape, and folder/naming conventions Phase 3.2 built already matched the doc exactly. Confirmed the established Persistence flow (Minimal API → ISender → CQRS → Handler → Read/Write Persistence Service → Repository → EF Core/DbContext → UnitOfWork → PostgreSQL) is what's now wired, ready for Phase 5 to add methods. **Ran a single `Promotion.API` build — succeeded, 0 errors**, same 26 expected warnings (now on `dbContext` instead of the repo param). See [../../tasks/2026-08-08/Task3_promotion-service-phase3.3-persistence-skeleton-implementation.md](../../tasks/2026-08-08/Task3_promotion-service-phase3.3-persistence-skeleton-implementation.md).
 - **2026-08-08** — Phase 3.4 (Elasticsearch + Fuzzy Search Integration — fourth Phase 3 prompt) completed: built public Coupon search infrastructure using ProductSearch as the primary reference (per the prompt's own instruction), cloning its exact pipeline shape (`Application/Abstractions/Search/` interfaces + `Persistence/Contexts/{Aggregate}/Search/{Mapping,Indexers,Repositories}`, `AddElasticsearchClient` + one indexer + one repository DI registration, index-ensure-at-startup). `CouponSearchDocument` carries `CouponId`/`Code`/`Name`/`Description`/`TranslatedNames` (flattened `CouponTranslation.Name`s)/`Status`/`Visibility`/`StartTime`/`EndTime`/`TimeZone`/`IsEnabled`/`TenantId`/`UpdatedAt` — no internal accounting/approval/eligibility fields. Found and reconciled two real gaps between the prompt's assumptions and actual precedent (both confirmed by reading Product/User's actual search code, not guessed, and both resolved with the architect rather than silently decided): **(1)** neither ProductSearch nor UserSearch has any fuzzy-search implementation despite docs claiming otherwise — added `.Fuzziness(new Fuzziness("AUTO"))` to the Coupon MultiMatch query as this codebase's first real fuzzy-search usage, a minimal standard ES parameter on the existing query shape, not a new abstraction; **(2)** neither ProductSearchDocument nor UserSearchDocument carries a tenant field despite both source entities implementing `ITenantEntity` — added a mandatory `TenantId` filter to `CouponSearchDocument`/`CouponSearchRepository` to close this for Promotion going forward (Product/User's own gap left uncorrected, out of scope). Deliberately did not build the projection builder, sync/rebuild domain events, or the search endpoint — all explicitly excluded as CQRS/Application-feature work belonging to Phase 5. Also wired `PROMOTION_ELASTICSEARCH_URL` into `.env.template`/`docker-compose.override.yml`, matching Product/User's existing config pattern. **Ran a single `Promotion.API` build (after resolving two real Elastic.Clients.Elasticsearch v8 API signature errors on the date-range query, found via a throwaway reflection probe against the actual installed package, not guessed) — succeeded, 0 errors.** See [../../tasks/2026-08-08/Task4_promotion-service-phase3.4-elasticsearch-fuzzy-search-integration.md](../../tasks/2026-08-08/Task4_promotion-service-phase3.4-elasticsearch-fuzzy-search-integration.md).
+- **2026-08-08** — Phase 3.5 (Persistence Finalization — fifth and final Phase 3 prompt) completed: **Phase 3 (Persistence) is now fully closed.** Verification-only pass, no large audit per the prompt's own instruction — a baseline `Promotion.API` build confirmed 0 errors before touching anything, and `Promotion.Domain`/`Promotion.Application` project references were confirmed to still carry no EF Core/Elasticsearch/PostgreSQL dependencies. No genuinely missing DI/repository/search/UnitOfWork wiring was found (everything built across 3.1-3.4 was already complete and connected), so no new code was added this prompt. Updated `Promotion.Persistence/Storage/Migrations/TODO.md` to state migration generation (`dotnet ef migrations add InitialCreate`) is deliberately deferred to an explicit future prompt, not auto-triggered by Phase 3 closing. Added a concise "Phase 3 close-out" section to [../persistence/persistence-strategy.md](../persistence/persistence-strategy.md) (the two final architecture diagrams, Translation/mapping-entity/no-speculative-methods/ProductSearch-reference summary the prompt asked for), without duplicating the detailed policy docs already written in 3.1-3.4. **Ran a single final `Promotion.API` build — succeeded, 0 errors**, unchanged from the pre-existing 28 warnings. See [../../tasks/2026-08-08/Task5_promotion-service-phase3.5-persistence-finalization.md](../../tasks/2026-08-08/Task5_promotion-service-phase3.5-persistence-finalization.md).

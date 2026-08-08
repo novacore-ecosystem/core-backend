@@ -24,3 +24,32 @@ A repository (+ Read/Write Persistence Service pair) exists **only for the 11 tr
 - **Phase 3.1** built the schema: `PromotionDbContext`'s 103 `DbSet`s, `IEntityTypeConfiguration<T>` for every entity, indexes/constraints. No repository/service existed yet.
 - **Phase 3.2** built the repository/Read/Write Persistence Service **skeleton** ahead of CQRS — one `I{Root}Repository`/`{Root}Repo` + one empty `I{Root}ReadService`/`{Root}ReadService` + one empty `I{Root}WriteService`/`{Root}WriteService` per true Aggregate Root (see "Repository granularity" above), all registered in `Promotion.Persistence/DependencyInjection.cs`, plus the full per-entity `AddAuditHierarchy()` registration (`IsRoot`/`BelongsTo<TParent>` for all 103 entities, mirroring Payment's own exhaustive precedent) and `UnitOfWork` reuse (`EfUnitOfWork<PromotionDbContext>`, no new abstraction). Zero query/command methods were added to any interface — that is explicitly Phase 5's job.
 - **Phase 5** adds the actual query/command **methods** to the Read/Write Persistence Service interfaces this skeleton already created, one CQRS pass's worth at a time — it does not create new interfaces/DI wiring for the 11 roots (already done), only extends them. If a future feature needs direct access to a non-root entity beyond what a root's own `Include()` can give it, that is the point to add that entity's own repository — not before.
+
+## Phase 3 close-out (Persistence complete as of 3.5)
+
+```text
+PostgreSQL
+    ↓
+DbContext (PromotionDbContext, 103 DbSets, IEntityTypeConfiguration<T> per entity)
+    ↓
+Repository (11 true Aggregate Roots only - see "Repository granularity")
+    ↓
+Read/Write Persistence Service (11 roots, empty - no methods until Phase 5)
+    ↓
+Application
+```
+
+```text
+Application
+    ↓
+Search abstraction (ICouponSearchIndexer / ICouponSearchRepository)
+    ↓
+CouponSearchIndexer / CouponSearchRepository
+    ↓
+Elasticsearch (ProductSearch is the implementation reference - see search/search-strategy.md)
+```
+
+- **Translation persistence** — entity-specific, never generic: every `{Entity}Translation` has its own EF config with composite key `ParentId + LanguageCode` (no surrogate `Id`) and its own parent navigation. No generic translation table/service/abstraction exists or is planned.
+- **Mapping entity persistence** — pure join entities (e.g. `PromotionExclusion`) use a composite key of their two FK components, no surrogate `Id`. Real child entities with their own lifecycle (history, versions, reservations, ...) keep their own `Guid` primary key — not every child was forced into the mapping-entity shape.
+- **No speculative repository/service methods** — every Read/Write Persistence Service and every entity-specific repository is either empty or carries only what an established infrastructure contract (`IRepository<T, TId>`) already requires. Feature-specific methods are added only when the feature implementing them lands, starting Phase 5.
+- **ProductSearch remains the Elasticsearch reference** for any future searchable Promotion resource beyond Coupon — same pipeline shape (`Application/Abstractions/Search/` + `Persistence/Contexts/{Aggregate}/Search/`), not a new abstraction per resource.
