@@ -7,6 +7,7 @@ using NovaCore.BuildingBlock.Persistence.Ef.DependencyInjection;
 using NovaCore.BuildingBlock.Persistence.Ef.Inbox;
 using NovaCore.BuildingBlock.Persistence.Ef.Outbox;
 using NovaCore.BuildingBlock.Persistence.Repository;
+using NovaCore.BuildingBlock.Search.DependencyInjection;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,6 +49,9 @@ using NovaCore.Promotion.Persistence.Contexts.Gifts.Read;
 using NovaCore.Promotion.Persistence.Contexts.Gifts.Write;
 using NovaCore.Promotion.Persistence.Contexts.Approvals.Read;
 using NovaCore.Promotion.Persistence.Contexts.Approvals.Write;
+using NovaCore.Promotion.Application.Abstractions.Search;
+using NovaCore.Promotion.Persistence.Contexts.Coupons.Search.Indexers;
+using NovaCore.Promotion.Persistence.Contexts.Coupons.Search.Repositories;
 using NovaCore.Promotion.Persistence.Engine;
 using NovaCore.Promotion.Persistence.Engine.UnitOfWork;
 using NovaCore.Promotion.Persistence.Reliability.Inbox;
@@ -68,7 +72,8 @@ public static class DependencyInjection
             .AddRepositories()
             .AddUnitOfWork()
             .AddOutboxAndInbox()
-            .AddAuditHierarchy();
+            .AddAuditHierarchy()
+            .AddPromotionSearchServices(configuration);
 
         return services;
     }
@@ -299,6 +304,18 @@ public static class DependencyInjection
             builder.Entity<ApprovalAudit>().IsRoot(x => x.Id);
             builder.Entity<ExecutionAudit>().IsRoot(x => x.Id);
         });
+
+        return services;
+    }
+
+    // First searchable resource is public Coupon discovery (Phase 3.4) - the same
+    // AddElasticsearchClient + one indexer + one repository shape ProductSearch/UserSearch use.
+    // Future searchable Promotion resources register the same way, one more scoped pair each.
+    private static IServiceCollection AddPromotionSearchServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddElasticsearchClient(configuration);
+        services.AddScoped<ICouponSearchIndexer, CouponSearchIndexer>();
+        services.AddScoped<ICouponSearchRepository, CouponSearchRepository>();
 
         return services;
     }
