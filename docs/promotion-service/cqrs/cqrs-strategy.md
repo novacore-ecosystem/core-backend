@@ -32,8 +32,6 @@ One representative Command (`CreateCouponCommand` → `CreateCouponHandler`) and
 
 ## Per-feature shape
 
-## Per-feature shape
-
 Every feature is a Feature-First folder under `Promotion.Application/Features/{Aggregate}/{Commands|Queries}/{FeatureName}/`, containing:
 
 - **Commands** — `{Action}Command : ICommand<TResult>` (e.g. `CreatePromotionCommand`). One command = one write intent, no CRUD-generic command types.
@@ -50,6 +48,31 @@ Every feature is a Feature-First folder under `Promotion.Application/Features/{A
 
 Not every aggregate gets a full CQRS surface at once. Follow Payment Service's precedent: implement Create + Get for the aggregates a given feature pass marks in-scope; every other aggregate keeps its EF mapping (from Phase 3) but has no repository/handler/endpoint until a later prompt's design calls for it. This is a deliberate scope decision, not an oversight — record it the same way [../../services/payment-service.md](../../services/payment-service.md#persistence-readwrite-services) does.
 
-## What Phase 4.1 does not do
+## Phase 4.2 — Coupon Management Foundation (built)
 
-No business rule (discount calculation, eligibility evaluation, redemption logic) is inferred into a handler. `CreateCouponHandler`/`GetCouponHandler` are structural stubs (see "Phase 4.1 — built" above) — real workflow logic is explicitly out of scope until a future prompt requests it, same boundary Payment's `CreatePayment`/`CreatePaymentIntent`/`CreateRefund` precedent set for its own feature rollout.
+The first real Promotion feature, implemented against the Phase 4.1 skeleton with no architecture change:
+
+```text
+Coupon Management
+    ├── Create   — POST   /coupons
+    ├── Get      — GET    /coupons/{couponId}
+    ├── Update   — PUT    /coupons/{couponId}
+    ├── Disable  — POST   /coupons/{couponId}/disable
+    ├── List     — GET    /coupons
+    └── Translate (upsert) — PUT /coupons/{couponId}/translations/{languageCode}
+```
+
+`Promotion.Application/Features/Coupons/{Commands,Queries}/` now has one folder per operation (`CreateCoupon`, `UpdateCoupon`, `DisableCoupon`, `TranslateCoupon`, `GetCoupon`, `ListCoupons`), each following the Phase 4.1 flow end to end — no stubs, real `ICouponReadService`/`ICouponWriteService` methods, real Domain calls:
+
+- **Create** — `CreateCouponHandler` calls `Coupon.Create(...)` directly (the Handler constructs the aggregate, matching `CreateProductCategoryHandler`'s pattern — not `CreateAsync(primitives...)` building the entity inside the Persistence layer, which is Payment's different, older pattern) then `couponWriteService.CreateAsync(coupon, ct)` persists it.
+- **Get** — `GetCouponHandler` fetches via `couponReadService.GetByIdAsync` (throws `NotFoundException` when missing) and maps via `.Adapt<GetCouponResponse>()` — Mapster's Entity→Response pattern is now genuinely exercised (unlike Phase 4.1's necessarily-unreachable stub), backed by a new `EntityCode`/`LanguageCode` → `string` `MapsterConfig : IRegister` under `Features/Coupons/Mapping/`.
+- **Update** — `UpdateCouponHandler` loads then calls `couponWriteService.UpdateDetailsAsync(...)`, which invokes `Coupon.UpdateDetails`/`Reschedule`/`ChangeVisibility`/`ChangeUsageLimits` inside one `repo.UpdateAsync` callback, wrapped in `uow.ExecuteTransactionAsync` by the Handler (matches `UpdateProductCategoryHandler`'s transaction-ownership split). Deliberately does not touch `Status` or reassign `CampaignId`/`BatchId` — no status-transition method (`Activate`/`Approve`/...) is invoked here, and campaign/batch reassignment was scoped out as beyond "administrative foundation."
+- **Disable** — `Coupon.Disable()` (`IsEnabled = false`), never a physical delete — Coupon has no `Delete()` method, and its lifecycle is designed to retain historical data. `Cancel()`/`Archive()`/other status transitions were **not** wired to any endpoint this phase — no requested operation mapped to them.
+- **Translate** — one `TranslateCouponCommand`/endpoint, upserting via `Coupon.Translate(...)` (already upsert-shaped in the Domain) — no separate Create/Update translation operations.
+- **List** — `ListCouponsQuery(Status?, Page, PageSize)` → `PaginatedResult<CouponSummaryResponse>`, matching `ListAuditLogsQuery`'s shape (the platform's plain EF/Mongo pagination pattern) — not Elasticsearch, which stays the separate public-search concern Phase 3.4 built.
+
+**Deliberately not implemented, per this phase's explicit scope**: `PromotionId`/`CampaignId`/`BatchId` existence checks against their own aggregates (would require reaching into `IPromotionReadService`/`ICampaignReadService` outside this feature's own scope, and isn't literally required by the Domain model itself); Coupon-code uniqueness checking (explicitly named as forbidden business validation); any status-transition endpoint beyond Disable.
+
+## What Phase 4.1/4.2 do not do
+
+No business rule (discount calculation, eligibility evaluation, redemption logic, stacking, campaign/voucher/point/reward logic) is inferred into any handler. Coupon Management Foundation is deliberately just the administrative CRUD+translate lifecycle the Domain already exposes — real Promotion-engine workflow logic is explicitly out of scope until a future prompt requests it, same boundary Payment's `CreatePayment`/`CreatePaymentIntent`/`CreateRefund` precedent set for its own feature rollout.
