@@ -10,6 +10,7 @@ using Serilog;
 
 using NovaCore.Promotion.API;
 using NovaCore.Promotion.Application;
+using NovaCore.Promotion.Application.Abstractions.Search;
 using NovaCore.Promotion.Infrastructure;
 using NovaCore.Promotion.Persistence;
 using NovaCore.Promotion.Persistence.Engine;
@@ -42,6 +43,18 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<PromotionDbContext>();
     await dbContext.Database.MigrateAsync();
+
+    var couponSearchIndexer = scope.ServiceProvider.GetRequiredService<ICouponSearchIndexer>();
+    try
+    {
+        await couponSearchIndexer.EnsureIndexAsync();
+    }
+    catch (Exception ex)
+    {
+        // Elasticsearch is a read-model dependency, not a hard requirement to serve traffic -
+        // don't let a transient ES outage/misconfiguration take down the whole API on boot.
+        app.Logger.LogError(ex, "Failed to ensure the coupon search index exists. Search endpoints will be degraded until Elasticsearch connectivity is restored.");
+    }
 }
 
 app.UseRedisTracing();

@@ -389,6 +389,10 @@ services:
       # Logging
       - Logging__Seq__Url=${SEQ_URL}
       - Logging__Elasticsearch__Url=${ELASTICSEARCH_URL}
+      # Elasticsearch (Search read model - see docs/promotion-service/search/search-strategy.md)
+      - Elasticsearch__Url=${PROMOTION_ELASTICSEARCH_URL}
+      - Elasticsearch__Username=${ELASTICSEARCH_APP_USERNAME}
+      - Elasticsearch__Password=${ELASTICSEARCH_PASSWORD}
       # Observability (APM/tracing - see docs/setup/observability.md)
       - Observability__ApmServerUrl=${APM_SERVER_URL}
       # JWT (validation only - tokens are issued by Auth)
