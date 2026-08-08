@@ -56,6 +56,11 @@ public sealed class CouponSearchRepository(ElasticsearchClient client) : ICoupon
         var tenantId = criteria.TenantId.ToString();
         filter.Add(q => q.Term(t => t.Field("tenantId").Value(tenantId)));
 
+        // Public visibility (Phase 4.3, Section 12): a disabled Coupon must never surface in
+        // public search regardless of caller-supplied criteria - unconditional, same trust
+        // boundary as TenantId above, not exposed as a criteria field.
+        filter.Add(q => q.Term(t => t.Field("isEnabled").Value(true)));
+
         if (!string.IsNullOrWhiteSpace(criteria.Keyword))
         {
             var keyword = criteria.Keyword;
