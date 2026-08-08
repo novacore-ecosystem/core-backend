@@ -16,6 +16,18 @@ global using NovaCore.BuildingBlock.SharedKernel.Constants;
 
 global using Mapster;
 
-// No NovaCore.Promotion.Domain.Entities / .Enums / .ValueObjects global usings yet - no
-// entities exist until Phase 2 (Domain Model). Add them here the same way Payment.Application
-// does once the first Feature needs them.
+global using NovaCore.Promotion.Domain.Entities.Campaigns;
+global using NovaCore.Promotion.Domain.Entities.Promotions;
+global using NovaCore.Promotion.Domain.Entities.Coupons;
+global using NovaCore.Promotion.Domain.Entities.Vouchers;
+global using NovaCore.Promotion.Domain.Entities.Loyalty;
+global using NovaCore.Promotion.Domain.Entities.Rewards;
+global using NovaCore.Promotion.Domain.Entities.Distributions;
+global using NovaCore.Promotion.Domain.Entities.Recommendations;
+global using NovaCore.Promotion.Domain.Entities.ProductSets;
+global using NovaCore.Promotion.Domain.Entities.Gifts;
+global using NovaCore.Promotion.Domain.Entities.Approvals;
+
+// "Promotion" collides with this project's own root namespace (NovaCore.Promotion.Application,
+// NovaCore.Promotion.Domain, ...) - same alias Promotion.Persistence/GlobalUsings.cs documents.
+global using PromotionEntity = NovaCore.Promotion.Domain.Entities.Promotions.Promotion;
