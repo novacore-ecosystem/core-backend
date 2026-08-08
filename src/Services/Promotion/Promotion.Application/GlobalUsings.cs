@@ -27,6 +27,7 @@ global using NovaCore.Promotion.Domain.Entities.Recommendations;
 global using NovaCore.Promotion.Domain.Entities.ProductSets;
 global using NovaCore.Promotion.Domain.Entities.Gifts;
 global using NovaCore.Promotion.Domain.Entities.Approvals;
+global using NovaCore.Promotion.Domain.Enums;
 
 // "Promotion" collides with this project's own root namespace (NovaCore.Promotion.Application,
 // NovaCore.Promotion.Domain, ...) - same alias Promotion.Persistence/GlobalUsings.cs documents.
