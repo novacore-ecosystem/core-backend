@@ -12,6 +12,7 @@ global using NovaCore.BuildingBlock.Application.Abstractions.Services;
 global using NovaCore.BuildingBlock.Application.Exceptions;
 global using NovaCore.BuildingBlock.Domain.Enums;
 global using NovaCore.BuildingBlock.Domain.Exceptions;
+global using NovaCore.BuildingBlock.Domain.ValueObjects;
 global using NovaCore.BuildingBlock.SharedKernel.Constants;
 
 global using Mapster;
@@ -28,6 +29,7 @@ global using NovaCore.Promotion.Domain.Entities.ProductSets;
 global using NovaCore.Promotion.Domain.Entities.Gifts;
 global using NovaCore.Promotion.Domain.Entities.Approvals;
 global using NovaCore.Promotion.Domain.Enums;
+global using NovaCore.Promotion.Domain.ValueObjects;
 
 // "Promotion" collides with this project's own root namespace (NovaCore.Promotion.Application,
 // NovaCore.Promotion.Domain, ...) - same alias Promotion.Persistence/GlobalUsings.cs documents.
