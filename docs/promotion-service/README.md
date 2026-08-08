@@ -34,4 +34,4 @@
 
 ## Current status
 
-See [planning/PROGRESS.md](planning/PROGRESS.md). **Phase 0, 1, and 2 (Domain Model) complete, 3/7. Phase 3 (Persistence) is in progress — 3.1 (Entity Configuration + Domain Correction) is done: all 103 entities have an `IEntityTypeConfiguration<T>` under `Promotion.Persistence/Configs/`, `PromotionDbContext` is fully wired, and `Promotion.Domain`/`Promotion.Persistence` both build clean. No repository, persistence service, CQRS, or migration exists yet.**
+See [planning/PROGRESS.md](planning/PROGRESS.md). **Phase 0, 1, and 2 (Domain Model) complete, 3/7. Phase 3 (Persistence) is in progress — 3.1 (Entity Configuration + Domain Correction) and 3.2 (Persistence Infrastructure Skeleton) are done: all 103 entities have an `IEntityTypeConfiguration<T>`, `PromotionDbContext` is fully wired, and the repository/Read/Write Persistence Service skeleton exists for all 11 true Aggregate Roots (empty — no query/command methods yet). The full solution builds clean through `Promotion.API`. No CQRS or migration exists yet.**
