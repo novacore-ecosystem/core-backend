@@ -8,6 +8,8 @@ using MapsterMapper;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using NovaCore.Promotion.Application.Abstractions.Persistence;
+
 namespace NovaCore.Promotion.Application;
 
 public static class DependencyInjection
@@ -18,8 +20,15 @@ public static class DependencyInjection
             .AddMediatR()
             .AddApplicationBehaviors()
             .AddMapster()
-            .AddFluentValidation();
+            .AddFluentValidation()
+            .AddInfrastructure();
 
+        return services;
+    }
+
+    private static IServiceCollection AddInfrastructure(this IServiceCollection services)
+    {
+        services.AddScoped<OptimisticConcurrencyRetry>();
         return services;
     }
 
