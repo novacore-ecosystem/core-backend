@@ -73,6 +73,30 @@ Coupon Management
 
 **Deliberately not implemented, per this phase's explicit scope**: `PromotionId`/`CampaignId`/`BatchId` existence checks against their own aggregates (would require reaching into `IPromotionReadService`/`ICampaignReadService` outside this feature's own scope, and isn't literally required by the Domain model itself); Coupon-code uniqueness checking (explicitly named as forbidden business validation); any status-transition endpoint beyond Disable.
 
-## What Phase 4.1/4.2 do not do
+## Phase 4.3 — Public Coupon Search + Elasticsearch Integration (built)
 
-No business rule (discount calculation, eligibility evaluation, redemption logic, stacking, campaign/voucher/point/reward logic) is inferred into any handler. Coupon Management Foundation is deliberately just the administrative CRUD+translate lifecycle the Domain already exposes — real Promotion-engine workflow logic is explicitly out of scope until a future prompt requests it, same boundary Payment's `CreatePayment`/`CreatePaymentIntent`/`CreateRefund` precedent set for its own feature rollout.
+Connects the Phase 3.4 Elasticsearch infrastructure to a real Application/API flow, cloning `SearchProductsQuery`/`SearchProductsHandler`/`SearchProductsEndpoint` exactly:
+
+```text
+Public Minimal API — GET /coupons/search
+    ↓
+SearchCouponsQuery
+    ↓
+SearchCouponsHandler
+    ↓
+ICouponSearchRepository (Phase 3.4)
+    ↓
+Elasticsearch
+```
+
+`SearchCouponsQuery(Search?, SortBy?, SortDescending, Page, PageSize)` — only the fields ProductSearch itself exposes for its own search+sort+page contract. `SearchCouponsHandler` builds `CouponSearchCriteria` and delegates straight to the existing `ICouponSearchRepository.SearchAsync` — no Elasticsearch DSL, index name, or analyzer knowledge in the Handler, matching `SearchProductsHandler`'s own shape. Fuzzy code/name/translated-name matching, tenant isolation, and availability-window filtering are all the Phase 3.4 `CouponSearchRepository` already implements — this phase adds no new search logic there beyond one filter (below).
+
+**Search is not eligibility** (Section 4 of the issuing prompt): `Status`/`Visibility`/`AvailableAsOf` are fixed by the Handler to "publicly discoverable right now" (`CouponStatus.Active`, `CouponVisibility.Public`, `DateTime.UtcNow`) — never taken from the request, so a caller cannot ask to see Draft/Cancelled/Expired Coupons. `TenantId` comes from `RequestContext.Current.TenantId` (`NovaCore.BuildingBlock.SharedKernel.Context`), the same ambient mechanism EF's own tenant query filter and `TenantAssignmentInterceptor` already use — the first Application-layer Handler in the platform to read it directly, since this is the first time a Handler needs an explicit `TenantId` value rather than relying on EF's automatic query filter (Elasticsearch has no such filter). No Promotion-specific tenant resolution was invented.
+
+**One small, precedented extension to `CouponSearchRepository`** (Phase 3.4): added an unconditional `isEnabled == true` filter, the same trust boundary as the existing unconditional `tenantId` filter — a disabled Coupon must never surface in public search regardless of what a caller supplies, and `CouponSearchCriteria` never exposed `IsEnabled` as a client-controllable field to begin with. This is the only Phase 3.4 file touched this phase.
+
+No User/Order/Product/inventory eligibility, discount calculation, stacking, redemption-limit, or applicability logic was added anywhere — those stay Promotion Engine business logic for a future phase.
+
+## What Phase 4.1/4.2/4.3 do not do
+
+No business rule (discount calculation, eligibility evaluation, redemption logic, stacking, campaign/voucher/point/reward logic) is inferred into any handler. Coupon Management Foundation and Public Coupon Search are deliberately just the administrative CRUD+translate lifecycle and the public discovery read path the Domain/Phase-3.4 infrastructure already expose — real Promotion-engine workflow logic is explicitly out of scope until a future prompt requests it, same boundary Payment's `CreatePayment`/`CreatePaymentIntent`/`CreateRefund` precedent set for its own feature rollout.
