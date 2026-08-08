@@ -33,6 +33,7 @@ public sealed class PromotionConfig : IEntityTypeConfiguration<PromotionEntity>
 
         builder.Property(x => x.TimeZone).HasMaxLength(50).IsRequired();
         builder.Property(x => x.IsEnabled).IsRequired();
+        builder.Property(x => x.IsApproved).IsRequired();
 
         builder.Property(x => x.Metadata)
             .HasConversion(
@@ -48,6 +49,13 @@ public sealed class PromotionConfig : IEntityTypeConfiguration<PromotionEntity>
             .HasForeignKey(x => x.CampaignId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // No reverse collection on ApprovalWorkflow (it's a general-purpose aggregate, not owned
+        // by Promotion) - same shape as the Campaign relationship above.
+        builder.HasOne(x => x.ApprovalWorkflow)
+            .WithMany()
+            .HasForeignKey(x => x.ApprovalWorkflowId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Versions/Rules/Targets/Benefits/Constraints/UsageLimits/ExecutionPolicy/StackingPolicy
         // are all configured from the child entity's own config (single source per relationship).
 
@@ -58,5 +66,6 @@ public sealed class PromotionConfig : IEntityTypeConfiguration<PromotionEntity>
         builder.HasIndex(x => new { x.Status, x.StartTime });
         builder.HasIndex(x => new { x.Type, x.Status });
         builder.HasIndex(x => x.Priority);
+        builder.HasIndex(x => x.ApprovalWorkflowId);
     }
 }
