@@ -9,4 +9,7 @@ public enum PromotionConstraintType : byte
     CustomerSegment = 2,
     ProductCategory = 3,
     PaymentMethod = 4,
+    MaximumOrderAmount = 5,
+    MaximumQuantity = 6,
+    MaximumDiscountAmount = 7,
 }

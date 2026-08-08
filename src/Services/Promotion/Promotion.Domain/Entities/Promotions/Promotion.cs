@@ -1,3 +1,4 @@
+using NovaCore.Promotion.Domain.Entities.Approvals;
 using NovaCore.Promotion.Domain.Entities.Campaigns;
 
 namespace NovaCore.Promotion.Domain.Entities.Promotions;
@@ -8,6 +9,10 @@ namespace NovaCore.Promotion.Domain.Entities.Promotions;
 /// related by PromotionId only (no Promotion navigation collection here) - see
 /// docs/promotion-service/aggregates/promotion.md. PromotionCondition is owned by PromotionRule,
 /// not by Promotion directly (Phase 2.6 correction - see PromotionRule.AddCondition).
+/// ApprovalWorkflowId (Phase 5.1) references the general-purpose ApprovalWorkflow aggregate root
+/// by id only, never by direct method call - Promotion and ApprovalWorkflow are independent
+/// aggregates, so the Application layer orchestrates both sides of a Submit/Approve/Reject
+/// operation across one transaction (see SubmitPromotionHandler/ApprovePromotionHandler).
 /// </summary>
 public sealed class Promotion : AggregateRoot<Guid>, IAuditable, ITenantEntity
 {
@@ -24,8 +29,11 @@ public sealed class Promotion : AggregateRoot<Guid>, IAuditable, ITenantEntity
     public Currency Currency { get; private set; } = default!;
     public string TimeZone { get; private set; } = string.Empty;
     public bool IsEnabled { get; private set; }
+    public Guid? ApprovalWorkflowId { get; private set; }
+    public bool IsApproved { get; private set; }
 
     public Campaign? Campaign { get; private set; }
+    public ApprovalWorkflow? ApprovalWorkflow { get; private set; }
     public ICollection<PromotionVersion> Versions { get; private set; } = [];
     public ICollection<PromotionRule> Rules { get; private set; } = [];
     public ICollection<PromotionTarget> Targets { get; private set; } = [];
@@ -145,6 +153,9 @@ public sealed class Promotion : AggregateRoot<Guid>, IAuditable, ITenantEntity
         if (Status is not (PromotionStatus.Draft or PromotionStatus.Paused))
             throw ExceptionFactory.InvalidStatus($"Cannot activate a promotion in {Status} status.");
 
+        if (!IsApproved)
+            throw ExceptionFactory.InvalidState("Cannot activate an unapproved promotion.");
+
         Status = PromotionStatus.Active;
     }
 
@@ -170,6 +181,43 @@ public sealed class Promotion : AggregateRoot<Guid>, IAuditable, ITenantEntity
             throw ExceptionFactory.InvalidStatus($"Cannot cancel a promotion in {Status} status.");
 
         Status = PromotionStatus.Cancelled;
+    }
+    #endregion
+
+    #region Approval
+    /// <summary>
+    /// Links a caller-created, already-submitted ApprovalWorkflow - Promotion never constructs or
+    /// mutates ApprovalWorkflow directly (separate aggregate root, see ApprovalWorkflow.Submit,
+    /// called by SubmitPromotionHandler before this).
+    /// </summary>
+    public void SubmitForApproval(Guid approvalWorkflowId)
+    {
+        if (Status != PromotionStatus.Draft)
+            throw ExceptionFactory.InvalidStatus($"Cannot submit a promotion in {Status} status for approval.");
+
+        if (ApprovalWorkflowId is not null)
+            throw ExceptionFactory.InvalidState("Promotion already has an approval workflow in progress.");
+
+        ApprovalWorkflowId = approvalWorkflowId;
+    }
+
+    /// <summary>Called after the linked ApprovalWorkflow has already been approved (see ApprovePromotionHandler).</summary>
+    public void MarkApproved()
+    {
+        if (ApprovalWorkflowId is null)
+            throw ExceptionFactory.InvalidState("Promotion has no approval workflow to approve.");
+
+        IsApproved = true;
+    }
+
+    /// <summary>Called after the linked ApprovalWorkflow has already been rejected (see RejectPromotionHandler). Clears the workflow link so a fresh Submit can start a new workflow.</summary>
+    public void MarkRejected()
+    {
+        if (ApprovalWorkflowId is null)
+            throw ExceptionFactory.InvalidState("Promotion has no approval workflow to reject.");
+
+        IsApproved = false;
+        ApprovalWorkflowId = null;
     }
     #endregion
 
