@@ -5,22 +5,34 @@ using NovaCore.Promotion.Application.Features.Coupons.Commands.CreateCoupon;
 
 namespace NovaCore.Promotion.API.Endpoints.Coupon;
 
-public sealed record CreateCouponRequest(string Name);
+public sealed record CreateCouponRequest(
+    Guid PromotionId,
+    string Code,
+    string Name,
+    CouponType CouponType,
+    DateTime StartTime,
+    DateTime EndTime,
+    string TimeZone,
+    string? Description,
+    CouponVisibility Visibility,
+    Guid? CampaignId,
+    Guid? BatchId,
+    int? MaxUsage,
+    int? MaxUsagePerUser);
 
-/// <summary>
-/// Phase 4.1 CQRS/Minimal API skeleton - the representative Coupon write flow future features
-/// clone. Deliberately minimal (Name only), not a real Coupon-creation contract - see
-/// CreateCouponHandler.
-/// </summary>
 public sealed class CreateCouponEndpoint : ICarterModule
 {
     private readonly string[] API_DESC = [
-        "## Create Coupon (skeleton)",
+        "## Create Coupon",
         "",
-        "Phase 4.1 CQRS/Minimal API skeleton only - not a real Coupon-creation feature yet.",
+        "Creates a Coupon under an existing Promotion.",
         "",
         "### Request Body",
+        "- **PromotionId**: The Promotion this Coupon belongs to (required)",
+        "- **Code**: Coupon code (required)",
         "- **Name**: Coupon name (required)",
+        "- **CouponType/StartTime/EndTime/TimeZone**: Required",
+        "- **Description/Visibility/CampaignId/BatchId/MaxUsage/MaxUsagePerUser**: Optional",
         "",
         "### Error Responses",
         "- **400**: Invalid request or validation failed",
@@ -42,7 +54,20 @@ public sealed class CreateCouponEndpoint : ICarterModule
         [FromServices] ISender sender,
         CancellationToken ct = default)
     {
-        var command = new CreateCouponCommand(request.Name.Trim());
+        var command = new CreateCouponCommand(
+            request.PromotionId,
+            request.Code.Trim(),
+            request.Name.Trim(),
+            request.CouponType,
+            request.StartTime,
+            request.EndTime,
+            request.TimeZone,
+            request.Description?.Trim(),
+            request.Visibility,
+            request.CampaignId,
+            request.BatchId,
+            request.MaxUsage,
+            request.MaxUsagePerUser);
 
         var response = await sender.Send(command, ct);
 
