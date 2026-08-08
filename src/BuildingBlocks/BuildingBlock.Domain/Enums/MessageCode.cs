@@ -165,4 +165,12 @@ public enum MessageCode
     RefundFailed = 805,
     [MessageCode("806", "Invalid coupon code")]
     InvalidCouponCode = 806,
+
+    // Promotion Service (900-999)
+    [MessageCode("900", "Coupon is disabled")]
+    CouponDisabled = 900,
+    [MessageCode("901", "Coupon is not currently active")]
+    CouponNotActive = 901,
+    [MessageCode("902", "Coupon usage limit has been reached")]
+    CouponUsageLimitReached = 902,
 }
