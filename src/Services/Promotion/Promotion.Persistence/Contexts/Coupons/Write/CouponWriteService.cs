@@ -60,4 +60,21 @@ public sealed class CouponWriteService(
             coupon.Translate(LanguageCode.Create(languageCode), name, description), ct);
         await unitOfWork.SaveChangesAsync(ct);
     }
+
+    public async Task<(Guid UsageId, DateTime UsedAt)> RedeemAsync(
+        Guid couponId,
+        Guid userId,
+        Guid? orderId,
+        CancellationToken ct = default)
+    {
+        CouponUsage usage = null!;
+
+        await couponRepo.UpdateAsync(couponId, coupon =>
+        {
+            coupon.RecordUsage(userId, orderId);
+            usage = coupon.Usages.Last();
+        }, ct);
+
+        return (usage.Id, usage.UsedAt);
+    }
 }

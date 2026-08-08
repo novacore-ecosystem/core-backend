@@ -27,4 +27,11 @@ public interface ICouponWriteService
         string name,
         string? description,
         CancellationToken ct = default);
+
+    /// <summary>Stages only - RedeemCouponHandler owns the ExecuteTransactionAsync call, same split UpdateDetailsAsync uses.</summary>
+    Task<(Guid UsageId, DateTime UsedAt)> RedeemAsync(
+        Guid couponId,
+        Guid userId,
+        Guid? orderId,
+        CancellationToken ct = default);
 }

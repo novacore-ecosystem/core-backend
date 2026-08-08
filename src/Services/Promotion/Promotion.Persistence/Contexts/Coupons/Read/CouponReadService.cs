@@ -13,6 +13,26 @@ public sealed class CouponReadService(PromotionDbContext dbContext) : ICouponRea
             .FirstOrDefaultAsync(c => c.Id == couponId, ct);
     }
 
+    public async Task<Coupon?> GetByCodeAsync(string code, CancellationToken ct = default)
+    {
+        var entityCode = EntityCode.Create(code);
+
+        return await dbContext.Coupons
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Code == entityCode, ct);
+    }
+
+    public async Task<IReadOnlyList<CouponUsage>> GetUsagesByCouponAndUserAsync(
+        Guid couponId,
+        Guid userId,
+        CancellationToken ct = default)
+    {
+        return await dbContext.CouponUsages
+            .AsNoTracking()
+            .Where(u => u.CouponId == couponId && u.UserId == userId)
+            .ToListAsync(ct);
+    }
+
     public async Task<(IReadOnlyList<Coupon> Items, int TotalCount)> SearchAsync(
         CouponStatus? status,
         int page,
