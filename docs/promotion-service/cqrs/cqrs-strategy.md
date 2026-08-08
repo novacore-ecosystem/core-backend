@@ -97,6 +97,32 @@ Elasticsearch
 
 No User/Order/Product/inventory eligibility, discount calculation, stacking, redemption-limit, or applicability logic was added anywhere — those stay Promotion Engine business logic for a future phase.
 
-## What Phase 4.1/4.2/4.3 do not do
+## Phase 4.4 — Coupon Lifecycle / Redemption Foundation (built)
 
-No business rule (discount calculation, eligibility evaluation, redemption logic, stacking, campaign/voucher/point/reward logic) is inferred into any handler. Coupon Management Foundation and Public Coupon Search are deliberately just the administrative CRUD+translate lifecycle and the public discovery read path the Domain/Phase-3.4 infrastructure already expose — real Promotion-engine workflow logic is explicitly out of scope until a future prompt requests it, same boundary Payment's `CreatePayment`/`CreatePaymentIntent`/`CreateRefund` precedent set for its own feature rollout.
+```text
+Coupon Discovery (Phase 4.3)
+    ↓
+Coupon Validation — GET /coupons/validate
+    ↓
+Coupon Redemption — POST /coupons/redeem
+    ↓
+CouponUsage (the existing Phase 2.2 redemption record)
+```
+
+**Validation** (`ValidateCouponQuery` → `ValidateCouponHandler`) is a read-only decision operation — never mutates. Returns `ValidateCouponResponse(CanProceed, Reason)`, a public-safe result: no database IDs, no exceptions, no internal state. A missing/invalid Coupon is a normal `CanProceed: false` answer (200 OK), not an error response — matching how a checkout flow expects to ask "is this code usable?" without treating "no" as a failure.
+
+**Redemption** (`RedeemCouponCommand` → `RedeemCouponHandler`) is the state-changing counterpart — it establishes the Coupon's usage/claim state only, never a discount amount, order total, or stacking outcome (Promotion Engine logic, still out of scope). It reuses `Coupon.RecordUsage(userId, orderId)` — the Domain's own existing usage-recording method — and persists into `CouponUsage`, the aggregate's **existing** Phase 2.2 redemption entity (no new entity was created, per the issuing prompt's explicit instruction to stop and document rather than invent one if the record didn't already exist — it did).
+
+**Validation and redemption share one rule set** (`CouponRedemptionEligibility.Evaluate`, `Features/Coupons/Shared/`): `IsEnabled`, `Status == Active`, the `StartTime`/`EndTime` window, `MaxUsage`, and `MaxUsagePerUser` — the only fields the Coupon Domain actually exposes for this (`Coupon.RecordUsage`'s own doc comment explicitly disclaims eligibility/limit enforcement, so this is genuinely an Application-layer responsibility, not Domain logic pulled up into the Handler). `RedeemCouponHandler` re-runs this same check live on every attempt rather than trusting a prior `ValidateCoupon` call, since a validation result can go stale between the two calls.
+
+**Concurrency**: `Coupon` already carries PostgreSQL `xmin`-based optimistic concurrency (`CouponConfig.ConfigureCommonFields()`, wired since Phase 3.1) — no new concurrency token was added. `EfUnitOfWork.ExecuteTransactionAsync` already translates a `DbUpdateConcurrencyException` into `ConflictException`. `RedeemCouponHandler` wraps its whole "reload → re-check → mutate" sequence in a new `OptimisticConcurrencyRetry` (`Promotion.Application/Abstractions/Persistence/`, cloned from Inventory's own local helper of the same name and shape — not a shared BuildingBlock type, so each service that needs it has its own copy) so a losing concurrent redemption re-evaluates against the winner's committed state instead of blindly retrying stale data. Directly mirrors Inventory's `DeductStockHandler`.
+
+**Idempotency, two layers, matching Payment's `CreatePayment` precedent**: the `RedeemCoupon` endpoint requires the platform's existing `Idempotency-Key` header (`.RequireIdempotency()`, the same HTTP-level middleware/store every idempotent write endpoint already uses) as the primary mechanism. As defense-in-depth once the HTTP cache's TTL passes, `RedeemCouponHandler` also checks for an existing `CouponUsage` matching the same (Coupon, User, Order) natural key and replays it instead of redeeming twice — this works whenever a caller supplies `OrderId` (the common case once OrderService integrates), and is a natural-key check rather than a synthetic `IdempotencyKey` field added to `CouponUsage`, since the Domain wasn't touched this phase.
+
+**Errors**: no new exception types. `NotFoundException` (Coupon not found), `ForbiddenException` (no current user), and `BusinessRuleException` (Coupon not currently redeemable) — all pre-existing `BuildingBlock.Application`/`BuildingBlock.Domain` exception types, all already mapped by the existing `GlobalExceptionHandler`/`ExceptionHandlerHelper`. One small additive extension to the shared `MessageCode` enum (`BuildingBlock.Domain.Enums`): a new "Promotion Service (900-999)" range (`CouponDisabled`, `CouponNotActive`, `CouponUsageLimitReached`) — the same per-service-range convention every other service (Product 400s, Inventory 500s, Order 600s, ...) already uses, giving `BusinessRuleException` an accurate client-facing message instead of reusing an unrelated existing code.
+
+**Deliberately not implemented, per this phase's explicit scope**: Coupon Reservation (`Coupon.AddReservation`/`ReleaseReservation` already exist on the Domain from Phase 2.2, but no Application feature wires them — the issuing prompt's own concrete requirements (Sections 5-26) and final-report checklist only named Validation and Redemption, not Reservation, so this stays an available-but-unused Domain capability, same kind of deliberate boundary Phase 4.2 drew around `AssignCampaign`/`AssignBatch`); no Elasticsearch sync from the redemption Handler; no Order/User service calls of any kind; no discount/stacking/eligibility-beyond-the-Coupon-itself logic anywhere.
+
+## What Phase 4.1/4.2/4.3/4.4 do not do
+
+No business rule (discount calculation, eligibility evaluation, promotion stacking, campaign/voucher/point/reward logic) is inferred into any handler. Coupon Management Foundation, Public Coupon Search, and Coupon Lifecycle/Redemption are deliberately just the administrative CRUD+translate lifecycle, the public discovery read path, and the validate/redeem lifecycle operations the Domain/Phase-3.4 infrastructure already expose — real Promotion-engine workflow logic is explicitly out of scope until a future prompt requests it, same boundary Payment's `CreatePayment`/`CreatePaymentIntent`/`CreateRefund` precedent set for its own feature rollout.
