@@ -4,11 +4,11 @@ using NovaCore.BuildingBlock.Web.Authorization;
 
 using NovaCore.BuildingBlock.SharedKernel.Constants;
 
-namespace NovaCore.Auth.API.Endpoints;
+namespace NovaCore.Auth.API.Endpoints.PermissionDefinitions;
 
 public record UpdatePermissionRequest(Guid PermissionGroupId);
 
-public sealed class UpdatePermission : ICarterModule
+public sealed class UpdatePermissionEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {

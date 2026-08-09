@@ -2,9 +2,9 @@ using NovaCore.Auth.Application.Features.Auth.Commands.Logout;
 
 using NovaCore.BuildingBlock.SharedKernel.Constants;
 
-namespace NovaCore.Auth.API.Endpoints;
+namespace NovaCore.Auth.API.Endpoints.Authentication;
 
-public sealed class Logout : ICarterModule
+public sealed class LogoutEndpoint : ICarterModule
 {
     private readonly string[] API_DESC = [
         "## User Logout",

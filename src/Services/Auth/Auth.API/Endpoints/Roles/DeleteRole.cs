@@ -4,9 +4,9 @@ using NovaCore.BuildingBlock.Web.Authorization;
 
 using NovaCore.BuildingBlock.SharedKernel.Constants;
 
-namespace NovaCore.Auth.API.Endpoints;
+namespace NovaCore.Auth.API.Endpoints.Roles;
 
-public sealed class DeleteRole : ICarterModule
+public sealed class DeleteRoleEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {

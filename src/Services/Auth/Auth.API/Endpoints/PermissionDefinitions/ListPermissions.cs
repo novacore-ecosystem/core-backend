@@ -4,9 +4,9 @@ using NovaCore.BuildingBlock.Web.Authorization;
 
 using NovaCore.BuildingBlock.SharedKernel.Constants;
 
-namespace NovaCore.Auth.API.Endpoints;
+namespace NovaCore.Auth.API.Endpoints.PermissionDefinitions;
 
-public sealed class ListPermissions : ICarterModule
+public sealed class ListPermissionsEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {

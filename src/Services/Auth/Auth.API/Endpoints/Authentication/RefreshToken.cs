@@ -1,8 +1,8 @@
 using NovaCore.Auth.Application.Features.Auth.Commands.RefreshToken;
 
-namespace NovaCore.Auth.API.Endpoints;
+namespace NovaCore.Auth.API.Endpoints.Authentication;
 
-public sealed class RefreshToken : ICarterModule
+public sealed class RefreshTokenEndpoint : ICarterModule
 {
     private readonly string[] API_DESC = [
         "## Refresh Access Token",

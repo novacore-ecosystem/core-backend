@@ -4,11 +4,11 @@ using NovaCore.BuildingBlock.Domain.Enums;
 using NovaCore.BuildingBlock.SharedKernel.Constants;
 using NovaCore.BuildingBlock.Web.Swagger.EndpointHeader;
 
-namespace NovaCore.Auth.API.Endpoints;
+namespace NovaCore.Auth.API.Endpoints.Authentication;
 
 public record RegisterRequest(string Email, string Password, string FirstName, string LastName, string PhoneNumber, string MiddleName = "");
 
-public sealed class Register : ICarterModule
+public sealed class RegisterEndpoint : ICarterModule
 {
     private readonly string[] API_DESC = [
         "## User Registration",

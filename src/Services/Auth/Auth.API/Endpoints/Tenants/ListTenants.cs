@@ -3,14 +3,14 @@ using NovaCore.Auth.Application.Features.Tenants.Queries.ListTenants;
 using NovaCore.BuildingBlock.SharedKernel.Constants;
 using NovaCore.BuildingBlock.Web.Authorization;
 
-namespace NovaCore.Auth.API.Endpoints;
+namespace NovaCore.Auth.API.Endpoints.Tenants;
 
 /// <summary>
 /// Tenant discovery/selection for the Root Portal only - never a general-purpose tenant API.
 /// Deliberately excludes any per-tenant business data (users/orders/payments/...) and any
 /// TenantClient/PublicKey field (see docs/services/auth-service.md, Phase 2 "Tenant List API").
 /// </summary>
-public sealed class ListTenants : ICarterModule
+public sealed class ListTenantsEndpoint : ICarterModule
 {
     private readonly string[] API_DESC = [
         "## List Tenants",

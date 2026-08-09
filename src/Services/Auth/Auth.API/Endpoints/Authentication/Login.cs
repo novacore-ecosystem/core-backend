@@ -2,11 +2,11 @@ using NovaCore.Auth.Application.Features.Auth.Commands.Login;
 
 using NovaCore.BuildingBlock.SharedKernel.Constants;
 
-namespace NovaCore.Auth.API.Endpoints;
+namespace NovaCore.Auth.API.Endpoints.Authentication;
 
 public record LoginRequest(string Email, string Password);
 
-public sealed class Login : ICarterModule
+public sealed class LoginEndpoint : ICarterModule
 {
     private readonly string[] API_DESC = [
         "## User Login",

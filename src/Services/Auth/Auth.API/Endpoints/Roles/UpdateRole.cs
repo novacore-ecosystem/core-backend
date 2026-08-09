@@ -4,11 +4,11 @@ using NovaCore.BuildingBlock.Web.Authorization;
 
 using NovaCore.BuildingBlock.SharedKernel.Constants;
 
-namespace NovaCore.Auth.API.Endpoints;
+namespace NovaCore.Auth.API.Endpoints.Roles;
 
 public record UpdateRoleRequest(string Name, string? Description);
 
-public sealed class UpdateRole : ICarterModule
+public sealed class UpdateRoleEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
