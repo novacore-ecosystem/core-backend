@@ -5,14 +5,16 @@ using NovaCore.BuildingBlock.Application.Abstractions.Services;
 using NovaCore.BuildingBlock.Contract.Events.User;
 using NovaCore.BuildingBlock.Messaging.Abstractions;
 
+using NovaCore.User.Application.Abstractions.Persistence.Users;
 using NovaCore.User.Application.Features.Users.Events.OnAccountEffectivePermissionsChanged;
 
 namespace NovaCore.User.Infrastructure.Messaging.Consumers;
 
 /// <summary>Consumes Auth's AccountEffectivePermissionsChangedIntegrationEvent to keep
-/// UserAuthorizationSnapshot in sync - see docs/services/auth-service.md, Phase 3. AccountId in
-/// the event equals this User's Id (the two rows are correlated by sharing an id, same as every
-/// other Auth-to-User Account/User correlation - see User.Create's id override).</summary>
+/// UserAuthorizationSnapshot in sync - see docs/services/auth-service.md, Phase 3. One event batches
+/// every Account a Role permission change affected; AccountId in each entry equals a User's Id (the
+/// two rows are correlated by sharing an id, same as every other Auth-to-User Account/User
+/// correlation - see User.Create's id override).</summary>
 public sealed class AccountEffectivePermissionsChangedConsumer(
     IInternalEventDispatcher eventDispatcher,
     IAppLogger<AccountEffectivePermissionsChangedConsumer> logger)
@@ -31,14 +33,18 @@ public sealed class AccountEffectivePermissionsChangedConsumer(
             ?? throw new InvalidOperationException("Failed to deserialize AccountEffectivePermissionsChangedIntegrationEvent");
 
         logger.Information(
-            "Received AccountEffectivePermissionsChangedIntegrationEvent for AccountId: {AccountId}",
-            integrationEvent.AccountId);
+            "Received AccountEffectivePermissionsChangedIntegrationEvent for {AccountCount} account(s)",
+            integrationEvent.Accounts.Count);
 
-        var @event = new OnAccountEffectivePermissionsChangedEvent(integrationEvent.AccountId, integrationEvent.Permissions);
+        var updates = integrationEvent.Accounts
+            .Select(a => new AccountAuthorizationUpdate(a.AccountId, a.Permissions))
+            .ToArray();
+
+        var @event = new OnAccountEffectivePermissionsChangedEvent(updates);
         await eventDispatcher.PublishAsync(@event, ct);
 
         logger.Information(
-            "Successfully processed AccountEffectivePermissionsChangedIntegrationEvent for AccountId: {AccountId}",
-            integrationEvent.AccountId);
+            "Successfully processed AccountEffectivePermissionsChangedIntegrationEvent for {AccountCount} account(s)",
+            integrationEvent.Accounts.Count);
     }
 }

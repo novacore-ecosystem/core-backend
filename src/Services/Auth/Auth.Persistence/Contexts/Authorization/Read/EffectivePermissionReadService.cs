@@ -50,6 +50,50 @@ public sealed class EffectivePermissionReadService(AuthDbContext dbContext) : IE
         return permissionKeys.ToHashSet(StringComparer.Ordinal);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlySet<string>>> GetEffectivePermissionsForAccountsAsync(
+        IReadOnlyCollection<Guid> accountIds, Guid tenantId, CancellationToken ct = default)
+    {
+        if (accountIds.Count == 0)
+            return new Dictionary<Guid, IReadOnlySet<string>>();
+
+        var directGrants = dbContext.UserRoles
+            .Where(ar => accountIds.Contains(ar.UserId))
+            .Select(ar => new { AccountId = ar.UserId, ar.RoleId });
+
+        var now = DateTime.UtcNow;
+        var positionGrants = dbContext.AccountPositions
+            .IgnoreQueryFilters()
+            .Where(ap => accountIds.Contains(ap.AccountId)
+                && ap.TenantId == tenantId
+                && ap.Status == AccountPositionStatus.Active
+                && (ap.ExpiredAt == null || ap.ExpiredAt > now))
+            .Join(
+                dbContext.PositionRoles.IgnoreQueryFilters().Where(pr => pr.TenantId == tenantId),
+                ap => ap.PositionId,
+                pr => pr.PositionId,
+                (ap, pr) => new { AccountId = ap.AccountId, pr.RoleId });
+
+        var accountRoleGrants = directGrants.Union(positionGrants);
+
+        // accountIds.Contains(...) translates to a single "= ANY(@p)" array parameter on Npgsql,
+        // not one bound parameter per id, so this stays one query regardless of how many affected
+        // accounts a Role update touches.
+        var rows = await accountRoleGrants
+            .Join(
+                dbContext.RolePermissions.IgnoreQueryFilters().Where(rp => rp.TenantId == tenantId),
+                arg => arg.RoleId,
+                rp => rp.RoleId,
+                (arg, rp) => new { arg.AccountId, PermissionKey = rp.PermissionDefinition.Key.Value })
+            .Distinct()
+            .ToListAsync(ct);
+
+        return rows
+            .GroupBy(r => r.AccountId)
+            .ToDictionary(
+                g => g.Key,
+                g => (IReadOnlySet<string>)g.Select(r => r.PermissionKey).ToHashSet(StringComparer.Ordinal));
+    }
+
     public async Task<IReadOnlySet<Guid>> GetAccountIdsForRoleAsync(Guid roleId, Guid tenantId, CancellationToken ct = default)
     {
         var directAccountIds = dbContext.UserRoles

@@ -1,5 +1,4 @@
 using NovaCore.Auth.Application.Abstractions.Authorization;
-using NovaCore.Auth.Application.Abstractions.Persistence.Permissions;
 using NovaCore.Auth.Application.Abstractions.Persistence.Roles;
 
 using NovaCore.BuildingBlock.Application.Abstractions.Outbox;
@@ -11,7 +10,7 @@ namespace NovaCore.Auth.Application.Features.Roles.Commands.UpdateRolePermission
 
 /// <summary>
 /// Two-phase commit, not one atomic transaction: the Role/RolePermission mutation commits first
-/// (RoleWriteService self-commits, matching every other Write Service in Auth), then affected
+/// (RoleWriteService self-commits, matching every other Write Service in Auth), then the affected
 /// Accounts' recomputed effective permissions are enqueued as a second SaveChanges. The usual
 /// Outbox atomicity guarantee (event + aggregate change in one transaction) is deliberately traded
 /// away here - correctly reflecting the JUST-changed RolePermission state requires querying it
@@ -22,7 +21,6 @@ namespace NovaCore.Auth.Application.Features.Roles.Commands.UpdateRolePermission
 /// </summary>
 public sealed class UpdateRolePermissionsHandler(
     IRoleWriteService roleWriteService,
-    IPermissionReadService permissionReadService,
     IEffectivePermissionReadService effectivePermissionReadService,
     IOutboxStore outboxStore,
     IUnitOfWork unitOfWork) : ICommandHandler<UpdateRolePermissionsCommand>
@@ -35,40 +33,27 @@ public sealed class UpdateRolePermissionsHandler(
         // is safe to resolve before the mutation below.
         var affectedAccountIds = await effectivePermissionReadService.GetAccountIdsForRoleAsync(request.RoleId, tenantId, ct);
 
-        var requestedKeys = request.PermissionKeys.ToHashSet(StringComparer.Ordinal);
-        var allPermissions = await permissionReadService.ListAsync(ct);
-        var permissionsByKey = allPermissions.ToDictionary(p => p.Key.Value, StringComparer.Ordinal);
+        var result = await roleWriteService.UpdatePermissionsAsync(request.RoleId, request.PermissionKeys, ct);
 
-        await roleWriteService.UpdateWithPermissionsAsync(request.RoleId, role =>
-        {
-            var currentKeys = role.Permissions
-                .Select(rp => rp.PermissionDefinition.Key.Value)
-                .ToHashSet(StringComparer.Ordinal);
+        if (!result.HasChanges || affectedAccountIds.Count == 0)
+            return;
 
-            foreach (var key in requestedKeys.Except(currentKeys))
-            {
-                if (permissionsByKey.TryGetValue(key, out var permission))
-                    role.AssignPermission(permission);
-            }
+        // Different affected Accounts can end up with different effective sets (extra Roles/
+        // Positions beyond this one), so each Account's permissions are resolved individually -
+        // in one batched query, not one query per Account - and carried in a single Outbox message.
+        var effectivePermissionsByAccount = await effectivePermissionReadService
+            .GetEffectivePermissionsForAccountsAsync(affectedAccountIds, tenantId, ct);
 
-            foreach (var permissionDefinitionId in role.Permissions
-                .Where(rp => !requestedKeys.Contains(rp.PermissionDefinition.Key.Value))
-                .Select(rp => rp.PermissionDefinitionId)
-                .ToList())
-            {
-                role.RemovePermission(permissionDefinitionId);
-            }
-        }, ct);
+        var accountUpdates = affectedAccountIds
+            .Select(accountId => new AccountEffectivePermissions(
+                accountId,
+                effectivePermissionsByAccount.TryGetValue(accountId, out var permissions) ? [.. permissions] : []))
+            .ToArray();
 
-        foreach (var accountId in affectedAccountIds)
-        {
-            var permissions = await effectivePermissionReadService.GetEffectivePermissionsAsync(accountId, tenantId, ct);
-            await outboxStore.EnqueueAsync(
-                new AccountEffectivePermissionsChangedIntegrationEvent(tenantId, accountId, [.. permissions]),
-                ct);
-        }
+        await outboxStore.EnqueueAsync(
+            new AccountEffectivePermissionsChangedIntegrationEvent(tenantId, accountUpdates),
+            ct);
 
-        if (affectedAccountIds.Count > 0)
-            await unitOfWork.SaveChangesAsync(ct);
+        await unitOfWork.SaveChangesAsync(ct);
     }
 }

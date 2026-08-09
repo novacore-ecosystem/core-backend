@@ -16,8 +16,11 @@ public interface IUserWriteService
 
     Task<int> DeleteWithNoTrackingAsync(Guid id, CancellationToken ct = default);
 
-    /// <summary>Rebuilds UserAuthorizationSnapshot (Auth's security permission projection - not
-    /// UserPermissionSnapshot, see UserAuthorizationSnapshot's class doc comment). Called only by
-    /// the AccountEffectivePermissionsChangedIntegrationEvent consumer.</summary>
-    Task RebuildAuthorizationSnapshotAsync(Guid userId, IReadOnlyList<string> permissions, CancellationToken ct = default);
+    /// <summary>Batch-rebuilds UserAuthorizationSnapshot (Auth's security permission projection -
+    /// not UserPermissionSnapshot, see UserAuthorizationSnapshot's class doc comment) for every
+    /// Account in updates. Set-based (ExecuteUpdateAsync), grouped by identical resulting
+    /// permission set, with no User entity tracking/loading - called only by the
+    /// AccountEffectivePermissionsChangedIntegrationEvent consumer, which can carry thousands of
+    /// affected Accounts from a single Role change.</summary>
+    Task RebuildAuthorizationSnapshotsAsync(IReadOnlyList<AccountAuthorizationUpdate> updates, CancellationToken ct = default);
 }

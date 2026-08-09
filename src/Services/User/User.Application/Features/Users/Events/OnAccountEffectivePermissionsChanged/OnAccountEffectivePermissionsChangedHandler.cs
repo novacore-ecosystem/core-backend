@@ -7,6 +7,6 @@ public sealed class OnAccountEffectivePermissionsChangedHandler(IUserWriteServic
 {
     public async Task Handle(OnAccountEffectivePermissionsChangedEvent @event, CancellationToken ct = default)
     {
-        await userWriteService.RebuildAuthorizationSnapshotAsync(@event.UserId, @event.Permissions, ct);
+        await userWriteService.RebuildAuthorizationSnapshotsAsync(@event.Updates, ct);
     }
 }

@@ -3,13 +3,20 @@ using NovaCore.BuildingBlock.Persistence.Repository;
 
 using NovaCore.User.Application.Abstractions.Persistence.Users;
 using NovaCore.User.Application.Features.Users.DTOs;
+using NovaCore.User.Persistence.Engine;
 
 namespace NovaCore.User.Persistence.Contexts.Users.Write;
 
 public sealed class UserWriteService(
     IRepository<UserEntity, Guid> repo,
+    UserDbContext dbContext,
     IUnitOfWork unitOfWork) : IUserWriteService
 {
+    // Large enough to keep round trips low, small enough to keep each UPDATE/INSERT statement's
+    // array parameter a reasonable size - not a hard Postgres limit (accountIds.Contains(...)
+    // binds as one "= ANY(@p)" array parameter either way), just a conservative batch unit.
+    private const int BatchSize = 500;
+
     public async Task<UserReadModel> CreateAsync(CreateUserRequest request, CancellationToken ct = default)
     {
         var user = UserEntity.Create(request.Username, request.DisplayName, request.UserType);
@@ -63,13 +70,59 @@ public sealed class UserWriteService(
         return await repo.DeleteWithNoTrackingAsync(u => u.Id == id, ct);
     }
 
-    public async Task RebuildAuthorizationSnapshotAsync(Guid userId, IReadOnlyList<string> permissions, CancellationToken ct = default)
+    public async Task RebuildAuthorizationSnapshotsAsync(IReadOnlyList<AccountAuthorizationUpdate> updates, CancellationToken ct = default)
     {
-        await repo.UpdateAsync(
-            u => u.Id == userId,
-            q => q.Include(u => u.AuthorizationSnapshot),
-            user => user.RebuildAuthorizationSnapshot(permissions),
-            ct);
+        foreach (var batch in updates.Chunk(BatchSize))
+        {
+            var userIds = batch.Select(u => u.UserId).ToArray();
+            var existingUserIds = await dbContext.UserAuthorizationSnapshots
+                .Where(s => userIds.Contains(s.UserId))
+                .Select(s => s.UserId)
+                .ToHashSetAsync(ct);
+
+            var normalized = batch
+                .Select(u => new { u.UserId, Permissions = u.Permissions.OrderBy(p => p, StringComparer.Ordinal).ToArray() })
+                .ToList();
+
+            // Grouped by identical resulting permission set - accounts sharing a Role (the common
+            // case) collapse into one ExecuteUpdateAsync instead of one statement per account. The
+            // separator is arbitrary since permission keys can't contain it.
+            var updateGroups = normalized
+                .Where(u => existingUserIds.Contains(u.UserId))
+                .GroupBy(u => string.Join('|', u.Permissions));
+
+            var now = DateTime.UtcNow;
+            foreach (var group in updateGroups)
+            {
+                var groupUserIds = group.Select(u => u.UserId).ToArray();
+                var permissions = group.First().Permissions;
+
+                await dbContext.UserAuthorizationSnapshots
+                    .Where(s => groupUserIds.Contains(s.UserId))
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(s => s.Permissions, permissions)
+                        .SetProperty(s => s.Version, s => s.Version + 1)
+                        .SetProperty(s => s.UpdatedAt, now), ct);
+            }
+
+            // First-ever authorization change for these accounts - no snapshot row exists yet
+            // (UserAuthorizationSnapshot is created lazily, not at User creation), so there is
+            // nothing for ExecuteUpdateAsync to match. Inserted directly rather than loading/
+            // tracking the owning User aggregate, keeping this path batch-sized too.
+            var missing = normalized.Where(u => !existingUserIds.Contains(u.UserId)).ToList();
+            if (missing.Count > 0)
+            {
+                var newSnapshots = missing.Select(u =>
+                {
+                    var snapshot = UserAuthorizationSnapshot.Create(u.UserId);
+                    snapshot.Rebuild(u.Permissions);
+                    return snapshot;
+                });
+
+                await dbContext.UserAuthorizationSnapshots.AddRangeAsync(newSnapshots, ct);
+            }
+        }
+
         await unitOfWork.SaveChangesAsync(ct);
     }
 

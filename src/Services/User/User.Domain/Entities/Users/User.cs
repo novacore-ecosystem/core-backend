@@ -693,24 +693,6 @@ public sealed class User : AggregateRoot<Guid>, IAuditable, ITenantEntity, ISoft
     #endregion
 
     // ============================================================================
-    // Authorization snapshot
-    // Manages the owned 1:1 UserAuthorizationSnapshot - Auth's security permission
-    // projection (see UserAuthorizationSnapshot's class doc comment for why this
-    // is not the same thing as PermissionSnapshot above). Rebuilt only by the
-    // AccountEffectivePermissionsChangedIntegrationEvent consumer.
-    // ============================================================================
-
-    #region Authorization snapshot
-
-    public void RebuildAuthorizationSnapshot(IReadOnlyList<string> permissions)
-    {
-        AuthorizationSnapshot ??= UserAuthorizationSnapshot.Create(Id);
-        AuthorizationSnapshot.Rebuild(permissions);
-    }
-
-    #endregion
-
-    // ============================================================================
     // Tags
     // Manages the owned UserTagMapping join collection linking this User to
     // independent UserTag aggregates (segmentation, not membership/loyalty).
