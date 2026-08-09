@@ -11,4 +11,9 @@ public interface IUserReadService
 
     /// <summary>Paged, ordered read of every User - used only by RebuildUserSearchIndex's batch loop.</summary>
     Task<IReadOnlyList<UserReadModel>> GetAllAsync(int skip, int take, CancellationToken ct = default);
+
+    /// <summary>Auth's security permission projection (UserAuthorizationSnapshot - not the
+    /// business-segmentation UserPermissionSnapshot, see that entity's class doc comment). Empty
+    /// if no snapshot has been built yet (no authorization event received for this User).</summary>
+    Task<IReadOnlyList<string>> GetEffectivePermissionsAsync(Guid userId, CancellationToken ct = default);
 }

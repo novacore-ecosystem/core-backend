@@ -29,6 +29,7 @@ public sealed class User : AggregateRoot<Guid>, IAuditable, ITenantEntity, ISoft
     public UserActivitySummary? ActivitySummary { get; private set; }
     public ICollection<UserRoleAssignment> RoleAssignments { get; private set; } = [];
     public UserPermissionSnapshot? PermissionSnapshot { get; private set; }
+    public UserAuthorizationSnapshot? AuthorizationSnapshot { get; private set; }
     public ICollection<UserTagMapping> TagMappings { get; private set; } = [];
 
     public Guid TenantId { get; private set; }
@@ -687,6 +688,24 @@ public sealed class User : AggregateRoot<Guid>, IAuditable, ITenantEntity, ISoft
     {
         PermissionSnapshot ??= UserPermissionSnapshot.Create(Id);
         PermissionSnapshot.Rebuild(mergedPermissions);
+    }
+
+    #endregion
+
+    // ============================================================================
+    // Authorization snapshot
+    // Manages the owned 1:1 UserAuthorizationSnapshot - Auth's security permission
+    // projection (see UserAuthorizationSnapshot's class doc comment for why this
+    // is not the same thing as PermissionSnapshot above). Rebuilt only by the
+    // AccountEffectivePermissionsChangedIntegrationEvent consumer.
+    // ============================================================================
+
+    #region Authorization snapshot
+
+    public void RebuildAuthorizationSnapshot(IReadOnlyList<string> permissions)
+    {
+        AuthorizationSnapshot ??= UserAuthorizationSnapshot.Create(Id);
+        AuthorizationSnapshot.Rebuild(permissions);
     }
 
     #endregion

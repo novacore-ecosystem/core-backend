@@ -741,6 +741,53 @@ namespace NovaCore.User.Persistence.Storage.Migrations
                     b.ToTable("user_addresses", (string)null);
                 });
 
+            modelBuilder.Entity("NovaCore.User.Domain.Entities.Users.UserAuthorizationSnapshot", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string[]>("Permissions")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("permissions");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<int>("Version")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("version");
+
+                    b.HasKey("UserId")
+                        .HasName("pk_user_authorization_snapshots");
+
+                    b.HasIndex("Permissions")
+                        .HasDatabaseName("ix_user_authorization_snapshots_permissions");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Permissions"), "gin");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_user_authorization_snapshots_tenant_id");
+
+                    b.ToTable("user_authorization_snapshots", (string)null);
+                });
+
             modelBuilder.Entity("NovaCore.User.Domain.Entities.Users.UserAvatar", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -1802,6 +1849,18 @@ namespace NovaCore.User.Persistence.Storage.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("NovaCore.User.Domain.Entities.Users.UserAuthorizationSnapshot", b =>
+                {
+                    b.HasOne("NovaCore.User.Domain.Entities.Users.User", "User")
+                        .WithOne("AuthorizationSnapshot")
+                        .HasForeignKey("NovaCore.User.Domain.Entities.Users.UserAuthorizationSnapshot", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_authorization_snapshots_users_user_id");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("NovaCore.User.Domain.Entities.Users.UserAvatar", b =>
                 {
                     b.HasOne("NovaCore.User.Domain.Entities.Users.User", "User")
@@ -2032,6 +2091,8 @@ namespace NovaCore.User.Persistence.Storage.Migrations
                     b.Navigation("ActivitySummary");
 
                     b.Navigation("Addresses");
+
+                    b.Navigation("AuthorizationSnapshot");
 
                     b.Navigation("Avatar");
 

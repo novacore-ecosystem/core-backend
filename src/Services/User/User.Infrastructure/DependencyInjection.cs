@@ -67,6 +67,7 @@ public static class DependencyInjection
         services.AddScoped<IIntegrationEventConsumer, UserAccountDeletionIntegrationEventConsumer>();
         services.AddScoped<IIntegrationEventConsumer, UserProfileCreatedSearchSyncConsumer>();
         services.AddScoped<IIntegrationEventConsumer, UserProfileUpdatedSearchSyncConsumer>();
+        services.AddScoped<IIntegrationEventConsumer, AccountEffectivePermissionsChangedConsumer>();
 
         return services;
     }

@@ -87,6 +87,11 @@ public sealed class UserConfig : IEntityTypeConfiguration<UserEntity>
             .HasForeignKey<UserPermissionSnapshot>(p => p.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasOne(x => x.AuthorizationSnapshot)
+            .WithOne(a => a.User)
+            .HasForeignKey<UserAuthorizationSnapshot>(a => a.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasMany(x => x.Addresses)
             .WithOne(a => a.User)
             .HasForeignKey(a => a.UserId)

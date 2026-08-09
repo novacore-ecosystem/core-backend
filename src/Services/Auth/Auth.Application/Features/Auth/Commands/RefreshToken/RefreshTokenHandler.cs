@@ -1,7 +1,7 @@
 using NovaCore.Auth.Application.Abstractions.Auth;
+using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
-using NovaCore.Auth.Application.Security;
 
 using NovaCore.BuildingBlock.Domain.Enums;
 using NovaCore.BuildingBlock.SharedKernel.Extensions;
@@ -12,6 +12,7 @@ public sealed class RefreshTokenHandler(
     IJwtTokenGenerator tokenGenerator,
     IRefreshTokenService refreshTokenService,
     IAuthService authService,
+    IEffectivePermissionReadService effectivePermissionReadService,
     ICurrentUserService currentUserService) : ICommandHandler<RefreshTokenCommand>
 {
     public async Task Handle(RefreshTokenCommand request, CancellationToken ct = default)
@@ -29,7 +30,7 @@ public sealed class RefreshTokenHandler(
 
         var jwtId = Guid.NewGuid();
         var roles = await authService.GetUserRolesAsync(user.Id, ct);
-        var permissions = RolePermissionMap.Resolve(roles);
+        var permissions = await effectivePermissionReadService.GetEffectivePermissionsAsync(user.Id, user.TenantId, ct);
         var accessToken = tokenGenerator.GenerateAccessToken(
             userId: user.Id,
             email: user.Email!,

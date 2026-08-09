@@ -20,6 +20,8 @@
 | POST | `/logout` | `Logout.cs` | Revoke refresh token, clear cookies |
 | POST | `/refresh-token` | `RefreshToken.cs` | Reads `RefreshToken` cookie, validates against Redis, issues new tokens. **Also filtered at the Gateway** — see [gateway.md](gateway.md) |
 | GET | `/tenants` | `ListTenants.cs` | Root-only. Tenant discovery/selection list for the Root Portal |
+| POST/GET/PUT/DELETE | `/roles`, `/roles/{id}`, `/roles/{id}/permissions` | `CreateRole.cs`/`ListRoles.cs`/`GetRole.cs`/`UpdateRole.cs`/`UpdateRolePermissions.cs`/`DeleteRole.cs` | Role CRUD + permission-set replacement, `role:view`/`role:manage` |
+| GET/PUT/DELETE | `/permissions`, `/permissions/{id}` | `ListPermissions.cs`/`GetPermission.cs`/`UpdatePermission.cs`/`DeletePermission.cs` | Permission catalog read + regroup + delete (system permissions blocked), `permission:view`/`permission:manage` |
 
 ## DI composition (`Auth.API/DependencyInjection.cs`, `Auth.API/ApplicationPipeline.cs`)
 
@@ -226,6 +228,103 @@ decisions below); everything else preserves Login/Refresh/Logout's existing beha
 - **Explicitly out of scope, unchanged from Phase 1's list**: `PublicKey` revocation enforcement
   (Redis/Gateway), Redis Pub/Sub cache sync, tenant impersonation/investigation, tenant
   subdomain/custom-domain routing, and tenant-scoped self-registration.
+
+## Authorization foundation (Phase 3)
+
+Introduced 2026-08-09. Replaces `RolePermissionMap`'s hard-coded C# switch with the real,
+DB-backed `Permission -> Role -> RolePermission[]` graph already modeled in `Auth.Domain` since
+before this phase (nothing new there) - this phase seeds it, resolves it, exposes it through a
+management API, and propagates changes to User Service. **No `RoleGroup` was introduced anywhere**
+- `Role` groups permissions, `Position` remains the sole organizational-hierarchy concept, exactly
+as before.
+
+- **Global vs tenant-scoped, confirmed by audit, not changed**: `Role`/`PermissionDefinition`/
+  `PermissionGroup` have no `TenantId` - one shared, platform-wide catalog. `RolePermission`/
+  `PositionRole`/`AccountPosition` all already implemented `ITenantEntity` before this phase - the
+  *grant* of a Role's permissions is tenant-scoped even though the Role/Permission identities
+  themselves are global. This phase's seeding and resolution code only had to use that shape
+  correctly, not invent it.
+- **`Permissions.User`** (`"system:user"`) added next to the existing `Permissions.Root`
+  (`"system:root"`) - the two mandatory permissions. Plus `Permissions.Role.{View,Manage,Full}` and
+  `Permissions.Permission.{View,Manage,Full}` for the new management API below.
+- **`PermissionCatalogSeeder`** (new) seeds one `PermissionGroup` per `Permissions.cs` module and
+  one `PermissionDefinition` per `Permissions.SupportedValues` entry - mechanical, driven entirely
+  by already-declared constants, not a second permission-definition system. **`RolePermissionSeeder`**
+  (new) then grants the seeded Root/Admin/User system Roles their `RolePermission` rows, exactly
+  mirroring `RolePermissionMap`'s former mapping for Root/Admin (no regression) plus the new
+  `Permissions.User` grant on the `User` role (previously empty). Both run via
+  `TenantAssignmentInterceptor` like any other write, so every seeded grant lands on
+  `TenantId == Guid.Empty` - Root/global scope, matching `Account`'s own seeded Root row.
+- **`PermissionDefinition.MoveToGroup` no longer blocks `IsSystemPermission`** - only deletion is
+  blocked (in `DeletePermissionHandler`, the one place deletion is possible; `PermissionDefinition`
+  has no Domain-level Delete method to guard itself). This is a deliberate Phase 3 correction: the
+  "`root`/`user` can be updated, cannot be deleted" invariant does not mean *no* mutation, and the
+  prior blanket guard on `MoveToGroup` was stricter than required.
+- **`IEffectivePermissionReadService`** (new, `Auth.Persistence/Contexts/Authorization/`) replaces
+  `RolePermissionMap.Resolve(roles)` everywhere it was called (`LoginHandler`/`RefreshTokenHandler`/
+  `RegisterHandler`, now deleted). `GetEffectivePermissionsAsync(accountId, tenantId)` unions direct
+  `AccountRole` grants with Position-derived ones (`AccountPosition` -> `Position` -> `PositionRole`),
+  then resolves `RolePermission` -> `PermissionDefinition.Key`, deduplicated. `tenantId` is always
+  an explicit parameter, never `RequestContext.Current` - the primary caller (Login) resolves this
+  before any tenant claim exists, and `AccountPosition`/`PositionRole`/`RolePermission` are all
+  `ITenantEntity`, so the query uses `IgnoreQueryFilters()` + an explicit `TenantId` equality
+  instead of the ambient automatic filter (first real use of that escape hatch in this codebase -
+  Phase 1/2 avoided it entirely by not implementing `ITenantEntity` on `TenantClient`/`Account`).
+  **All three `GenerateAccessToken` call sites now pass every argument by name** - the old
+  positional call (`..., permissions, jwtId)`) would otherwise have silently bound `jwtId` into the
+  new `tenantId` parameter (both `Guid`/`Guid?` in the same position) and left `jti` unset, caught
+  during this phase's own review before it shipped.
+- **Role/Permission management API** (`Auth.API/Endpoints/{Create,List,Get,Update,Delete}Role*.cs`,
+  `{List,Get,Update,Delete}Permission.cs`) - standard Read/Write-Service CRUD, same shape as every
+  other Auth aggregate. `PUT /roles/{id}/permissions` replaces a Role's permission set wholesale
+  (client sends the desired `PermissionKey[]`, the handler diffs against current grants and applies
+  `AssignPermission`/`RemovePermission` internally) rather than separate assign/remove endpoints.
+  `DeleteRoleHandler`/`DeletePermissionHandler` block deletion of `IsSystemRole`/`IsSystemPermission`
+  rows. Protected by the new `role:*`/`permission:*` permissions - Root satisfies these
+  automatically (`Permissions.Root` bypasses every check).
+- **`AccountEffectivePermissionsChangedIntegrationEvent`** (new,
+  `BuildingBlock.Contract/Events/User/`) - published by `UpdateRolePermissionsHandler` for every
+  Account holding the changed Role (directly or via an effective Position), carrying the
+  already-recomputed, final permission array. **Two-phase commit, not one atomic transaction**: the
+  `RolePermission` mutation commits first (`RoleWriteService` self-commits, matching every other
+  Auth Write Service), then affected Accounts' recomputed permissions are enqueued as a second
+  `SaveChangesAsync` - the usual Outbox atomicity guarantee is deliberately traded away here,
+  documented in `UpdateRolePermissionsHandler`'s own class doc comment. Direct `AccountRole`
+  assignment (outside Register's fixed "User" role grant) has no dedicated admin endpoint yet, so
+  it does not publish this event - an explicitly deferred gap, not an oversight.
+- **User Service**: new `UserAuthorizationSnapshot` (`User.Domain/Entities/Users/`, 1:1 owned,
+  `text[]` + GIN index, same shape as the pre-existing `UserPermissionSnapshot`) stores Auth's
+  security permission projection. **Deliberately a new type, not a reuse of
+  `UserPermissionSnapshot`/`UserRole`/`PermissionCollection`** - those are User's own, independent,
+  already-documented-as-unrelated business-segmentation concept (see
+  [user-service.md](user-service.md#denormalized-roles): "the two happen to share the word 'Roles'
+  but nothing else"), confirmed unwired and untouched by this phase. New
+  `AccountEffectivePermissionsChangedConsumer` (`User.Infrastructure/Messaging/Consumers/`)
+  deserializes the integration event and dispatches an internal `OnAccountEffectivePermissionsChangedEvent`
+  (mirroring every other User consumer's shape, e.g. `UserAccountDeletionIntegrationEventConsumer`)
+  → `IUserWriteService.RebuildAuthorizationSnapshotAsync` stores the array verbatim; User never
+  recomputes or queries Auth's Role/RolePermission graph itself.
+  `GetUserDetailResponse.Permissions` (new field, direct uncached DB read via
+  `IUserReadService.GetEffectivePermissionsAsync`) - a client-side UI-behavior signal only, never
+  the server-side authorization boundary, same caveat as `Roles`.
+- **Migration**: Auth has none this phase (seeding only, no schema change - confirmed via
+  `dotnet ef migrations has-pending-model-changes`). User:
+  `20260809085343_AddUserAuthorizationSnapshot` (new table, additive only). Neither applied to any
+  database.
+- **Deferred / explicitly out of scope**: Position management API (audited - existing Domain shape
+  is already sufficient for the resolver's needs, no gap found, no new endpoints built), direct
+  `AccountRole` assignment propagating this event, `RoleUpdated`/`RoleDeleted`-triggered propagation
+  (only `RolePermission` changes propagate), any caching layer for
+  `IUserReadService.GetEffectivePermissionsAsync` (kept as a plain DB read, matching how `Roles`
+  worked before `IRoleCacheReader` existed), Root Tenant Management / Bootstrap / Configuration /
+  Dictionary APIs.
+- **Found, not fixed (pre-existing, unrelated)**: `UserWriteService`'s constructor injects
+  `IRepository<UserEntity, Guid>`, but only `IRepository<TEntity>` (no `TId` overload) is ever
+  Scrutor-registered anywhere in this codebase (`AddScopedByInterface(typeof(IRepository<>), ...)`
+  only matches the single-generic interface) - this may be an unresolvable DI dependency on
+  existing, unrelated methods (`UpdateProfileDetailsAsync`/`DeleteAsync`). This phase's own new
+  `RebuildAuthorizationSnapshotAsync` reuses the same injected `repo` field for consistency (no
+  worse off than the rest of the class) but was not the place to investigate or fix this further.
 
 ## Known state
 

@@ -16,6 +16,24 @@ public static class Permissions
 {
     public const string Root = "system:root";
 
+    /// <summary>The foundational Tenant/Client user capability - every authenticated non-Root
+    /// account carries this. Distinct from Users.* below (managing OTHER users' accounts).</summary>
+    public const string User = "system:user";
+
+    public static class Role
+    {
+        public const string View = "role:view";
+        public const string Manage = "role:manage";
+        public const string Full = "role:full";
+    }
+
+    public static class Permission
+    {
+        public const string View = "permission:view";
+        public const string Manage = "permission:manage";
+        public const string Full = "permission:full";
+    }
+
     public static class Product
     {
         public const string Manage = "product:manage";
@@ -87,6 +105,9 @@ public static class Permissions
     public static readonly FrozenSet<string> SupportedValues = new[]
     {
         Root,
+        User,
+        Role.View, Role.Manage, Role.Full,
+        Permission.View, Permission.Manage, Permission.Full,
         Product.Manage, Product.Reindex, Product.Full,
         Inventory.View, Inventory.StockMove, Inventory.Adjust, Inventory.Receive, Inventory.Transfer, Inventory.CycleCount, Inventory.Full,
         Warehouse.View, Warehouse.Manage, Warehouse.Full,

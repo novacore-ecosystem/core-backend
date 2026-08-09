@@ -1,8 +1,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
+using NovaCore.Auth.Application.Abstractions.Persistence.Permissions;
 using NovaCore.Auth.Application.Abstractions.Persistence.RefreshTokens;
+using NovaCore.Auth.Application.Abstractions.Persistence.Roles;
 using NovaCore.Auth.Application.Abstractions.Persistence.Scopes;
 using NovaCore.Auth.Application.Abstractions.Persistence.TenantClients;
 using NovaCore.Auth.Application.Abstractions.Persistence.Tenants;
@@ -15,6 +18,11 @@ using NovaCore.Auth.Domain.Entities.Scopes;
 using NovaCore.Auth.Domain.Entities.TenantClients;
 using NovaCore.Auth.Domain.Entities.Tenants;
 using NovaCore.Auth.Persistence.Contexts.Accounts.Read;
+using NovaCore.Auth.Persistence.Contexts.Authorization.Read;
+using NovaCore.Auth.Persistence.Contexts.Permissions.Read;
+using NovaCore.Auth.Persistence.Contexts.Permissions.Write;
+using NovaCore.Auth.Persistence.Contexts.Roles.Read;
+using NovaCore.Auth.Persistence.Contexts.Roles.Write;
 using NovaCore.Auth.Persistence.Contexts.Accounts.Repositories;
 using NovaCore.Auth.Persistence.Contexts.Accounts.Write;
 using NovaCore.Auth.Persistence.Contexts.RefreshTokens.Read;
@@ -188,6 +196,17 @@ public static class DependencyInjection
 
         services.AddScoped<ITenantClientReadService, TenantClientReadService>();
         services.AddScoped<ITenantClientWriteService, TenantClientWriteService>();
+
+        services.AddScoped<IEffectivePermissionReadService, EffectivePermissionReadService>();
+
+        // RoleRepo/PermissionDefinitionRepo implement the generic IRepository<T> in full (via
+        // AuthBaseRepository), so they're Scrutor-scanned; only their Read/Write services are
+        // registered explicitly.
+        services.AddScoped<IRoleReadService, RoleReadService>();
+        services.AddScoped<IRoleWriteService, RoleWriteService>();
+
+        services.AddScoped<IPermissionReadService, PermissionReadService>();
+        services.AddScoped<IPermissionWriteService, PermissionWriteService>();
 
         return services;
     }

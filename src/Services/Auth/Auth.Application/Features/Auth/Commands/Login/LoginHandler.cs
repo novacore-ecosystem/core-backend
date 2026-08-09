@@ -1,9 +1,9 @@
 using NovaCore.Auth.Application.Abstractions.Auth;
+using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
 using NovaCore.Auth.Application.Abstractions.Persistence.TenantClients;
 using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
-using NovaCore.Auth.Application.Security;
 
 namespace NovaCore.Auth.Application.Features.Auth.Commands.Login;
 
@@ -11,6 +11,7 @@ public sealed class LoginHandler(
     ITenantClientReadService tenantClientReadService,
     IAccountReadService accountReadService,
     IAuthService authService,
+    IEffectivePermissionReadService effectivePermissionReadService,
     IJwtTokenGenerator tokenGenerator,
     IRefreshTokenService refreshTokenService,
     ICurrentUserService currentUserService) : ICommandHandler<LoginCommand, LoginResult>
@@ -35,7 +36,7 @@ public sealed class LoginHandler(
 
         var jwtId = Guid.NewGuid();
         var roles = await authService.GetUserRolesAsync(user.Id, ct);
-        var permissions = RolePermissionMap.Resolve(roles);
+        var permissions = await effectivePermissionReadService.GetEffectivePermissionsAsync(user.Id, tenantId, ct);
         var accessToken = tokenGenerator.GenerateAccessToken(
             userId: user.Id,
             email: user.Email!,

@@ -20,6 +20,8 @@ public class DatabaseSeeder(
 
             await ApplyMigrationsAsync();
             await SeedRolesAsync();
+            await SeedPermissionCatalogAsync();
+            await SeedRolePermissionsAsync();
             await SeedAccountsAsync();
             await SeedTenantClientsAsync();
 
@@ -54,6 +56,22 @@ public class DatabaseSeeder(
         var roleSeeder = new RoleSeeder(context);
         await roleSeeder.SeedAsync();
         logger.LogInformation("Roles seeded successfully");
+    }
+
+    private async Task SeedPermissionCatalogAsync()
+    {
+        logger.LogInformation("Seeding permission catalog...");
+        var permissionCatalogSeeder = new PermissionCatalogSeeder(context);
+        await permissionCatalogSeeder.SeedAsync();
+        logger.LogInformation("Permission catalog seeded successfully");
+    }
+
+    private async Task SeedRolePermissionsAsync()
+    {
+        logger.LogInformation("Seeding role permissions...");
+        var rolePermissionSeeder = new RolePermissionSeeder(context);
+        await rolePermissionSeeder.SeedAsync();
+        logger.LogInformation("Role permissions seeded successfully");
     }
 
     private async Task SeedAccountsAsync()

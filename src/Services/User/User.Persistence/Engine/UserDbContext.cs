@@ -24,6 +24,7 @@ public sealed class UserDbContext(DbContextOptions<UserDbContext> options)
     public DbSet<UserVerification> UserVerifications { get; set; } = null!;
     public DbSet<UserRoleAssignment> UserRoleAssignments { get; set; } = null!;
     public DbSet<UserPermissionSnapshot> UserPermissionSnapshots { get; set; } = null!;
+    public DbSet<UserAuthorizationSnapshot> UserAuthorizationSnapshots { get; set; } = null!;
     public DbSet<UserTagMapping> UserTagMappings { get; set; } = null!;
 
     public DbSet<UserRole> UserRoles { get; set; } = null!;

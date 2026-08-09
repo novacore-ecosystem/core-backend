@@ -15,4 +15,9 @@ public interface IUserWriteService
     Task DeleteAsync(Guid id, CancellationToken ct = default);
 
     Task<int> DeleteWithNoTrackingAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Rebuilds UserAuthorizationSnapshot (Auth's security permission projection - not
+    /// UserPermissionSnapshot, see UserAuthorizationSnapshot's class doc comment). Called only by
+    /// the AccountEffectivePermissionsChangedIntegrationEvent consumer.</summary>
+    Task RebuildAuthorizationSnapshotAsync(Guid userId, IReadOnlyList<string> permissions, CancellationToken ct = default);
 }

@@ -63,6 +63,16 @@ public sealed class UserWriteService(
         return await repo.DeleteWithNoTrackingAsync(u => u.Id == id, ct);
     }
 
+    public async Task RebuildAuthorizationSnapshotAsync(Guid userId, IReadOnlyList<string> permissions, CancellationToken ct = default)
+    {
+        await repo.UpdateAsync(
+            u => u.Id == userId,
+            q => q.Include(u => u.AuthorizationSnapshot),
+            user => user.RebuildAuthorizationSnapshot(permissions),
+            ct);
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+
     // Freshly-created, not queried back - Roles is intentionally empty here (a just-added
     // UserRoleAssignment has no loaded Role navigation to read Key from), which is fine since
     // neither CreateUserHandler nor OnUserInitiatedHandler read Roles off the returned model.

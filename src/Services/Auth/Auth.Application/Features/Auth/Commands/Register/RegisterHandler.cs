@@ -1,14 +1,15 @@
 using NovaCore.Auth.Application.Abstractions.Auth;
+using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
 using NovaCore.Auth.Application.Features.Auth.Events.OnUserRegistered;
-using NovaCore.Auth.Application.Security;
 
 namespace NovaCore.Auth.Application.Features.Auth.Commands.Register;
 
 public sealed class RegisterHandler(
     IUnitOfWork unitOfWork,
     IAuthService authService,
+    IEffectivePermissionReadService effectivePermissionReadService,
     IJwtTokenGenerator tokenGenerator,
     IRefreshTokenService refreshTokenService,
     ICurrentUserService currentUserService,
@@ -68,7 +69,7 @@ public sealed class RegisterHandler(
         // Generate AccessToken and Refresh Token which are set to HttpOnly
         var jwtId = Guid.NewGuid();
         var roles = await authService.GetUserRolesAsync(account.Id, ct);
-        var permissions = RolePermissionMap.Resolve(roles);
+        var permissions = await effectivePermissionReadService.GetEffectivePermissionsAsync(account.Id, account.TenantId, ct);
         var accessToken = tokenGenerator.GenerateAccessToken(
             userId: account.Id,
             email: account.Email!,

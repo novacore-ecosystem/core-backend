@@ -67,17 +67,17 @@ public sealed class PermissionDefinition : AggregateRoot<Guid>, IAuditable
 
     // ============================================================================
     // Details
-    // Regrouping and system-permission protection. Key has no change method -
-    // it is the stable identifier baked into JWT claims and policy checks.
+    // Regrouping. Key has no change method - it is the stable identifier baked
+    // into JWT claims and policy checks. IsSystemPermission only blocks deletion
+    // (see Application-layer DeletePermissionHandler) - a system permission can
+    // still be regrouped/updated like any other, per the "can update, cannot
+    // delete" invariant documented on Permissions.Root/Permissions.User.
     // ============================================================================
 
     #region Details
 
     public void MoveToGroup(Guid permissionGroupId)
     {
-        if (IsSystemPermission)
-            throw ExceptionFactory.InvalidState("Cannot regroup a system permission.");
-
         PermissionGroupId = permissionGroupId;
     }
 

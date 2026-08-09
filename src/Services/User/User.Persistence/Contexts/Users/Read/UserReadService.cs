@@ -40,6 +40,15 @@ public sealed class UserReadService(UserDbContext dbContext) : IUserReadService
             .ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<string>> GetEffectivePermissionsAsync(Guid userId, CancellationToken ct = default)
+    {
+        return await dbContext.UserAuthorizationSnapshots
+            .AsNoTracking()
+            .Where(s => s.UserId == userId)
+            .SelectMany(s => s.Permissions)
+            .ToListAsync(ct);
+    }
+
     // Email/PhoneNumber resolve to the primary contact of that type (falling back to any contact
     // of that type if none is marked primary) - the aggregate no longer stores them as columns.
     private static readonly System.Linq.Expressions.Expression<Func<UserEntity, UserReadModel>> ToReadModel = u => new UserReadModel(

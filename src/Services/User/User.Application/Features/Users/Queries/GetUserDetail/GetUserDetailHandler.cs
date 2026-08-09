@@ -10,6 +10,7 @@ public sealed class GetUserDetailHandler(
     ICurrentLocaleService currentLocale,
     IUserProfileDetailCache userProfileCache,
     IRoleCacheReader roleCacheReader,
+    IUserReadService userReadService,
     IUserDisplayNameFormatter displayNameFormatter) : IQueryHandler<GetUserDetailQuery, GetUserDetailResponse>
 {
     public async Task<GetUserDetailResponse> Handle(GetUserDetailQuery request, CancellationToken ct = default)
@@ -24,6 +25,13 @@ public sealed class GetUserDetailHandler(
         // cache below - kept unchanged from before this cache existed, since they're two
         // different caches with two different owners (see docs/reference/caching.md).
         var roles = await roleCacheReader.GetUserRolesAsync(userId, ct);
+
+        // Auth's security permission projection (UserAuthorizationSnapshot) - a direct,
+        // uncached DB read for now, same as Roles was before IRoleCacheReader existed. UI-only
+        // signal (see docs/services/auth-service.md, Phase 3) - never the server-side
+        // authorization boundary.
+        var permissions = await userReadService.GetEffectivePermissionsAsync(userId, ct);
+
         var displayName = displayNameFormatter.Format(user.FirstName, user.MiddleName, user.LastName, currentLocale.GetLocale());
 
         return new GetUserDetailResponse(
@@ -37,6 +45,7 @@ public sealed class GetUserDetailHandler(
             displayName,
             user.Status,
             roles,
+            permissions,
             user.CreatedAt,
             user.UpdatedAt);
     }

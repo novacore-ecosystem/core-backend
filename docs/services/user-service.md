@@ -46,6 +46,23 @@ User was the reference implementation (Phase 1) for the [persistence Read/Write 
 
 `CreateUserCommand.Roles`/`UserProfileCreatedIntegrationEvent.Roles` (`string[]`) are **Auth's own Identity role names** (`AccountRole`/`Role.Name`, e.g. `"Root"`/`"Admin"`/`"User"`) passed straight through from the admin-facing `CreateUser` endpoint to Auth's `UserCreatedIntegrationEventConsumer`, which assigns them to the newly-created `Account`. This is a *different* concept from `User.Domain`'s own `UserRole`/`UserRoleAssignment` (an independent business-segmentation aggregate local to User service — e.g. customer-support bundles — surfaced read-only via `UserReadModel.Roles`/`/users/search`'s `role` filter). The two happen to share the word "Roles" but nothing else. `CreateUserHandler` used to validate the incoming string array against `AppRoleConstant.SupportedRoles` and enforce "only Root may grant Admin" — both removed 2026-08-04 (User service has no authority over which Auth role names are valid or grantable; that belongs to Auth's own Role/Position admin surface, which this endpoint should eventually delegate to rather than re-implement). **Not yet functional**: nothing currently populates `CreateUserCommand.Roles`/`RoleIds` from a real admin-facing Role/Position picker — wiring that (once Auth exposes the right admin API) is tracked as future work, not started.
 
+## Authorization projection (added 2026-08-09, Auth Phase 3)
+
+`UserAuthorizationSnapshot` (`User.Domain/Entities/Users/`, 1:1 owned, `text[]` + GIN index) caches
+Auth's real, security-relevant effective permission set (e.g. `"system:root"`) - **not** the same
+thing as `UserPermissionSnapshot`/`UserRole`/`PermissionCollection` above, which is this service's
+own independent business-segmentation concept. Kept as two separate types on purpose, same
+reasoning as the "Denormalized Roles" split. Synced one-way: Auth computes and owns the merge,
+publishes `AccountEffectivePermissionsChangedIntegrationEvent`
+(`BuildingBlock.Contract/Events/User/`) whenever it changes;
+`AccountEffectivePermissionsChangedConsumer` (`User.Infrastructure/Messaging/Consumers/`)
+dispatches an internal event that calls `IUserWriteService.RebuildAuthorizationSnapshotAsync` to
+store the array verbatim - User never recomputes or queries Auth's Role graph itself.
+`GetUserDetailResponse.Permissions` (`GetUserDetailHandler`) reads it via a plain, uncached
+`IUserReadService.GetEffectivePermissionsAsync` call - a client-side UI-behavior signal only, same
+caveat as the existing `Roles` field (server-side authorization is never based on this). See
+[auth-service.md](auth-service.md#authorization-foundation-phase-3) for the Auth-side detail.
+
 ## Known issues
 
 - Mapster registered but unused, same as Auth — see [04-coding-rules.md](../04-coding-rules.md#mapping).

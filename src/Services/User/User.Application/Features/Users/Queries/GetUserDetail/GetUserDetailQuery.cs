@@ -13,5 +13,6 @@ public sealed record GetUserDetailResponse(
     string DisplayName,
     UserStatus Status,
     IReadOnlyList<string> Roles,
+    IReadOnlyList<string> Permissions,
     DateTime CreatedAt,
     DateTime UpdatedAt);
