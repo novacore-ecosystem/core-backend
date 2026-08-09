@@ -4,6 +4,7 @@ using NovaCore.Auth.Domain.Entities.Permissions;
 using NovaCore.Auth.Domain.Entities.Positions;
 using NovaCore.Auth.Domain.Entities.Roles;
 using NovaCore.Auth.Domain.Entities.Scopes;
+using NovaCore.Auth.Domain.Entities.TenantClients;
 using NovaCore.Auth.Domain.Entities.Tenants;
 using NovaCore.Auth.Domain.Entities.TokenBlacklists;
 
@@ -63,6 +64,7 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
 
     public DbSet<Tenant> Tenants { get; set; } = null!;
     public DbSet<TenantLocale> TenantLocales { get; set; } = null!;
+    public DbSet<TenantClient> TenantClients { get; set; } = null!;
 
     public DbSet<Scope> Scopes { get; set; } = null!;
     public DbSet<ScopeTranslation> ScopeTranslations { get; set; } = null!;

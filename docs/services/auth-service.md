@@ -91,6 +91,59 @@ the minimal surface inferable without a real caller yet (`GetByCodeAsync`/`Exist
 self-committing `CreateAsync`) - no CQRS commands/handlers/endpoints exist for either aggregate
 yet; that's the bootstrap-API phase.
 
+## Tenant Client / Public Key foundation (Phase 1 - domain & persistence only)
+
+Introduced 2026-08-09 as the domain/persistence groundwork for tenant public-key based client
+identification - resolving *which Tenant* an unauthenticated client belongs to, before
+username/password authentication happens: `PublicKey -> TenantClient -> TenantId -> login ->
+access token`. Scoped exactly as narrow as the Tenant Foundation phase before it - no JWT claims,
+login API, Gateway, Redis, or revocation-enforcement middleware were touched; those are later
+phases' concern.
+
+- **`TenantClient`** (`Auth.Domain/Entities/TenantClients/TenantClient.cs`, `AggregateRoot<Guid>`)
+  - an independent aggregate, one row per client credential (Web/Mobile/Admin/...) belonging to
+  exactly one `Tenant` (`TenantId`, plain FK - see below). A `Tenant` can have any number of
+  `TenantClient`s; there is no back-collection on `Tenant` (same shadow-FK shape as `Scope`, not an
+  owned child like `TenantLocale`). Fields: `Name` (admin-facing label), `PublicKey`
+  (`ClientPublicKey` VO), `Status` (`TenantClientStatus`: `Active`/`Revoked`/`Expired`),
+  `ExpiresAt` (optional), `RevokedAt`/`RevokedReason` (reuses the existing `RevocationReason`
+  enum already shared by `Session`/`RefreshToken`). `Revoke`/`MarkExpired` are idempotent no-ops
+  once already non-`Active` (same shape as `Session.Revoke`); `IsUsable()` is a computed Domain
+  invariant (`Active` and not past `ExpiresAt`), not enforcement - no Redis/Gateway check exists
+  yet, this is purely what a later resolution query would rely on.
+- **`ClientPublicKey`** (`Auth.Domain/ValueObjects/ClientPublicKey.cs`, `StringValueObject`) - a
+  32-byte (256-bit) CSPRNG value, lowercase-hex-encoded (64 chars), generated only via
+  `Generate()` (never user-supplied, never derived from `TenantId`/`TenantCode`). Not a secret -
+  intentionally safe to ship client-side; it answers "which Tenant is this," never "is this
+  request authorized."
+- **Deliberately does NOT implement `ITenantEntity`.** This is the load-bearing design decision of
+  this phase: the Entity Convention's query filter
+  (`ModelBuilderExtensions.ApplyEntityConventions`, see
+  [reference/tenant-convention.md](../reference/tenant-convention.md)) compares `TenantId` against
+  `RequestContext.Current.TenantId`, which is `Guid.Empty` for exactly the anonymous,
+  pre-authentication requests `TenantClient` exists to serve - opting in would make every
+  `PublicKey` lookup return zero rows, since no real `TenantClient` ever has `TenantId ==
+  Guid.Empty`. `TenantId` is therefore a hand-mapped column/index in `TenantClientConfig`
+  (`.Property(x => x.TenantId)` + `.HasIndex(x => x.TenantId)`), not the automatic
+  convention-driven mapping `Scope`/`TokenBlacklist`/etc. get for free. No query filter is applied
+  to `tenant_clients` at all.
+- **EF configuration** (`Auth.Persistence/Configs/TenantClientConfig.cs`): unique index on
+  `PublicKey` (the primary future lookup path), plain index on `TenantId`, composite index on
+  `(TenantId, Status)` (admin "list this tenant's active clients"). FK to `Tenant` cascades on
+  delete, same as `Scope`'s. `Status` persists as `smallint` via `.HasConversion<short>()`, same
+  pattern as `InvitationStatus`.
+- **Repo/Read-Service/Write-Service**: `ITenantClientRepository` (empty marker, Scrutor-scanned via
+  `AuthBaseRepository<TenantClient>`) + `ITenantClientReadService`
+  (`GetByPublicKeyAsync`/`ExistsByPublicKeyAsync`) + `ITenantClientWriteService`
+  (self-committing `CreateAsync`) - the exact same minimal shape as `Tenant`'s own Phase 1. No CQRS
+  commands/handlers/endpoints exist yet.
+- **Migration**: `20260809070959_AddTenantClient` - additive only (new `tenant_clients` table),
+  not applied to any database.
+- **Explicitly out of scope for this phase** (see the phase's own design doc for the full list):
+  login API changes, JWT `tenant_id` claim, `PublicKey` resolution endpoint, Redis/Gateway
+  revocation enforcement, and any `Session`/`RefreshToken` -> `TenantClient` relationship (no
+  such FK exists yet - deferred as an explicit next-phase design decision, not silently assumed).
+
 ## Known state
 
 - Mapster is registered but unused — hand-mapping is the actual convention (see [04-coding-rules.md](../04-coding-rules.md#mapping)).
