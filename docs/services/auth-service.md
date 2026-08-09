@@ -326,6 +326,60 @@ as before.
   `RebuildAuthorizationSnapshotAsync` reuses the same injected `repo` field for consistency (no
   worse off than the rest of the class) but was not the place to investigate or fix this further.
 
+## Persistence Service pattern + automatic DI (Phase 4)
+
+Introduced 2026-08-09. Two narrow objectives only: classify the authentication flow's genuine
+persistence concerns explicitly, and eliminate manual DI registration for them going forward. Not
+a new architecture, not a token-flow redesign, not a mass refactor of every existing service.
+
+- **`IPersistenceService`** (new, `BuildingBlock.Persistence/IPersistenceService.cs`) - a
+  no-member marker, placed alongside `IRepository<T>` (`BuildingBlock.Persistence/Repository/`)
+  since it's the same kind of reusable, cross-service classification concept. A class implements it
+  *in addition to* its own Application-facing interface
+  (`sealed class RoleReadService : IRoleReadService, IPersistenceService`) purely to become eligible
+  for automatic discovery - it carries no behavior of its own.
+- **No new scanner was written.** `AddScopedByInterface(Type interfaceType, params Type[]
+  assembliesToScan)` (`BuildingBlock.Application/Extensions/ServiceScanningExtensions.cs`) already
+  existed as a fully generic Scrutor helper - `IRepository<>` was just its first caller. Auth's
+  `AddPersistenceServices` (new, `Auth.Persistence/DependencyInjection.cs`) calls the exact same
+  method with `typeof(IPersistenceService)` instead - one line, same `Scoped` lifetime `IRepository<>`
+  already uses, same `AsImplementedInterfaces()` behavior (so resolving `IRoleReadService` still
+  works - the scan registers the concrete class against every interface it implements, not just the
+  marker). Any other service can adopt the identical one-line call against its own DbContext
+  assembly; nothing AuthService-specific needed duplicating.
+- **Marked (`IPersistenceService`), now auto-registered**: `AccountReadService`,
+  `RefreshTokenReadService`, `TenantClientReadService`, `EffectivePermissionReadService`,
+  `RoleReadService`, `RoleWriteService`, `PermissionReadService`, `PermissionWriteService` - each
+  represents a genuine, non-trivial data-access concern (custom filtered/joined queries, or a
+  Write Service covering an aggregate's full Create/Update/Delete lifecycle), confirmed by reading
+  every method body before marking it, not by name pattern.
+- **Deliberately NOT marked**: `AccountWriteService.DeleteIfExistAsync`,
+  `RefreshTokenWriteService.AddAsync`/`UpdateAsync`, `TenantClientWriteService.CreateAsync` - each
+  is a single-method, single-Repository-call decorator with no added responsibility (e.g.
+  `AccountWriteService.DeleteIfExistAsync` is a bare `return repo.DeleteIfExistAsync(id, ct);`) -
+  exactly the anti-pattern this phase's own spec calls out by name. They stay manually registered
+  in `AddRepositories`, unchanged.
+- **`ITenantReadService`/`ITenantWriteService`/`IScopeReadService`/`IScopeWriteService` were left
+  untouched** - pre-existing, unrelated to the authentication flow this phase scoped itself to (see
+  "do not fix every existing Persistence Service" in the phase's own spec). They remain manually
+  registered.
+- **`authService.GetUserRolesAsync` stays on `IAuthService`, not moved.** Audited per the phase's
+  own explicit example: `IAuthService` is a broad, cohesive `UserManager<Account>`-wrapping
+  Identity abstraction (`GetUserByIdAsync`, `ValidateCredentialsAsync`, `CreateUserAsync`,
+  `UpdatePasswordAsync`, `ConfirmEmailAsync`, `IsInRoleAsync`, `AssignRoleAsync`,
+  `DeleteUserAsync`, ...) that already owns this operation correctly - pulling just this one method
+  into a Persistence Service would fragment a working abstraction for no clear benefit, which the
+  phase's own spec explicitly permits declining to do.
+- **No `AuthenticationTokenService` or equivalent was created.** `LoginHandler`/
+  `RefreshTokenHandler`/`RegisterHandler` are unchanged in this phase - they already called
+  `IEffectivePermissionReadService`/`IAccountReadService`/`ITenantClientReadService` directly
+  (built across Phases 1-3), which *is* the Login flow correctly calling Persistence Services; there
+  was no leftover raw `DbContext`/inline query to extract, and no merge-multiple-calls-into-one
+  service was introduced.
+- **No token/permission/refresh-token/tenant-context behavior changed.** This phase touched zero
+  business logic - only which interface(s) five pre-existing classes implement and how they reach
+  the DI container.
+
 ## Known state
 
 - Mapster is registered but unused — hand-mapping is the actual convention (see [04-coding-rules.md](../04-coding-rules.md#mapping)).

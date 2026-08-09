@@ -4,9 +4,11 @@ using NovaCore.Auth.Application.Abstractions.Persistence.Permissions;
 using NovaCore.Auth.Domain.Entities.Permissions;
 using NovaCore.Auth.Persistence.Engine;
 
+using NovaCore.BuildingBlock.Persistence;
+
 namespace NovaCore.Auth.Persistence.Contexts.Permissions.Read;
 
-public sealed class PermissionReadService(AuthDbContext dbContext) : IPermissionReadService
+public sealed class PermissionReadService(AuthDbContext dbContext) : IPermissionReadService, IPersistenceService
 {
     public async Task<PermissionDefinition?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {

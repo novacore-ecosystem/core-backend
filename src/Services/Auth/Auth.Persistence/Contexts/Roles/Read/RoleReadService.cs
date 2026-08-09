@@ -4,9 +4,11 @@ using NovaCore.Auth.Application.Abstractions.Persistence.Roles;
 using NovaCore.Auth.Domain.Entities.Roles;
 using NovaCore.Auth.Persistence.Engine;
 
+using NovaCore.BuildingBlock.Persistence;
+
 namespace NovaCore.Auth.Persistence.Contexts.Roles.Read;
 
-public sealed class RoleReadService(AuthDbContext dbContext) : IRoleReadService
+public sealed class RoleReadService(AuthDbContext dbContext) : IRoleReadService, IPersistenceService
 {
     public async Task<Role?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {

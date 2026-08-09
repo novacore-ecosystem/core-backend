@@ -4,9 +4,11 @@ using NovaCore.Auth.Persistence.Engine;
 
 using Microsoft.EntityFrameworkCore;
 
+using NovaCore.BuildingBlock.Persistence;
+
 namespace NovaCore.Auth.Persistence.Contexts.RefreshTokens.Read;
 
-public sealed class RefreshTokenReadService(AuthDbContext dbContext) : IRefreshTokenReadService
+public sealed class RefreshTokenReadService(AuthDbContext dbContext) : IRefreshTokenReadService, IPersistenceService
 {
     public async Task<List<RefreshToken>> GetByUserIdAsync(Guid userId, CancellationToken ct = default)
     {

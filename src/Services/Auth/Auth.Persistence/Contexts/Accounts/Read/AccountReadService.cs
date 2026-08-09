@@ -4,9 +4,11 @@ using NovaCore.Auth.Persistence.Engine;
 
 using Microsoft.EntityFrameworkCore;
 
+using NovaCore.BuildingBlock.Persistence;
+
 namespace NovaCore.Auth.Persistence.Contexts.Accounts.Read;
 
-public sealed class AccountReadService(AuthDbContext dbContext) : IAccountReadService
+public sealed class AccountReadService(AuthDbContext dbContext) : IAccountReadService, IPersistenceService
 {
     public async Task<Account?> GetByEmailAsync(string email, CancellationToken ct = default)
     {

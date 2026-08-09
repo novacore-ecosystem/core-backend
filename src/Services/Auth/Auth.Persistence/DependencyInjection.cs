@@ -1,11 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
-using NovaCore.Auth.Application.Abstractions.Persistence.Permissions;
 using NovaCore.Auth.Application.Abstractions.Persistence.RefreshTokens;
-using NovaCore.Auth.Application.Abstractions.Persistence.Roles;
 using NovaCore.Auth.Application.Abstractions.Persistence.Scopes;
 using NovaCore.Auth.Application.Abstractions.Persistence.TenantClients;
 using NovaCore.Auth.Application.Abstractions.Persistence.Tenants;
@@ -17,19 +14,11 @@ using NovaCore.Auth.Domain.Entities.Roles;
 using NovaCore.Auth.Domain.Entities.Scopes;
 using NovaCore.Auth.Domain.Entities.TenantClients;
 using NovaCore.Auth.Domain.Entities.Tenants;
-using NovaCore.Auth.Persistence.Contexts.Accounts.Read;
-using NovaCore.Auth.Persistence.Contexts.Authorization.Read;
-using NovaCore.Auth.Persistence.Contexts.Permissions.Read;
-using NovaCore.Auth.Persistence.Contexts.Permissions.Write;
-using NovaCore.Auth.Persistence.Contexts.Roles.Read;
-using NovaCore.Auth.Persistence.Contexts.Roles.Write;
 using NovaCore.Auth.Persistence.Contexts.Accounts.Repositories;
 using NovaCore.Auth.Persistence.Contexts.Accounts.Write;
-using NovaCore.Auth.Persistence.Contexts.RefreshTokens.Read;
 using NovaCore.Auth.Persistence.Contexts.RefreshTokens.Write;
 using NovaCore.Auth.Persistence.Contexts.Scopes.Read;
 using NovaCore.Auth.Persistence.Contexts.Scopes.Write;
-using NovaCore.Auth.Persistence.Contexts.TenantClients.Read;
 using NovaCore.Auth.Persistence.Contexts.TenantClients.Write;
 using NovaCore.Auth.Persistence.Contexts.Tenants.Read;
 using NovaCore.Auth.Persistence.Contexts.Tenants.Write;
@@ -42,6 +31,7 @@ using NovaCore.BuildingBlock.Application.Abstractions.Outbox;
 using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
 using NovaCore.BuildingBlock.Application.Abstractions.Services;
 using NovaCore.BuildingBlock.Application.Extensions;
+using NovaCore.BuildingBlock.Persistence;
 using NovaCore.BuildingBlock.Persistence.Audit;
 using NovaCore.BuildingBlock.Persistence.Ef.DependencyInjection;
 using NovaCore.BuildingBlock.Persistence.Ef.Inbox;
@@ -70,6 +60,7 @@ public static class DependencyInjection
             .AddIdentityService()
             .AddApplicationServices()
             .AddRepositories()
+            .AddPersistenceServices()
             .AddUnitOfWork()
             .AddOutboxAndInbox()
             .AddSeeding()
@@ -174,39 +165,45 @@ public static class DependencyInjection
     // real operation, DeleteIfExistAsync, is a bulk ExecuteDeleteAsync that doesn't fit the
     // generic shape - Account mutation itself goes through ASP.NET Identity's UserManager, not
     // this repository at all), so it stays manually registered.
+    //
+    // The Write Services registered here by hand (Account/RefreshToken/TenantClient) are each a
+    // single Repository-method decorator with no meaningful grouping of their own (e.g.
+    // AccountWriteService.DeleteIfExistAsync is a bare `return repo.DeleteIfExistAsync(id, ct);`)
+    // - they deliberately do NOT implement IPersistenceService (see that interface's own "not a
+    // dumping ground" guidance) and so are not picked up by AddPersistenceServices below.
+    // Tenant/Scope are pre-existing, unrelated to this authentication-flow refactor, and were left
+    // exactly as they were rather than mass-converted.
     private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
         services.AddScopedByInterface(typeof(IRepository<>), typeof(AuthDbContext));
 
         services.AddScoped<IAccountRepository, AccountRepo>();
-        services.AddScoped<IAccountReadService, AccountReadService>();
         services.AddScoped<IAccountWriteService, AccountWriteService>();
 
-        services.AddScoped<IRefreshTokenReadService, RefreshTokenReadService>();
         services.AddScoped<IRefreshTokenWriteService, RefreshTokenWriteService>();
 
-        // TenantRepo/ScopeRepo/TenantClientRepo implement the generic IRepository<T> in full (via
-        // AuthBaseRepository), so - like RefreshTokenRepo - they're Scrutor-scanned; only their
-        // one-per-aggregate Read/Write services are registered explicitly.
         services.AddScoped<ITenantReadService, TenantReadService>();
         services.AddScoped<ITenantWriteService, TenantWriteService>();
 
         services.AddScoped<IScopeReadService, ScopeReadService>();
         services.AddScoped<IScopeWriteService, ScopeWriteService>();
 
-        services.AddScoped<ITenantClientReadService, TenantClientReadService>();
         services.AddScoped<ITenantClientWriteService, TenantClientWriteService>();
 
-        services.AddScoped<IEffectivePermissionReadService, EffectivePermissionReadService>();
+        return services;
+    }
 
-        // RoleRepo/PermissionDefinitionRepo implement the generic IRepository<T> in full (via
-        // AuthBaseRepository), so they're Scrutor-scanned; only their Read/Write services are
-        // registered explicitly.
-        services.AddScoped<IRoleReadService, RoleReadService>();
-        services.AddScoped<IRoleWriteService, RoleWriteService>();
-
-        services.AddScoped<IPermissionReadService, PermissionReadService>();
-        services.AddScoped<IPermissionWriteService, PermissionWriteService>();
+    // Persistence Services (a meaningful group of data-access operations behind an
+    // Application-facing interface - see IPersistenceService's own doc comment) are discovered
+    // automatically here via the exact same generic Scrutor helper IRepository<> uses above, just
+    // scanning for a different marker - no per-service manual registration needed. Currently:
+    // AccountReadService, RefreshTokenReadService, TenantClientReadService,
+    // EffectivePermissionReadService, RoleReadService, RoleWriteService, PermissionReadService,
+    // PermissionWriteService. A new Persistence Service only needs to implement
+    // IPersistenceService alongside its own interface to be picked up here.
+    private static IServiceCollection AddPersistenceServices(this IServiceCollection services)
+    {
+        services.AddScopedByInterface(typeof(IPersistenceService), typeof(AuthDbContext));
 
         return services;
     }

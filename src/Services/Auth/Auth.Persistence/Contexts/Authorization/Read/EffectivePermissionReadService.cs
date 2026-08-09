@@ -4,9 +4,14 @@ using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Domain.Enums;
 using NovaCore.Auth.Persistence.Engine;
 
+using NovaCore.BuildingBlock.Persistence;
+
 namespace NovaCore.Auth.Persistence.Contexts.Authorization.Read;
 
-public sealed class EffectivePermissionReadService(AuthDbContext dbContext) : IEffectivePermissionReadService
+/// <summary>The reference Persistence Service for this codebase - a meaningful, cross-aggregate
+/// authorization-data concern (Role/Position/RolePermission), not a Repository-method decorator.
+/// IPersistenceService makes it auto-registered (see Auth.Persistence/DependencyInjection.cs).</summary>
+public sealed class EffectivePermissionReadService(AuthDbContext dbContext) : IEffectivePermissionReadService, IPersistenceService
 {
     public async Task<IReadOnlySet<string>> GetEffectivePermissionsAsync(Guid accountId, Guid tenantId, CancellationToken ct = default)
     {

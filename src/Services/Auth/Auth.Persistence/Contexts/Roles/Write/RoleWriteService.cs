@@ -5,12 +5,13 @@ using NovaCore.Auth.Domain.Entities.Roles;
 using NovaCore.Auth.Persistence.Contexts.Roles.Repositories;
 
 using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
+using NovaCore.BuildingBlock.Persistence;
 
 namespace NovaCore.Auth.Persistence.Contexts.Roles.Write;
 
 public sealed class RoleWriteService(
     IRoleRepository repo,
-    IUnitOfWork unitOfWork) : IRoleWriteService
+    IUnitOfWork unitOfWork) : IRoleWriteService, IPersistenceService
 {
     public async Task CreateAsync(Role role, CancellationToken ct = default)
     {

@@ -3,12 +3,13 @@ using NovaCore.Auth.Domain.Entities.Permissions;
 using NovaCore.Auth.Persistence.Contexts.Permissions.Repositories;
 
 using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
+using NovaCore.BuildingBlock.Persistence;
 
 namespace NovaCore.Auth.Persistence.Contexts.Permissions.Write;
 
 public sealed class PermissionWriteService(
     IPermissionDefinitionRepository repo,
-    IUnitOfWork unitOfWork) : IPermissionWriteService
+    IUnitOfWork unitOfWork) : IPermissionWriteService, IPersistenceService
 {
     public async Task UpdateAsync(Guid id, Action<PermissionDefinition> update, CancellationToken ct = default)
     {
