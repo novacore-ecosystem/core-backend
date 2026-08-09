@@ -8,6 +8,13 @@ public interface IAuthService
 
     Task<bool> ValidateCredentialsAsync(string email, string password, CancellationToken ct = default);
 
+    /// <summary>Validates a password against an already-resolved Account, without re-looking it up
+    /// by email. Login must resolve the Account itself first (tenant-scoped - see
+    /// IAccountReadService.GetByEmailAsync), since the plain email-only lookup this type wraps
+    /// (UserManager.FindByEmailAsync) has no tenant awareness and could resolve a different
+    /// account than the one the caller's TenantClient PublicKey actually authorized.</summary>
+    Task<bool> ValidateCredentialsAsync(Account account, string password, CancellationToken ct = default);
+
     Task<Account?> CreateUserAsync(string email, string username, string password, CancellationToken ct = default);
 
     /// <summary>

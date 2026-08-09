@@ -29,6 +29,9 @@ public sealed class AuthService(UserManager<Account> userManager) : IAppService,
         return await _userManager.CheckPasswordAsync(user, password);
     }
 
+    public async Task<bool> ValidateCredentialsAsync(Account account, string password, CancellationToken ct = default)
+        => await _userManager.CheckPasswordAsync(account, password);
+
     public Task<Account?> CreateUserAsync(string email, string username, string password, CancellationToken ct = default)
         => CreateUserInternalAsync(Account.Create(username, Email.Create(email)), password);
 

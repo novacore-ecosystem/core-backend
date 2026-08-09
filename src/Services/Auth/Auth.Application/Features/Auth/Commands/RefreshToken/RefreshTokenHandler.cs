@@ -31,12 +31,13 @@ public sealed class RefreshTokenHandler(
         var roles = await authService.GetUserRolesAsync(user.Id, ct);
         var permissions = RolePermissionMap.Resolve(roles);
         var accessToken = tokenGenerator.GenerateAccessToken(
-            user.Id,
-            user.Email!,
-            user.UserName!,
-            roles,
-            permissions,
-            jwtId);
+            userId: user.Id,
+            email: user.Email!,
+            username: user.UserName!,
+            roles: roles,
+            permissions: permissions,
+            tenantId: user.TenantId,
+            jwtId: jwtId);
         var newRefreshToken = await refreshTokenService.GenerateRefreshTokenAsync(user.Id, jwtId, ct);
 
         currentUserService.SetAccessToken(accessToken);

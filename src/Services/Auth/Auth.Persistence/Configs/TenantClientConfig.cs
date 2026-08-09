@@ -20,8 +20,8 @@ public sealed class TenantClientConfig : IEntityTypeConfiguration<TenantClient>
         // TenantClient deliberately does not implement ITenantEntity (see class doc comment) -
         // TenantId is mapped/indexed by hand here instead of by the Entity Convention, and there
         // is no query filter, since PublicKey lookup must work before any tenant context exists.
-        builder.Property(x => x.TenantId)
-            .IsRequired();
+        // Nullable: a null TenantId is the Root client (see class doc comment).
+        builder.Property(x => x.TenantId);
 
         builder.Property(x => x.Name)
             .HasMaxLength(200)

@@ -11,21 +11,28 @@ namespace NovaCore.Auth.Domain.Entities.TenantClients;
 /// owned child of Tenant - client credentials are independently created/rotated/revoked, not
 /// bootstrap data that lives and dies with the tenant record itself.
 ///
+/// TenantId is nullable: a null TenantId is the Root client - a global identity not tied to any
+/// Tenant (see docs/services/auth-service.md, Phase 2). Root must use the same PublicKey login
+/// mechanism as tenant clients without being conflated with a real Tenant, so this reuses the one
+/// TenantClient aggregate rather than a sentinel Tenant row or a parallel RootClient type.
+/// IsRootClient below is the readable name for that condition wherever it matters (Login context
+/// resolution, seeding).
+///
 /// Deliberately does NOT implement ITenantEntity. The Entity Convention's query filter compares
 /// TenantId against RequestContext.Current.TenantId, which is Guid.Empty for exactly the
 /// anonymous, pre-authentication requests this aggregate exists to serve (see
 /// docs/reference/tenant-convention.md) - opting in would make every PublicKey lookup return zero
-/// rows, since no real TenantClient row ever has TenantId == Guid.Empty. TenantId is still a plain
-/// FK, assigned once in Create and never touched by TenantAssignmentInterceptor.
+/// rows, since no real tenant-scoped TenantClient row ever has TenantId == Guid.Empty. TenantId is
+/// still a plain FK, assigned once in Create and never touched by TenantAssignmentInterceptor.
 ///
-/// PublicKey is not a secret or an authorization credential - it only answers "which Tenant is
-/// this client associated with," never "is this client allowed to do X." Business authorization
-/// stays entirely on the access token issued after username/password authentication.
+/// PublicKey is not a secret or an authorization credential - it only answers "which Tenant (or
+/// Root) is this client associated with," never "is this client allowed to do X." Business
+/// authorization stays entirely on the access token issued after username/password authentication.
 /// </summary>
 public sealed class TenantClient : AggregateRoot<Guid>, IAuditable
 {
-    public Guid TenantId { get; private set; }
-    public Tenant Tenant { get; private set; } = default!;
+    public Guid? TenantId { get; private set; }
+    public Tenant? Tenant { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public ClientPublicKey PublicKey { get; private set; } = null!;
     public TenantClientStatus Status { get; private set; }
@@ -33,10 +40,14 @@ public sealed class TenantClient : AggregateRoot<Guid>, IAuditable
     public DateTime? RevokedAt { get; private set; }
     public RevocationReason? RevokedReason { get; private set; }
 
+    public bool IsRootClient => TenantId is null;
+
     private TenantClient() { }
 
+    /// <summary>tenantId null creates the Root client; a non-empty value creates a tenant client.
+    /// Guid.Empty is rejected outright - it is not a valid "no tenant" sentinel here, null is.</summary>
     public static TenantClient Create(
-        Guid tenantId,
+        Guid? tenantId,
         string name,
         DateTime? expiresAt = null)
     {
@@ -94,9 +105,9 @@ public sealed class TenantClient : AggregateRoot<Guid>, IAuditable
             throw ExceptionFactory.RequiredField("Client name cannot be empty.");
     }
 
-    private static void ValidateTenantId(Guid tenantId)
+    private static void ValidateTenantId(Guid? tenantId)
     {
         if (tenantId == Guid.Empty)
-            throw ExceptionFactory.RequiredField("TenantId cannot be empty.");
+            throw ExceptionFactory.RequiredField("TenantId cannot be Guid.Empty - pass null for the Root client instead.");
     }
 }

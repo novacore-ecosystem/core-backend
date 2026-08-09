@@ -21,6 +21,7 @@ public class DatabaseSeeder(
             await ApplyMigrationsAsync();
             await SeedRolesAsync();
             await SeedAccountsAsync();
+            await SeedTenantClientsAsync();
 
             logger.LogInformation("Database initialization completed successfully");
         }
@@ -61,5 +62,19 @@ public class DatabaseSeeder(
         var accountSeeder = new AccountSeeder(context, userManager);
         await accountSeeder.SeedAsync();
         logger.LogInformation("Accounts seeded successfully");
+    }
+
+    private async Task SeedTenantClientsAsync()
+    {
+        logger.LogInformation("Seeding tenant clients...");
+        var tenantClientSeeder = new TenantClientSeeder(context);
+        var rootClient = await tenantClientSeeder.SeedAsync();
+        if (rootClient is not null)
+        {
+            logger.LogWarning(
+                "Seeded Root TenantClient public key: {PublicKey}. Save this - it is not shown again and there is no API to retrieve it.",
+                rootClient.PublicKey.Value);
+        }
+        logger.LogInformation("Tenant clients seeded successfully");
     }
 }

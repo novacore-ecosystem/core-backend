@@ -15,4 +15,12 @@ public sealed class AccountReadService(AuthDbContext dbContext) : IAccountReadSe
             .Include(u => u.AccountRoles)
             .FirstOrDefaultAsync(u => u.Email == email, ct);
     }
+
+    public async Task<Account?> GetByEmailAsync(string email, Guid tenantId, CancellationToken ct = default)
+    {
+        return await dbContext.Users
+            .AsNoTracking()
+            .Include(u => u.AccountRoles)
+            .FirstOrDefaultAsync(u => u.Email == email && u.TenantId == tenantId, ct);
+    }
 }

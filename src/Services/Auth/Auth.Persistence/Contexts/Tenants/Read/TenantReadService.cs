@@ -21,4 +21,12 @@ public sealed class TenantReadService(AuthDbContext dbContext) : ITenantReadServ
             .AsNoTracking()
             .AnyAsync(t => t.Code.Value == code, ct);
     }
+
+    public async Task<IReadOnlyList<Tenant>> ListAsync(CancellationToken ct = default)
+    {
+        return await dbContext.Tenants
+            .AsNoTracking()
+            .OrderBy(t => t.Name)
+            .ToListAsync(ct);
+    }
 }

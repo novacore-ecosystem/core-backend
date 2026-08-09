@@ -48,6 +48,12 @@ public sealed class CachedAuthServiceDecorator(
         return await innerAuthService.ValidateCredentialsAsync(email, password, ct);
     }
 
+    /// <summary>Pass-through to inner service (no caching for credentials validation).</summary>
+    public async Task<bool> ValidateCredentialsAsync(Account account, string password, CancellationToken ct = default)
+    {
+        return await innerAuthService.ValidateCredentialsAsync(account, password, ct);
+    }
+
     /// <summary>Delegates to inner service and invalidates cache for new user.</summary>
     public async Task<Account?> CreateUserAsync(string email, string username, string password, CancellationToken ct = default)
     {

@@ -16,9 +16,10 @@
 | Method | Route | File | Purpose |
 |---|---|---|---|
 | POST | `/register` | `Register.cs` | Create account, triggers `OnUserRegisteredEvent` → gRPC `CreateUserProfile` on User Service |
-| POST | `/login` | `Login.cs` | Issue AccessToken/RefreshToken cookies |
+| POST | `/login` | `Login.cs` | Resolves tenant context from the `X-Tenant-Client-Key` header, then issues AccessToken/RefreshToken cookies |
 | POST | `/logout` | `Logout.cs` | Revoke refresh token, clear cookies |
 | POST | `/refresh-token` | `RefreshToken.cs` | Reads `RefreshToken` cookie, validates against Redis, issues new tokens. **Also filtered at the Gateway** — see [gateway.md](gateway.md) |
+| GET | `/tenants` | `ListTenants.cs` | Root-only. Tenant discovery/selection list for the Root Portal |
 
 ## DI composition (`Auth.API/DependencyInjection.cs`, `Auth.API/ApplicationPipeline.cs`)
 
@@ -143,6 +144,88 @@ phases' concern.
   login API changes, JWT `tenant_id` claim, `PublicKey` resolution endpoint, Redis/Gateway
   revocation enforcement, and any `Session`/`RefreshToken` -> `TenantClient` relationship (no
   such FK exists yet - deferred as an explicit next-phase design decision, not silently assumed).
+  **Superseded by Phase 2 below** for login/JWT claim - the rest still stands.
+
+## Tenant-aware Login (Phase 2)
+
+Introduced 2026-08-09, immediately after the Phase 1 commit. Makes `POST /login` resolve tenant
+context from a `TenantClient` PublicKey *before* checking credentials, for both tenant clients and
+Root, under the one existing endpoint - no `/root/login`/`/tenant/login` split. Two structural gaps
+surfaced during audit and were resolved with the user before implementation (see the design
+decisions below); everything else preserves Login/Refresh/Logout's existing behavior.
+
+- **`X-Tenant-Client-Key` header** (`HeaderKeyConstant.TenantClientKey`) carries the `TenantClient`
+  PublicKey on `POST /login` (`[FromHeader]` on the Carter route, not `RequestContext` - the raw
+  key is a pre-auth *credential to resolve*, not identity itself, so it doesn't belong in
+  `RequestContextData`). Deliberately a new constant, not a reuse of the pre-existing-but-unused
+  `HeaderKeyConstant.TenantId` ("X-Tenant-Id") - that one's own doc comment describes it as
+  carrying an already-resolved TenantId, never an opaque public key; the two are not
+  interchangeable and `X-Tenant-Id` is left untouched/still unused.
+- **`TenantClient.TenantId` is now `Guid?`** (was a required `Guid`). A null `TenantId` is the Root
+  client - a global identity, not a Tenant. Reuses the one `TenantClient`/`ClientPublicKey`
+  aggregate rather than a sentinel Tenant row or a parallel `RootClient` type (`IsRootClient =>
+  TenantId is null` reads the condition). `TenantClientConfig`'s FK to `Tenant` became optional;
+  `Status`/`PublicKey`/lifecycle methods are unchanged.
+- **`Account` gained `TenantId`** (`Guid`, default `Guid.Empty`). Uses the same
+  Guid.Empty-means-"no tenant" sentinel every sibling entity (`Session`, `RefreshToken`, `Device`,
+  ...) already uses - the seeded Root account is `TenantId == Guid.Empty`, not a distinct
+  null/global representation. **Deliberately does NOT implement `ITenantEntity`**, unlike those
+  siblings: `Account` is wrapped end-to-end by ASP.NET Core Identity's `UserManager`
+  (`FindByIdAsync`, `FindByEmailAsync`, `CheckPasswordAsync`, ...), which queries `Users` with no
+  `RequestContext` awareness. Opting into the Entity Convention's automatic query filter would have
+  silently scoped every one of those calls to `RequestContext.Current.TenantId` (`Guid.Empty` for
+  literally every request today, since no code path emitted `tenant_id` before this phase) -
+  breaking `GetUserByIdAsync`/`GetUserRolesAsync`/`AssignRoleAsync`/etc. for any real tenant user,
+  invisibly. `TenantId` is a plain, hand-mapped column instead (`AccountConfig`), read explicitly
+  only where tenant-scoped lookup is needed.
+- **Username uniqueness is now tenant-scoped.** ASP.NET Core Identity's own `OnModelCreating`
+  declares a global-unique index on `NormalizedUserName` ("UserNameIndex"). `AccountConfig`
+  re-targets that same index to non-unique and adds `(TenantId, NormalizedUserName)` as the real
+  unique constraint - the same username may now exist in two different tenants. Register's own
+  behavior is unchanged (still creates `TenantId == Guid.Empty` accounts by default); tenant-scoped
+  self-registration is not implemented in this phase.
+- **`IAccountReadService.GetByEmailAsync(email, tenantId)`** (new overload) is what Login actually
+  calls - `dbContext.Users.Where(u => u.Email == email && u.TenantId == tenantId)`, bypassing
+  `UserManager` entirely for this one lookup so the tenant boundary is explicit, not ambient.
+  Password verification then goes through a new `IAuthService.ValidateCredentialsAsync(Account,
+  password)` overload (`UserManager.CheckPasswordAsync` against the already-resolved entity) -
+  the existing `ValidateCredentialsAsync(email, password)` overload still exists for other callers
+  but is no longer used by Login, since its internal `FindByEmailAsync` has no tenant awareness.
+- **`JwtTokenGenerator.GenerateAccessToken`** gained a required `tenantId` parameter and emits
+  `AppClaimTypes.TenantId` ("tenant_id") only when it is not `Guid.Empty` - completing the claim
+  `RequestContextMiddleware` was already wired to read but nothing emitted yet (see
+  [reference/tenant-convention.md](../reference/tenant-convention.md)). Root logins therefore carry
+  no `tenant_id` claim at all, which resolves back to `Guid.Empty` on read - consistent with every
+  other entity's sentinel, no special-casing needed. All three call sites (`LoginHandler`,
+  `RefreshTokenHandler`, `RegisterHandler`) now pass this by name (`tenantId: ...`) - the old
+  positional call (`..., permissions, jwtId)`) would otherwise have silently bound `jwtId` into the
+  new `tenantId` slot and left the real `jti` claim unset, since both are `Guid`/`Guid?` in the same
+  position. `RefreshTokenHandler` reads `user.TenantId` off the already-fetched `Account` (no new
+  lookup, no header) - refresh preserves whatever tenant context Login established.
+- **`TenantClientSeeder`** (new, wired into `DatabaseSeeder`) seeds exactly one Root `TenantClient`
+  (`TenantId == null`) on a fresh database, idempotent like `AccountSeeder`/`RoleSeeder`. Its
+  generated `PublicKey` is logged once (`LogWarning`) at creation - there is no other bootstrap
+  channel for it yet, same local-dev-only tradeoff `SeedData.Accounts.RootPassword` already accepts.
+- **`GET /tenants`** (`ListTenants.cs`, `Permissions.Root`) - Root Portal tenant discovery/selection
+  only. Returns `Id`/`Code`/`Name`/`LogoUrl`/`IsActive` - never `PublicKey`, `Metadata`, or any
+  per-tenant business data. Backed by new `ITenantReadService.ListAsync` (unpaginated, same
+  reasoning as `INotificationChannelReadService.ListAsync` - an operator-facing picker, not a
+  customer-facing catalog).
+- **Migration**: `20260809075108_AddAccountTenantAndRootClientSupport` - adds `users.tenant_id`
+  (default `Guid.Empty`), re-scopes `UserNameIndex` to non-unique, adds the
+  `(tenant_id, normalized_user_name)` unique index, and makes `tenant_clients.tenant_id` nullable.
+  Not applied to any database.
+- **Two design decisions were confirmed with the user before implementation** (both because the
+  spec explicitly calls for stopping rather than silently resolving a structural gap): making
+  `TenantClient.TenantId` nullable for Root (rather than a sentinel Tenant row or a separate
+  `RootClient` type), and adding `TenantId` directly to `Account` (rather than an `AccountTenant`
+  membership entity, or deferring tenant-user binding entirely).
+- **Refresh/Logout required no other changes.** Refresh already re-fetches the `Account` by id
+  every rotation, so `user.TenantId` is available for free once `Account` carries it; Logout only
+  ever revokes the current refresh-token cookie, no tenant awareness applies.
+- **Explicitly out of scope, unchanged from Phase 1's list**: `PublicKey` revocation enforcement
+  (Redis/Gateway), Redis Pub/Sub cache sync, tenant impersonation/investigation, tenant
+  subdomain/custom-domain routing, and tenant-scoped self-registration.
 
 ## Known state
 

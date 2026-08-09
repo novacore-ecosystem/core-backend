@@ -36,6 +36,12 @@ public sealed class AccountConfig : IEntityTypeConfiguration<Account>
             .IsRequired()
             .HasDefaultValue(0);
 
+        // Account deliberately does not implement ITenantEntity (see class doc comment) -
+        // TenantId is mapped/indexed by hand here instead of by the Entity Convention.
+        builder.Property(a => a.TenantId)
+            .IsRequired()
+            .HasDefaultValue(Guid.Empty);
+
         // Relationships
         builder.HasMany(a => a.AccountRoles)
             .WithOne(ar => ar.Account)
@@ -89,6 +95,19 @@ public sealed class AccountConfig : IEntityTypeConfiguration<Account>
         // otherwise served by a sequential scan.
         builder.HasIndex(a => a.Email);
         builder.HasIndex(a => a.Status);
+        builder.HasIndex(a => a.TenantId);
+
+        // ASP.NET Core Identity's own OnModelCreating (called first, via base.OnModelCreating in
+        // AuthDbContext) already declares a globally-unique index on NormalizedUserName
+        // ("UserNameIndex"). Re-targeting that same index here downgrades it to non-unique, and a
+        // new (TenantId, NormalizedUserName) composite index becomes the real uniqueness boundary
+        // - the same username is allowed to exist in two different tenants, matching TenantClient's
+        // PublicKey resolving a tenant boundary before login even runs.
+        builder.HasIndex(a => a.NormalizedUserName)
+            .IsUnique(false);
+        builder.HasIndex(a => new { a.TenantId, a.NormalizedUserName })
+            .IsUnique()
+            .HasDatabaseName("ix_users_tenant_id_normalized_user_name");
 
         // Audit & Concurrency
         builder.ConfigureCommonFields();

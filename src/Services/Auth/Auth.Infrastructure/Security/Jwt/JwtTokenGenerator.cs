@@ -23,6 +23,7 @@ public sealed class JwtTokenGenerator(JwtSettings settings) : IJwtTokenGenerator
         string username,
         IEnumerable<string> roles,
         IEnumerable<string> permissions,
+        Guid tenantId,
         Guid? jwtId = null)
     {
         var claims = new List<Claim>
@@ -31,6 +32,9 @@ public sealed class JwtTokenGenerator(JwtSettings settings) : IJwtTokenGenerator
             new(ClaimTypes.Email, email),
             new(ClaimTypes.Name, username),
         };
+
+        if (tenantId != Guid.Empty)
+            claims.Add(new Claim(AppClaimTypes.TenantId, tenantId.ToString()));
 
         if (jwtId.HasValue)
             claims.Add(new Claim("jti", jwtId.Value.ToString()));

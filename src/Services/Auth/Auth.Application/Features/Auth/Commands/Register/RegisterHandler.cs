@@ -70,12 +70,13 @@ public sealed class RegisterHandler(
         var roles = await authService.GetUserRolesAsync(account.Id, ct);
         var permissions = RolePermissionMap.Resolve(roles);
         var accessToken = tokenGenerator.GenerateAccessToken(
-            account.Id,
-            account.Email!,
-            account.UserName!,
-            roles,
-            permissions,
-            jwtId);
+            userId: account.Id,
+            email: account.Email!,
+            username: account.UserName!,
+            roles: roles,
+            permissions: permissions,
+            tenantId: account.TenantId,
+            jwtId: jwtId);
         var refreshToken = await refreshTokenService.GenerateRefreshTokenAsync(
             account.Id,
             jwtId,
