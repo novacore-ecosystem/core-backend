@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.Payment.Infrastructure</RootNamespace>
+    <AssemblyName>NovaCore.Payment.Infrastructure</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Payment.Application/Payment.Application.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Infrastructure/BuildingBlock.Infrastructure.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Contract/BuildingBlock.Contract.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Messaging/BuildingBlock.Messaging.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Messaging.Kafka/BuildingBlock.Messaging.Kafka.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.SharedKernel/BuildingBlock.SharedKernel.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Grpc/BuildingBlock.Grpc.csproj" />
+  </ItemGroup>
+
+</Project>

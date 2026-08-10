@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\BuildingBlock.SharedKernel\BuildingBlock.SharedKernel.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.BuildingBlock.Domain</RootNamespace>
+    <AssemblyName>NovaCore.BuildingBlock.Domain</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

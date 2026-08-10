@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.BuildingBlock.Application</RootNamespace>
+    <AssemblyName>NovaCore.BuildingBlock.Application</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../BuildingBlock.Domain/BuildingBlock.Domain.csproj" />
+    <ProjectReference Include="../BuildingBlock.Contract/BuildingBlock.Contract.csproj" />
+    <ProjectReference Include="..\BuildingBlock.SharedKernel\BuildingBlock.SharedKernel.csproj" />
+    <ProjectReference Include="..\BuildingBlock.Criteria\BuildingBlock.Criteria.csproj" />
+    <ProjectReference Include="..\BuildingBlock.Messaging\BuildingBlock.Messaging.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Scrutor" />
+  </ItemGroup>
+
+</Project>

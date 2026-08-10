@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.Audit.API</RootNamespace>
+    <AssemblyName>NovaCore.Audit.API</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Carter" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Seq" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Audit.Application/Audit.Application.csproj" />
+    <ProjectReference Include="../Audit.Infrastructure/Audit.Infrastructure.csproj" />
+    <ProjectReference Include="../Audit.Persistence/Audit.Persistence.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Web/BuildingBlock.Web.csproj" />
+  </ItemGroup>
+
+</Project>

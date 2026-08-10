@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.Notification.API</RootNamespace>
+    <AssemblyName>NovaCore.Notification.API</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Carter" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Notification.Application/Notification.Application.csproj" />
+    <ProjectReference Include="../Notification.Infrastructure/Notification.Infrastructure.csproj" />
+    <ProjectReference Include="../Notification.Persistence/Notification.Persistence.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Web/BuildingBlock.Web.csproj" />
+  </ItemGroup>
+
+</Project>

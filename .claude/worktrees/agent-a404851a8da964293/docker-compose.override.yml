@@ -1,0 +1,663 @@
+services:
+  # ============= API GATEWAY =============
+  yarp-api-gateway:
+    container_name: ${GATEWAY_CONTAINER_NAME}
+    ports:
+      - "${GATEWAY_PUBLIC_PORT}:${GATEWAY_HTTP_PORT}"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${ASPNETCORE_URLS}
+      # Service URLs
+      - Auth__Url=${AUTH_SERVICE_URL}
+      - Inventory__Url=${INVENTORY_SERVICE_URL}
+      - Order__Url=${ORDER_SERVICE_URL}
+      - Product__Url=${PRODUCT_SERVICE_URL}
+      - User__Url=${USER_SERVICE_URL}
+      # JWT Configuration
+      - Gateway__Jwt__SecretKey=${GATEWAY_JWT_SECRET_KEY}
+      - Gateway__Jwt__Issuer=${GATEWAY_JWT_ISSUER}
+      - Gateway__Jwt__Audience=${GATEWAY_JWT_AUDIENCE}
+      # Redis (refresh token existence check only)
+      - Gateway__Redis__ConnectionString=${GATEWAY_REDIS_CONNECTION_STRING}
+      # Logging
+      - Logging__Seq__Url=${SEQ_URL}
+      - Logging__Elasticsearch__Url=${ELASTICSEARCH_URL}
+      # Observability (APM/tracing - see docs/setup/observability.md)
+      - Observability__ApmServerUrl=${APM_SERVER_URL}
+    healthcheck:
+      # Must probe the in-container port (GATEWAY_HTTP_PORT/8080), not GATEWAY_PUBLIC_PORT (5000)
+      # - that's only the host-side mapping, and curl runs *inside* this container.
+      test:
+        ["CMD", "curl", "-f", "http://localhost:${GATEWAY_HTTP_PORT}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============= MICROSERVICES =============
+  auth-api:
+    container_name: ${AUTH_CONTAINER_NAME}
+    ports:
+      - "${AUTH_PUBLIC_HTTP_PORT}:${AUTH_HTTP_PORT}"
+      - "${AUTH_GRPC_PORT}"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${AUTH_URLS}
+      - ASPNETCORE_HTTP_PORT=${AUTH_HTTP_PORT}
+      - ASPNETCORE_GRPC_PORT=${AUTH_GRPC_PORT}
+      # Database
+      - ConnectionStrings__DefaultConnection=${AUTH_DB_CONNECTION}
+      - ConnectionStrings__Hangfire=${HANGFIRE_DB_CONNECTION}
+      # Logging
+      - Logging__Seq__Url=${SEQ_URL}
+      - Logging__Elasticsearch__Url=${ELASTICSEARCH_URL}
+      # Observability (APM/tracing - see docs/setup/observability.md)
+      - Observability__ApmServerUrl=${APM_SERVER_URL}
+      # Cache (Redis)
+      - Cache__ConnectionString=${AUTH_REDIS_CONNECTION_STRING}
+      - Cache__DefaultExpirationMinutes=${AUTH_REDIS_EXPIRATION_MINUTES}
+      - Cache__KeyPrefix=${AUTH_REDIS_KEY_PREFIX}
+      - Cache__ConnectionTimeout=${AUTH_REDIS_CONNECTION_TIMEOUT}
+      # JWT
+      - Jwt__SecretKey=${AUTH_JWT_SECRET_KEY}
+      - Jwt__Issuer=${AUTH_JWT_ISSUER}
+      - Jwt__Audience=${AUTH_JWT_AUDIENCE}
+      - Jwt__AccessTokenExpirationMinutes=${AUTH_JWT_ACCESS_TOKEN_EXPIRATION_MINUTES}
+      - Jwt__RefreshTokenExpirationDays=${AUTH_JWT_REFRESH_TOKEN_EXPIRATION_DAYS}
+      # Hangfire
+      - Jobs__RefreshTokenSync__JobId=${AUTH_HANGFIRE_JOB_ID}
+      - Jobs__RefreshTokenSync__CronExpression=${AUTH_HANGFIRE_CRON_EXPRESSION}
+      - Jobs__RefreshTokenSync__Queue=${AUTH_HANGFIRE_QUEUE}
+      - Jobs__RefreshTokenSync__Enabled=${AUTH_HANGFIRE_ENABLED}
+      - Jobs__RefreshTokenSync__UserBatchSize=${AUTH_HANGFIRE_USER_BATCH_SIZE}
+      - Jobs__RefreshTokenSync__TokenBatchSize=${AUTH_HANGFIRE_TOKEN_BATCH_SIZE}
+      # Inbox/Outbox cleanup
+      - Jobs__OutboxCleanup__JobId=${AUTH_OUTBOX_CLEANUP_JOB_ID}
+      - Jobs__OutboxCleanup__CronExpression=${AUTH_OUTBOX_CLEANUP_CRON}
+      - Jobs__OutboxCleanup__Queue=${AUTH_OUTBOX_CLEANUP_QUEUE}
+      - Jobs__OutboxCleanup__Enabled=${AUTH_OUTBOX_CLEANUP_ENABLED}
+      - Jobs__OutboxCleanup__RetentionPeriod=${AUTH_OUTBOX_CLEANUP_RETENTION}
+      - Jobs__OutboxCleanup__BatchSize=${AUTH_OUTBOX_CLEANUP_BATCH_SIZE}
+      - Jobs__OutboxCleanup__MaxBatchesPerRun=${AUTH_OUTBOX_CLEANUP_MAX_BATCHES}
+      - Jobs__InboxCleanup__JobId=${AUTH_INBOX_CLEANUP_JOB_ID}
+      - Jobs__InboxCleanup__CronExpression=${AUTH_INBOX_CLEANUP_CRON}
+      - Jobs__InboxCleanup__Queue=${AUTH_INBOX_CLEANUP_QUEUE}
+      - Jobs__InboxCleanup__Enabled=${AUTH_INBOX_CLEANUP_ENABLED}
+      - Jobs__InboxCleanup__RetentionPeriod=${AUTH_INBOX_CLEANUP_RETENTION}
+      - Jobs__InboxCleanup__BatchSize=${AUTH_INBOX_CLEANUP_BATCH_SIZE}
+      - Jobs__InboxCleanup__MaxBatchesPerRun=${AUTH_INBOX_CLEANUP_MAX_BATCHES}
+      # gRPC
+      - Grpc__UserService__Url=${USER_GRPC_URL}
+      # Kafka
+      - Kafka__BootstrapServers=${AUTH_KAFKA_BROKERS}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  user-api:
+    container_name: ${USER_CONTAINER_NAME}
+    ports:
+      - "${USER_PUBLIC_HTTP_PORT}:${USER_HTTP_PORT}"
+      - "${USER_GRPC_PORT}"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${USER_URLS}
+      - ASPNETCORE_HTTP_PORT=${USER_HTTP_PORT}
+      - ASPNETCORE_GRPC_PORT=${USER_GRPC_PORT}
+      # Database
+      - ConnectionStrings__DefaultConnection=${USER_DB_CONNECTION}
+      - ConnectionStrings__Hangfire=${USER_HANGFIRE_DB_CONNECTION}
+      # Logging
+      - Logging__Seq__Url=${SEQ_URL}
+      - Logging__Elasticsearch__Url=${ELASTICSEARCH_URL}
+      # Observability (APM/tracing - see docs/setup/observability.md)
+      - Observability__ApmServerUrl=${APM_SERVER_URL}
+      # JWT
+      - Jwt__SecretKey=${AUTH_JWT_SECRET_KEY}
+      - Jwt__Issuer=${AUTH_JWT_ISSUER}
+      - Jwt__Audience=${AUTH_JWT_AUDIENCE}
+      - Jwt__AccessTokenExpirationMinutes=${AUTH_JWT_ACCESS_TOKEN_EXPIRATION_MINUTES}
+      - Jwt__RefreshTokenExpirationDays=${AUTH_JWT_REFRESH_TOKEN_EXPIRATION_DAYS}
+      # Cache (Redis) - shared instance with Auth; role cache keys are read
+      # under the "auth:roles:" namespace regardless of KeyPrefix here.
+      - Cache__ConnectionString=${USER_REDIS_CONNECTION_STRING}
+      - Cache__DefaultExpirationMinutes=${USER_REDIS_EXPIRATION_MINUTES}
+      - Cache__KeyPrefix=${USER_REDIS_KEY_PREFIX}
+      - Cache__ConnectionTimeout=${USER_REDIS_CONNECTION_TIMEOUT}
+      # Idempotency (shared framework config - see docs/reference/idempotency.md)
+      - Idempotency__HeaderName=${IDEMPOTENCY_HEADER_NAME}
+      - Idempotency__LockTimeoutSeconds=${IDEMPOTENCY_LOCK_TIMEOUT_SECONDS}
+      - Idempotency__LockExpirationSeconds=${IDEMPOTENCY_LOCK_EXPIRATION_SECONDS}
+      - Idempotency__RecordExpirationMinutes=${IDEMPOTENCY_RECORD_EXPIRATION_MINUTES}
+      - Idempotency__MaxCachedResponseSizeBytes=${IDEMPOTENCY_MAX_CACHED_RESPONSE_SIZE_BYTES}
+      # Inbox/Outbox cleanup
+      - Jobs__OutboxCleanup__JobId=${USER_OUTBOX_CLEANUP_JOB_ID}
+      - Jobs__OutboxCleanup__CronExpression=${USER_OUTBOX_CLEANUP_CRON}
+      - Jobs__OutboxCleanup__Queue=${USER_OUTBOX_CLEANUP_QUEUE}
+      - Jobs__OutboxCleanup__Enabled=${USER_OUTBOX_CLEANUP_ENABLED}
+      - Jobs__OutboxCleanup__RetentionPeriod=${USER_OUTBOX_CLEANUP_RETENTION}
+      - Jobs__OutboxCleanup__BatchSize=${USER_OUTBOX_CLEANUP_BATCH_SIZE}
+      - Jobs__OutboxCleanup__MaxBatchesPerRun=${USER_OUTBOX_CLEANUP_MAX_BATCHES}
+      - Jobs__InboxCleanup__JobId=${USER_INBOX_CLEANUP_JOB_ID}
+      - Jobs__InboxCleanup__CronExpression=${USER_INBOX_CLEANUP_CRON}
+      - Jobs__InboxCleanup__Queue=${USER_INBOX_CLEANUP_QUEUE}
+      - Jobs__InboxCleanup__Enabled=${USER_INBOX_CLEANUP_ENABLED}
+      - Jobs__InboxCleanup__RetentionPeriod=${USER_INBOX_CLEANUP_RETENTION}
+      - Jobs__InboxCleanup__BatchSize=${USER_INBOX_CLEANUP_BATCH_SIZE}
+      - Jobs__InboxCleanup__MaxBatchesPerRun=${USER_INBOX_CLEANUP_MAX_BATCHES}
+      # gRPC
+      - Grpc__AuthService__Url=${AUTH_GRPC_URL}
+      # Kafka
+      - Kafka__BootstrapServers=${USER_KAFKA_BROKERS}
+      # Elasticsearch (Search read model - see docs/reference/search.md)
+      - Elasticsearch__Url=${USER_ELASTICSEARCH_URL}
+      - Elasticsearch__Username=${ELASTICSEARCH_APP_USERNAME}
+      - Elasticsearch__Password=${ELASTICSEARCH_PASSWORD}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  product-api:
+    container_name: ${PRODUCT_CONTAINER_NAME}
+    ports:
+      - "${PRODUCT_PUBLIC_HTTP_PORT}:${PRODUCT_HTTP_PORT}"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${PRODUCT_URLS}
+      - ASPNETCORE_HTTP_PORT=${PRODUCT_HTTP_PORT}
+      # Database
+      - ConnectionStrings__DefaultConnection=${PRODUCT_DB_CONNECTION}
+      - ConnectionStrings__Hangfire=${PRODUCT_HANGFIRE_DB_CONNECTION}
+      # Logging
+      - Logging__Seq__Url=${SEQ_URL}
+      - Logging__Elasticsearch__Url=${ELASTICSEARCH_URL}
+      - Logging__Elasticsearch__Username=${ELASTICSEARCH_APP_USERNAME}
+      - Logging__Elasticsearch__Password=${ELASTICSEARCH_PASSWORD}
+      # Observability (APM/tracing - see docs/setup/observability.md)
+      - Observability__ApmServerUrl=${APM_SERVER_URL}
+      # JWT (validation only - tokens are issued by Auth)
+      - Jwt__SecretKey=${AUTH_JWT_SECRET_KEY}
+      - Jwt__Issuer=${AUTH_JWT_ISSUER}
+      - Jwt__Audience=${AUTH_JWT_AUDIENCE}
+      - Jwt__AccessTokenExpirationMinutes=${AUTH_JWT_ACCESS_TOKEN_EXPIRATION_MINUTES}
+      - Jwt__RefreshTokenExpirationDays=${AUTH_JWT_REFRESH_TOKEN_EXPIRATION_DAYS}
+      # Cache (Redis) - backs the Idempotency framework (see BuildingBlock.Infrastructure/Idempotency)
+      - Cache__ConnectionString=${PRODUCT_REDIS_CONNECTION_STRING}
+      - Cache__DefaultExpirationMinutes=${PRODUCT_REDIS_EXPIRATION_MINUTES}
+      - Cache__KeyPrefix=${PRODUCT_REDIS_KEY_PREFIX}
+      - Cache__ConnectionTimeout=${PRODUCT_REDIS_CONNECTION_TIMEOUT}
+      # Idempotency (shared framework config - see docs/reference/idempotency.md)
+      - Idempotency__HeaderName=${IDEMPOTENCY_HEADER_NAME}
+      - Idempotency__LockTimeoutSeconds=${IDEMPOTENCY_LOCK_TIMEOUT_SECONDS}
+      - Idempotency__LockExpirationSeconds=${IDEMPOTENCY_LOCK_EXPIRATION_SECONDS}
+      - Idempotency__RecordExpirationMinutes=${IDEMPOTENCY_RECORD_EXPIRATION_MINUTES}
+      - Idempotency__MaxCachedResponseSizeBytes=${IDEMPOTENCY_MAX_CACHED_RESPONSE_SIZE_BYTES}
+      # Outbox/Inbox cleanup (Product now also self-consumes for Search sync - see docs/reference/search.md)
+      - Jobs__OutboxCleanup__JobId=${PRODUCT_OUTBOX_CLEANUP_JOB_ID}
+      - Jobs__OutboxCleanup__CronExpression=${PRODUCT_OUTBOX_CLEANUP_CRON}
+      - Jobs__OutboxCleanup__Queue=${PRODUCT_OUTBOX_CLEANUP_QUEUE}
+      - Jobs__OutboxCleanup__Enabled=${PRODUCT_OUTBOX_CLEANUP_ENABLED}
+      - Jobs__OutboxCleanup__RetentionPeriod=${PRODUCT_OUTBOX_CLEANUP_RETENTION}
+      - Jobs__OutboxCleanup__BatchSize=${PRODUCT_OUTBOX_CLEANUP_BATCH_SIZE}
+      - Jobs__OutboxCleanup__MaxBatchesPerRun=${PRODUCT_OUTBOX_CLEANUP_MAX_BATCHES}
+      - Jobs__InboxCleanup__JobId=${PRODUCT_INBOX_CLEANUP_JOB_ID}
+      - Jobs__InboxCleanup__CronExpression=${PRODUCT_INBOX_CLEANUP_CRON}
+      - Jobs__InboxCleanup__Queue=${PRODUCT_INBOX_CLEANUP_QUEUE}
+      - Jobs__InboxCleanup__Enabled=${PRODUCT_INBOX_CLEANUP_ENABLED}
+      - Jobs__InboxCleanup__RetentionPeriod=${PRODUCT_INBOX_CLEANUP_RETENTION}
+      - Jobs__InboxCleanup__BatchSize=${PRODUCT_INBOX_CLEANUP_BATCH_SIZE}
+      - Jobs__InboxCleanup__MaxBatchesPerRun=${PRODUCT_INBOX_CLEANUP_MAX_BATCHES}
+      # Kafka
+      - Kafka__BootstrapServers=${PRODUCT_KAFKA_BROKERS}
+      # Elasticsearch (Search read model - see docs/reference/search.md)
+      - Elasticsearch__Url=${PRODUCT_ELASTICSEARCH_URL}
+      - Elasticsearch__Username=${ELASTICSEARCH_APP_USERNAME}
+      - Elasticsearch__Password=${ELASTICSEARCH_PASSWORD}
+      # gRPC (stock availability lookup for Search Products - see docs/services/inventory-service.md)
+      - Grpc__InventoryService__Url=${INVENTORY_GRPC_URL}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  inventory-api:
+    container_name: ${INVENTORY_CONTAINER_NAME}
+    ports:
+      - "${INVENTORY_PUBLIC_HTTP_PORT}:${INVENTORY_HTTP_PORT}"
+      - "${INVENTORY_GRPC_PORT}"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${INVENTORY_URLS}
+      - ASPNETCORE_HTTP_PORT=${INVENTORY_HTTP_PORT}
+      - ASPNETCORE_GRPC_PORT=${INVENTORY_GRPC_PORT}
+      # Database
+      - ConnectionStrings__DefaultConnection=${INVENTORY_DB_CONNECTION}
+      - ConnectionStrings__Hangfire=${INVENTORY_HANGFIRE_DB_CONNECTION}
+      # Logging
+      - Logging__Seq__Url=${SEQ_URL}
+      - Logging__Elasticsearch__Url=${ELASTICSEARCH_URL}
+      # Observability (APM/tracing - see docs/setup/observability.md)
+      - Observability__ApmServerUrl=${APM_SERVER_URL}
+      # JWT (validation only - tokens are issued by Auth)
+      - Jwt__SecretKey=${AUTH_JWT_SECRET_KEY}
+      - Jwt__Issuer=${AUTH_JWT_ISSUER}
+      - Jwt__Audience=${AUTH_JWT_AUDIENCE}
+      - Jwt__AccessTokenExpirationMinutes=${AUTH_JWT_ACCESS_TOKEN_EXPIRATION_MINUTES}
+      - Jwt__RefreshTokenExpirationDays=${AUTH_JWT_REFRESH_TOKEN_EXPIRATION_DAYS}
+      # Outbox/Inbox cleanup (Inventory gained an Outbox table for audit tracking)
+      - Jobs__OutboxCleanup__JobId=${INVENTORY_OUTBOX_CLEANUP_JOB_ID}
+      - Jobs__OutboxCleanup__CronExpression=${INVENTORY_OUTBOX_CLEANUP_CRON}
+      - Jobs__OutboxCleanup__Queue=${INVENTORY_OUTBOX_CLEANUP_QUEUE}
+      - Jobs__OutboxCleanup__Enabled=${INVENTORY_OUTBOX_CLEANUP_ENABLED}
+      - Jobs__OutboxCleanup__RetentionPeriod=${INVENTORY_OUTBOX_CLEANUP_RETENTION}
+      - Jobs__OutboxCleanup__BatchSize=${INVENTORY_OUTBOX_CLEANUP_BATCH_SIZE}
+      - Jobs__OutboxCleanup__MaxBatchesPerRun=${INVENTORY_OUTBOX_CLEANUP_MAX_BATCHES}
+      - Jobs__InboxCleanup__JobId=${INVENTORY_INBOX_CLEANUP_JOB_ID}
+      - Jobs__InboxCleanup__CronExpression=${INVENTORY_INBOX_CLEANUP_CRON}
+      - Jobs__InboxCleanup__Queue=${INVENTORY_INBOX_CLEANUP_QUEUE}
+      - Jobs__InboxCleanup__Enabled=${INVENTORY_INBOX_CLEANUP_ENABLED}
+      - Jobs__InboxCleanup__RetentionPeriod=${INVENTORY_INBOX_CLEANUP_RETENTION}
+      - Jobs__InboxCleanup__BatchSize=${INVENTORY_INBOX_CLEANUP_BATCH_SIZE}
+      - Jobs__InboxCleanup__MaxBatchesPerRun=${INVENTORY_INBOX_CLEANUP_MAX_BATCHES}
+      # Kafka
+      - Kafka__BootstrapServers=${INVENTORY_KAFKA_BROKERS}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  order-api:
+    container_name: ${ORDER_CONTAINER_NAME}
+    ports:
+      - "${ORDER_PUBLIC_HTTP_PORT}:${ORDER_HTTP_PORT}"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${ORDER_URLS}
+      - ASPNETCORE_HTTP_PORT=${ORDER_HTTP_PORT}
+      # Database
+      - ConnectionStrings__DefaultConnection=${ORDER_DB_CONNECTION}
+      - ConnectionStrings__Hangfire=${ORDER_HANGFIRE_DB_CONNECTION}
+      # Logging
+      - Logging__Seq__Url=${SEQ_URL}
+      - Logging__Elasticsearch__Url=${ELASTICSEARCH_URL}
+      # Observability (APM/tracing - see docs/setup/observability.md)
+      - Observability__ApmServerUrl=${APM_SERVER_URL}
+      # JWT (validation only - tokens are issued by Auth)
+      - Jwt__SecretKey=${AUTH_JWT_SECRET_KEY}
+      - Jwt__Issuer=${AUTH_JWT_ISSUER}
+      - Jwt__Audience=${AUTH_JWT_AUDIENCE}
+      - Jwt__AccessTokenExpirationMinutes=${AUTH_JWT_ACCESS_TOKEN_EXPIRATION_MINUTES}
+      - Jwt__RefreshTokenExpirationDays=${AUTH_JWT_REFRESH_TOKEN_EXPIRATION_DAYS}
+      # Inbox/Outbox cleanup (Order both publishes and consumes - dual shape like User)
+      - Jobs__OutboxCleanup__JobId=${ORDER_OUTBOX_CLEANUP_JOB_ID}
+      - Jobs__OutboxCleanup__CronExpression=${ORDER_OUTBOX_CLEANUP_CRON}
+      - Jobs__OutboxCleanup__Queue=${ORDER_OUTBOX_CLEANUP_QUEUE}
+      - Jobs__OutboxCleanup__Enabled=${ORDER_OUTBOX_CLEANUP_ENABLED}
+      - Jobs__OutboxCleanup__RetentionPeriod=${ORDER_OUTBOX_CLEANUP_RETENTION}
+      - Jobs__OutboxCleanup__BatchSize=${ORDER_OUTBOX_CLEANUP_BATCH_SIZE}
+      - Jobs__OutboxCleanup__MaxBatchesPerRun=${ORDER_OUTBOX_CLEANUP_MAX_BATCHES}
+      - Jobs__InboxCleanup__JobId=${ORDER_INBOX_CLEANUP_JOB_ID}
+      - Jobs__InboxCleanup__CronExpression=${ORDER_INBOX_CLEANUP_CRON}
+      - Jobs__InboxCleanup__Queue=${ORDER_INBOX_CLEANUP_QUEUE}
+      - Jobs__InboxCleanup__Enabled=${ORDER_INBOX_CLEANUP_ENABLED}
+      - Jobs__InboxCleanup__RetentionPeriod=${ORDER_INBOX_CLEANUP_RETENTION}
+      - Jobs__InboxCleanup__BatchSize=${ORDER_INBOX_CLEANUP_BATCH_SIZE}
+      - Jobs__InboxCleanup__MaxBatchesPerRun=${ORDER_INBOX_CLEANUP_MAX_BATCHES}
+      # gRPC (CreateOrderSaga's DeductInventoryStep - see docs/workflows/create-order-saga.md)
+      - Grpc__InventoryService__Url=${INVENTORY_GRPC_URL}
+      # Kafka
+      - Kafka__BootstrapServers=${ORDER_KAFKA_BROKERS}
+      # Cache (Redis-backed cart - see Order.Infrastructure/Caching/CartService.cs)
+      - Cache__ConnectionString=${ORDER_REDIS_CONNECTION_STRING}
+      - Cache__DefaultExpirationMinutes=${ORDER_REDIS_EXPIRATION_MINUTES}
+      - Cache__KeyPrefix=${ORDER_REDIS_KEY_PREFIX}
+      - Cache__ConnectionTimeout=${ORDER_REDIS_CONNECTION_TIMEOUT}
+      # Idempotency (shared framework config - see docs/reference/idempotency.md)
+      - Idempotency__HeaderName=${IDEMPOTENCY_HEADER_NAME}
+      - Idempotency__LockTimeoutSeconds=${IDEMPOTENCY_LOCK_TIMEOUT_SECONDS}
+      - Idempotency__LockExpirationSeconds=${IDEMPOTENCY_LOCK_EXPIRATION_SECONDS}
+      - Idempotency__RecordExpirationMinutes=${IDEMPOTENCY_RECORD_EXPIRATION_MINUTES}
+      - Idempotency__MaxCachedResponseSizeBytes=${IDEMPOTENCY_MAX_CACHED_RESPONSE_SIZE_BYTES}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  payment-api:
+    container_name: ${PAYMENT_CONTAINER_NAME}
+    ports:
+      - "${PAYMENT_PUBLIC_HTTP_PORT}:${PAYMENT_HTTP_PORT}"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${PAYMENT_URLS}
+      - ASPNETCORE_HTTP_PORT=${PAYMENT_HTTP_PORT}
+      # Database
+      - ConnectionStrings__DefaultConnection=${PAYMENT_DB_CONNECTION}
+      # Logging
+      - Logging__Seq__Url=${SEQ_URL}
+      - Logging__Elasticsearch__Url=${ELASTICSEARCH_URL}
+      # Observability (APM/tracing - see docs/setup/observability.md)
+      - Observability__ApmServerUrl=${APM_SERVER_URL}
+      # JWT (validation only - tokens are issued by Auth)
+      - Jwt__SecretKey=${AUTH_JWT_SECRET_KEY}
+      - Jwt__Issuer=${AUTH_JWT_ISSUER}
+      - Jwt__Audience=${AUTH_JWT_AUDIENCE}
+      - Jwt__AccessTokenExpirationMinutes=${AUTH_JWT_ACCESS_TOKEN_EXPIRATION_MINUTES}
+      - Jwt__RefreshTokenExpirationDays=${AUTH_JWT_REFRESH_TOKEN_EXPIRATION_DAYS}
+      # Kafka
+      - Kafka__BootstrapServers=${PAYMENT_KAFKA_BROKERS}
+      # Cache (required for the Idempotency framework's distributed lock - see BuildingBlock.Infrastructure.Idempotency)
+      - Cache__ConnectionString=${PAYMENT_REDIS_CONNECTION_STRING}
+      - Cache__DefaultExpirationMinutes=${PAYMENT_REDIS_EXPIRATION_MINUTES}
+      - Cache__KeyPrefix=${PAYMENT_REDIS_KEY_PREFIX}
+      - Cache__ConnectionTimeout=${PAYMENT_REDIS_CONNECTION_TIMEOUT}
+      # Idempotency (shared framework config - see docs/reference/idempotency.md)
+      - Idempotency__HeaderName=${IDEMPOTENCY_HEADER_NAME}
+      - Idempotency__LockTimeoutSeconds=${IDEMPOTENCY_LOCK_TIMEOUT_SECONDS}
+      - Idempotency__LockExpirationSeconds=${IDEMPOTENCY_LOCK_EXPIRATION_SECONDS}
+      - Idempotency__RecordExpirationMinutes=${IDEMPOTENCY_RECORD_EXPIRATION_MINUTES}
+      - Idempotency__MaxCachedResponseSizeBytes=${IDEMPOTENCY_MAX_CACHED_RESPONSE_SIZE_BYTES}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Shipping Service - see the commented shipping-api block in docker-compose.yml for why
+  # this is not enabled yet. Uncomment both together, along with .env's SHIPPING_* values.
+  # shipping-api:
+  #   container_name: ${SHIPPING_CONTAINER_NAME}
+  #   ports:
+  #     - "${SHIPPING_PUBLIC_HTTP_PORT}:${SHIPPING_HTTP_PORT}"
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+  #     - ASPNETCORE_URLS=${SHIPPING_URLS}
+  #     - ASPNETCORE_HTTP_PORT=${SHIPPING_HTTP_PORT}
+  #     # Database
+  #     - ConnectionStrings__DefaultConnection=${SHIPPING_DB_CONNECTION}
+  #     # Logging
+  #     - Logging__Seq__Url=${SEQ_URL}
+  #     - Logging__Elasticsearch__Url=${ELASTICSEARCH_URL}
+  #     # Observability (APM/tracing - see docs/setup/observability.md)
+  #     - Observability__ApmServerUrl=${APM_SERVER_URL}
+  #     # JWT (validation only - tokens are issued by Auth)
+  #     - Jwt__SecretKey=${AUTH_JWT_SECRET_KEY}
+  #     - Jwt__Issuer=${AUTH_JWT_ISSUER}
+  #     - Jwt__Audience=${AUTH_JWT_AUDIENCE}
+  #     - Jwt__AccessTokenExpirationMinutes=${AUTH_JWT_ACCESS_TOKEN_EXPIRATION_MINUTES}
+  #     - Jwt__RefreshTokenExpirationDays=${AUTH_JWT_REFRESH_TOKEN_EXPIRATION_DAYS}
+  #     # Kafka
+  #     - Kafka__BootstrapServers=${SHIPPING_KAFKA_BROKERS}
+  #     # Cache (required for the Idempotency framework's distributed lock)
+  #     - Cache__ConnectionString=${SHIPPING_REDIS_CONNECTION_STRING}
+  #     - Cache__DefaultExpirationMinutes=${SHIPPING_REDIS_EXPIRATION_MINUTES}
+  #     - Cache__KeyPrefix=${SHIPPING_REDIS_KEY_PREFIX}
+  #     - Cache__ConnectionTimeout=${SHIPPING_REDIS_CONNECTION_TIMEOUT}
+  #     # Idempotency (shared framework config - see docs/reference/idempotency.md)
+  #     - Idempotency__HeaderName=${IDEMPOTENCY_HEADER_NAME}
+  #     - Idempotency__LockTimeoutSeconds=${IDEMPOTENCY_LOCK_TIMEOUT_SECONDS}
+  #     - Idempotency__LockExpirationSeconds=${IDEMPOTENCY_LOCK_EXPIRATION_SECONDS}
+  #     - Idempotency__RecordExpirationMinutes=${IDEMPOTENCY_RECORD_EXPIRATION_MINUTES}
+  #     - Idempotency__MaxCachedResponseSizeBytes=${IDEMPOTENCY_MAX_CACHED_RESPONSE_SIZE_BYTES}
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
+
+  audit-api:
+    container_name: ${AUDIT_CONTAINER_NAME}
+    ports:
+      - "${AUDIT_PUBLIC_HTTP_PORT}:${AUDIT_HTTP_PORT}"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${AUDIT_URLS}
+      - ASPNETCORE_HTTP_PORT=${AUDIT_HTTP_PORT}
+      # Database (Mongo - domain data; Hangfire storage is still Postgres, see AUDIT_HANGFIRE_DB_CONNECTION)
+      - ConnectionStrings__Mongo=${AUDIT_MONGODB_URL}
+      - Mongo__DatabaseName=${AUDIT_MONGO_DATABASE}
+      - ConnectionStrings__Hangfire=${AUDIT_HANGFIRE_DB_CONNECTION}
+      # Logging
+      - Logging__Seq__Url=${SEQ_URL}
+      # JWT (validation only - tokens are issued by Auth)
+      - Jwt__SecretKey=${AUTH_JWT_SECRET_KEY}
+      - Jwt__Issuer=${AUTH_JWT_ISSUER}
+      - Jwt__Audience=${AUTH_JWT_AUDIENCE}
+      - Jwt__AccessTokenExpirationMinutes=${AUTH_JWT_ACCESS_TOKEN_EXPIRATION_MINUTES}
+      - Jwt__RefreshTokenExpirationDays=${AUTH_JWT_REFRESH_TOKEN_EXPIRATION_DAYS}
+      # Inbox/Outbox cleanup (Audit consumes from every service and has Outbox wired but unused)
+      - Jobs__OutboxCleanup__JobId=${AUDIT_OUTBOX_CLEANUP_JOB_ID}
+      - Jobs__OutboxCleanup__CronExpression=${AUDIT_OUTBOX_CLEANUP_CRON}
+      - Jobs__OutboxCleanup__Queue=${AUDIT_OUTBOX_CLEANUP_QUEUE}
+      - Jobs__OutboxCleanup__Enabled=${AUDIT_OUTBOX_CLEANUP_ENABLED}
+      - Jobs__OutboxCleanup__RetentionPeriod=${AUDIT_OUTBOX_CLEANUP_RETENTION}
+      - Jobs__OutboxCleanup__BatchSize=${AUDIT_OUTBOX_CLEANUP_BATCH_SIZE}
+      - Jobs__OutboxCleanup__MaxBatchesPerRun=${AUDIT_OUTBOX_CLEANUP_MAX_BATCHES}
+      - Jobs__InboxCleanup__JobId=${AUDIT_INBOX_CLEANUP_JOB_ID}
+      - Jobs__InboxCleanup__CronExpression=${AUDIT_INBOX_CLEANUP_CRON}
+      - Jobs__InboxCleanup__Queue=${AUDIT_INBOX_CLEANUP_QUEUE}
+      - Jobs__InboxCleanup__Enabled=${AUDIT_INBOX_CLEANUP_ENABLED}
+      - Jobs__InboxCleanup__RetentionPeriod=${AUDIT_INBOX_CLEANUP_RETENTION}
+      - Jobs__InboxCleanup__BatchSize=${AUDIT_INBOX_CLEANUP_BATCH_SIZE}
+      - Jobs__InboxCleanup__MaxBatchesPerRun=${AUDIT_INBOX_CLEANUP_MAX_BATCHES}
+      # Kafka
+      - Kafka__BootstrapServers=${AUDIT_KAFKA_BROKERS}
+      # gRPC (actor display-name enrichment for GetAuditLog - fail-open, see docs/reference/grpc.md)
+      - Grpc__UserService__Url=${USER_GRPC_URL}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  notification-api:
+    container_name: ${NOTIFICATION_CONTAINER_NAME}
+    ports:
+      - "${NOTIFICATION_PUBLIC_HTTP_PORT}:${NOTIFICATION_HTTP_PORT}"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${NOTIFICATION_URLS}
+      - ASPNETCORE_HTTP_PORT=${NOTIFICATION_HTTP_PORT}
+      # Database (Mongo - domain data; Hangfire storage is still Postgres, see NOTIFICATION_HANGFIRE_DB_CONNECTION)
+      - ConnectionStrings__Mongo=${NOTIFICATION_MONGODB_URL}
+      - Mongo__DatabaseName=${NOTIFICATION_MONGO_DATABASE}
+      - ConnectionStrings__Hangfire=${NOTIFICATION_HANGFIRE_DB_CONNECTION}
+      # Logging
+      - Logging__Seq__Url=${SEQ_URL}
+      - Logging__Elasticsearch__Url=${ELASTICSEARCH_URL}
+      # Observability (APM/tracing - see docs/setup/observability.md)
+      - Observability__ApmServerUrl=${APM_SERVER_URL}
+      # JWT (validation only - tokens are issued by Auth)
+      - Jwt__SecretKey=${AUTH_JWT_SECRET_KEY}
+      - Jwt__Issuer=${AUTH_JWT_ISSUER}
+      - Jwt__Audience=${AUTH_JWT_AUDIENCE}
+      - Jwt__AccessTokenExpirationMinutes=${AUTH_JWT_ACCESS_TOKEN_EXPIRATION_MINUTES}
+      - Jwt__RefreshTokenExpirationDays=${AUTH_JWT_REFRESH_TOKEN_EXPIRATION_DAYS}
+      # Inbox/Outbox cleanup (skeleton service - Outbox/Inbox wired but unused, see Audit's pattern)
+      - Jobs__OutboxCleanup__JobId=${NOTIFICATION_OUTBOX_CLEANUP_JOB_ID}
+      - Jobs__OutboxCleanup__CronExpression=${NOTIFICATION_OUTBOX_CLEANUP_CRON}
+      - Jobs__OutboxCleanup__Queue=${NOTIFICATION_OUTBOX_CLEANUP_QUEUE}
+      - Jobs__OutboxCleanup__Enabled=${NOTIFICATION_OUTBOX_CLEANUP_ENABLED}
+      - Jobs__OutboxCleanup__RetentionPeriod=${NOTIFICATION_OUTBOX_CLEANUP_RETENTION}
+      - Jobs__OutboxCleanup__BatchSize=${NOTIFICATION_OUTBOX_CLEANUP_BATCH_SIZE}
+      - Jobs__OutboxCleanup__MaxBatchesPerRun=${NOTIFICATION_OUTBOX_CLEANUP_MAX_BATCHES}
+      - Jobs__InboxCleanup__JobId=${NOTIFICATION_INBOX_CLEANUP_JOB_ID}
+      - Jobs__InboxCleanup__CronExpression=${NOTIFICATION_INBOX_CLEANUP_CRON}
+      - Jobs__InboxCleanup__Queue=${NOTIFICATION_INBOX_CLEANUP_QUEUE}
+      - Jobs__InboxCleanup__Enabled=${NOTIFICATION_INBOX_CLEANUP_ENABLED}
+      - Jobs__InboxCleanup__RetentionPeriod=${NOTIFICATION_INBOX_CLEANUP_RETENTION}
+      - Jobs__InboxCleanup__BatchSize=${NOTIFICATION_INBOX_CLEANUP_BATCH_SIZE}
+      - Jobs__InboxCleanup__MaxBatchesPerRun=${NOTIFICATION_INBOX_CLEANUP_MAX_BATCHES}
+      # Kafka
+      - Kafka__BootstrapServers=${NOTIFICATION_KAFKA_BROKERS}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============= DATABASES =============
+  pg:
+    container_name: ${PG_CONTAINER_NAME}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${PG_DATABASE}
+      POSTGRES_INITDB_ARGS: ${POSTGRES_INITDB_ARGS}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo:
+    container_name: ${MONGO_CONTAINER_NAME}
+    ports:
+      - "${MONGO_PORT}:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============= CACHE & MESSAGE QUEUE =============
+  redis:
+    container_name: ${REDIS_CONTAINER_NAME}
+    ports:
+      - "${REDIS_PORT}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    container_name: ${KAFKA_CONTAINER_NAME}
+    ports:
+      - "${KAFKA_PORT}:9092"
+    environment:
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID}
+      KAFKA_NODE_ID: ${KAFKA_NODE_ID}
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:${KAFKA_CONTROLLER_PORT}
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://${KAFKA_CONTAINER_NAME}:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: ${KAFKA_NODE_ID}@${KAFKA_CONTAINER_NAME}:${KAFKA_CONTROLLER_PORT}
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: ${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: ${KAFKA_AUTO_CREATE_TOPICS}
+      KAFKA_LOG_RETENTION_HOURS: ${KAFKA_LOG_RETENTION_HOURS}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "kafka-topics",
+          "--bootstrap-server",
+          "${KAFKA_CONTAINER_NAME}:${KAFKA_PORT}",
+          "--list",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============= LOGGING & MONITORING =============
+  seq:
+    container_name: ${SEQ_CONTAINER_NAME}
+    ports:
+      - "${SEQ_PORT}:80"
+    environment:
+      ACCEPT_EULA: ${SEQ_ACCEPT_EULA}
+      SEQ_FIRSTRUN_ADMINPASSWORD: ${SEQ_FIRSTRUN_ADMINPASSWORD}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  elasticsearch:
+    container_name: ${ELASTICSEARCH_CONTAINER_NAME}
+    ports:
+      - "${ELASTICSEARCH_PORT}:9200"
+    environment:
+      - discovery.type=${ELASTICSEARCH_DISCOVERY_TYPE}
+      - xpack.security.enabled=${ELASTICSEARCH_XPACK_SECURITY_ENABLED}
+      - xpack.security.http.ssl.enabled=${ELASTICSEARCH_HTTP_SSL_ENABLED}
+      # Bootstraps the built-in `elastic` superuser's password on first start (recognized
+      # natively by the ES docker image) - ELASTICSEARCH_USERNAME/PASSWORD alone only tell
+      # *consumers* (Kibana/Product/APM) what to send, they don't set anything inside ES itself.
+      - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      - ES_JAVA_OPTS=${ELASTICSEARCH_JAVA_OPTS}
+    healthcheck:
+      # Must use the elastic superuser here, not kibana_system - kibana_system's real
+      # password isn't provisioned until es-init runs, and es-init depends_on this
+      # healthcheck passing first (see es-init below).
+      test:
+        [
+          "CMD-SHELL",
+          "curl -s -u ${ELASTICSEARCH_APP_USERNAME}:${ELASTICSEARCH_PASSWORD} http://localhost:9200 >/dev/null || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  kibana:
+    container_name: ${KIBANA_CONTAINER_NAME}
+    ports:
+      - "${KIBANA_PORT}:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=${KIBANA_ELASTICSEARCH_HOSTS}
+      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME}
+      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5601/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  es-init:
+    environment:
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
+      # Authenticates as elastic (the only user guaranteed valid right after ES boots via
+      # ELASTIC_PASSWORD) - also resets kibana_system's real password to this same value,
+      # since nothing else provisions it (see init-ilm-templates.sh).
+      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_APP_USERNAME}
+      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+
+  apm-server:
+    container_name: ${APM_SERVER_CONTAINER_NAME}
+    ports:
+      - "${APM_SERVER_PORT}:8200"
+    environment:
+      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_APP_USERNAME}
+      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+    healthcheck:
+      # apm-server's image has no curl/wget - a bare TCP connect via bash's /dev/tcp
+      # is enough to confirm the port is accepting connections.
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8200'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

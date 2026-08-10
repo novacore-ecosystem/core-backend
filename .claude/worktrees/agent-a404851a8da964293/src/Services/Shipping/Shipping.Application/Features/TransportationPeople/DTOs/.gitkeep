@@ -1,0 +1,4 @@
+# Foundation phase: this feature slice has no implementation yet.
+# The folder shape (Commands/Queries/DTOs/Events) is created up front so future
+# work drops straight in without restructuring - see
+# docs/services/shipping-service.md, "Planned phases".

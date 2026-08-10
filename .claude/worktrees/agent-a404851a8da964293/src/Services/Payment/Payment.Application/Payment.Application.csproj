@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.Payment.Application</RootNamespace>
+    <AssemblyName>NovaCore.Payment.Application</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mapster" />
+    <PackageReference Include="Mapster.DependencyInjection" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Payment.Domain/Payment.Domain.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Application/BuildingBlock.Application.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.SharedKernel/BuildingBlock.SharedKernel.csproj" />
+  </ItemGroup>
+
+</Project>

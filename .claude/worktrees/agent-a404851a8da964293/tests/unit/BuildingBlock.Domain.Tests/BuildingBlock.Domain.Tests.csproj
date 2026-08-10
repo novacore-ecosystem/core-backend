@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.BuildingBlock.Domain.Tests</RootNamespace>
+    <AssemblyName>NovaCore.BuildingBlock.Domain.Tests</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/BuildingBlocks/BuildingBlock.Domain/BuildingBlock.Domain.csproj" />
+    <ProjectReference Include="../Common/NovaCore.TestKit/NovaCore.TestKit.csproj" />
+  </ItemGroup>
+
+</Project>

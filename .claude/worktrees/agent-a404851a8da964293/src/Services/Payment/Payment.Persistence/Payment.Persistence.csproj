@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.Payment.Persistence</RootNamespace>
+    <AssemblyName>NovaCore.Payment.Persistence</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Payment.Application/Payment.Application.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Domain/BuildingBlock.Domain.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Persistence/BuildingBlock.Persistence.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Persistence.Ef/BuildingBlock.Persistence.Ef.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Observability/BuildingBlock.Observability.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.Xml" />
+    <PackageReference Include="Npgsql.OpenTelemetry" />
+  </ItemGroup>
+
+</Project>

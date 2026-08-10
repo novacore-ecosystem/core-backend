@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.User.API</RootNamespace>
+    <AssemblyName>NovaCore.User.API</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Carter" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../User.Application/User.Application.csproj" />
+    <ProjectReference Include="../User.Infrastructure/User.Infrastructure.csproj" />
+    <ProjectReference Include="../User.Persistence/User.Persistence.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Grpc/BuildingBlock.Grpc.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Web/BuildingBlock.Web.csproj" />
+  </ItemGroup>
+
+</Project>

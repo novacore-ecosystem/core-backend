@@ -1,0 +1,299 @@
+services:
+  # ============= API GATEWAY =============
+  yarp-api-gateway:
+    build:
+      context: .
+      dockerfile: ./src/ApiGateways/YarpApiGateway/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      apm-server:
+        condition: service_healthy
+    networks:
+      - default
+    volumes:
+      - ./src/ApiGateways/YarpApiGateway/appsettings.json:/app/appsettings.json:ro
+
+  # ============= MICROSERVICES =============
+  auth-api:
+    image: ${AUTH_CONTAINER_NAME}
+    build:
+      context: .
+      dockerfile: ./src/Services/Auth/Auth.API/Dockerfile
+    depends_on:
+      pg:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      seq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      apm-server:
+        condition: service_healthy
+    networks:
+      - default
+
+  user-api:
+    image: ${USER_CONTAINER_NAME}
+    build:
+      context: .
+      dockerfile: ./src/Services/User/User.API/Dockerfile
+    depends_on:
+      pg:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      seq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      apm-server:
+        condition: service_healthy
+    networks:
+      - default
+
+  product-api:
+    image: ${PRODUCT_CONTAINER_NAME}
+    build:
+      context: .
+      dockerfile: ./src/Services/Product/Product.API/Dockerfile
+    depends_on:
+      pg:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      seq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      apm-server:
+        condition: service_healthy
+    networks:
+      - default
+
+  inventory-api:
+    image: ${INVENTORY_CONTAINER_NAME}
+    build:
+      context: .
+      dockerfile: ./src/Services/Inventory/Inventory.API/Dockerfile
+    depends_on:
+      pg:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      seq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      apm-server:
+        condition: service_healthy
+    networks:
+      - default
+
+  order-api:
+    image: ${ORDER_CONTAINER_NAME}
+    build:
+      context: .
+      dockerfile: ./src/Services/Order/Order.API/Dockerfile
+    depends_on:
+      pg:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      seq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      apm-server:
+        condition: service_healthy
+    networks:
+      - default
+
+  payment-api:
+    image: ${PAYMENT_CONTAINER_NAME}
+    build:
+      context: .
+      dockerfile: ./src/Services/Payment/Payment.API/Dockerfile
+    depends_on:
+      pg:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      seq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      apm-server:
+        condition: service_healthy
+    networks:
+      - default
+
+  # Shipping Service - foundation phase only (domain model, persistence, DI wiring;
+  # no shipping workflow implemented yet), so the container is deliberately not started.
+  # Uncomment together with the shipping-api block in docker-compose.override.yml and the
+  # SHIPPING_* variables in .env once the service has real endpoints to serve.
+  # shipping-api:
+  #   image: ${SHIPPING_CONTAINER_NAME}
+  #   build:
+  #     context: .
+  #     dockerfile: ./src/Services/Shipping/Shipping.API/Dockerfile
+  #   depends_on:
+  #     pg:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     kafka:
+  #       condition: service_started
+  #     seq:
+  #       condition: service_healthy
+  #     elasticsearch:
+  #       condition: service_healthy
+  #     apm-server:
+  #       condition: service_healthy
+  #   networks:
+  #     - default
+
+  audit-api:
+    image: ${AUDIT_CONTAINER_NAME}
+    build:
+      context: .
+      dockerfile: ./src/Services/Audit/Audit.API/Dockerfile
+    depends_on:
+      mongo:
+        condition: service_healthy
+      pg:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      seq:
+        condition: service_healthy
+    networks:
+      - default
+
+  notification-api:
+    image: ${NOTIFICATION_CONTAINER_NAME}
+    build:
+      context: .
+      dockerfile: ./src/Services/Notification/Notification.API/Dockerfile
+    depends_on:
+      mongo:
+        condition: service_healthy
+      pg:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      seq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      apm-server:
+        condition: service_healthy
+    networks:
+      - default
+
+  # ============= DATABASES =============
+  pg:
+    image: ${POSTGRES_IMAGE}
+    container_name: ${PG_CONTAINER_NAME}
+    # Default max_connections=100 is exhausted once every service (each with its own EF Core
+    # pool + a separate Hangfire.PostgreSql storage pool) connects to this single shared instance -
+    # confirmed via "sorry, too many clients already" once Auth/User/Product/Inventory/Order/Audit
+    # were all running together instead of just the original Order-only vertical slice.
+    command: ["postgres", "-c", "max_connections=300"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - default
+
+  mongo:
+    image: ${MONGO_IMAGE}
+    volumes:
+      - mongo_data:/data/db
+      - ./scripts/mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
+    networks:
+      - default
+
+  # ============= CACHE & MESSAGE QUEUE =============
+  redis:
+    image: ${REDIS_IMAGE}
+    volumes:
+      - redis_data:/data
+    networks:
+      - default
+
+  kafka:
+    image: ${KAFKA_IMAGE}
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - default
+
+  # ============= LOGGING & MONITORING =============
+  seq:
+    image: ${SEQ_IMAGE}
+    volumes:
+      - seq_data:/data
+    networks:
+      - default
+
+  elasticsearch:
+    image: ${ELASTICSEARCH_IMAGE}
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - default
+
+  # One-shot: applies the logs ILM policy + index template, then exits.
+  es-init:
+    image: curlimages/curl:latest
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - ./scripts/elasticsearch/init-ilm-templates.sh:/init-ilm-templates.sh:ro
+    entrypoint: ["/bin/sh", "/init-ilm-templates.sh"]
+    restart: "no"
+    networks:
+      - default
+
+  kibana:
+    image: ${KIBANA_IMAGE}
+    depends_on:
+      - elasticsearch
+    networks:
+      - default
+
+  apm-server:
+    image: ${APM_SERVER_IMAGE}
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - ./scripts/apm-server/apm-server.yml:/usr/share/apm-server/apm-server.yml:ro
+    networks:
+      - default
+
+networks:
+  default:
+    name: ${COMPOSE_NETWORK}
+    external: true
+
+volumes:
+  postgres_data:
+  mongo_data:
+  redis_data:
+  kafka_data:
+  seq_data:
+  elasticsearch_data:

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Carter" />
+    <!-- Pinned below the central version: not yet verified against Swashbuckle.AspNetCore 7.0.0 / Microsoft.AspNetCore.OpenApi 10.0.0. -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" VersionOverride="9.0.0" />
+    <PackageReference Include="Microsoft.OpenApi" VersionOverride="1.6.17" />
+    <PackageReference Include="Swashbuckle.AspNetCore" VersionOverride="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BuildingBlock.SharedKernel\BuildingBlock.SharedKernel.csproj" />
+    <ProjectReference Include="..\BuildingBlock.Application\BuildingBlock.Application.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.BuildingBlock.Web</RootNamespace>
+    <AssemblyName>NovaCore.BuildingBlock.Web</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

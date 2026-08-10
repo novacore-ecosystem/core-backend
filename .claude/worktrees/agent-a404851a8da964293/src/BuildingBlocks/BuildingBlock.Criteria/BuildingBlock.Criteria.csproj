@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.BuildingBlock.Criteria</RootNamespace>
+    <AssemblyName>NovaCore.BuildingBlock.Criteria</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BuildingBlock.SharedKernel\BuildingBlock.SharedKernel.csproj" />
+  </ItemGroup>
+
+</Project>

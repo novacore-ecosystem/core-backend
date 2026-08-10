@@ -1,0 +1,21 @@
+apm-server:
+  host: "0.0.0.0:8200"
+  rum:
+    enabled: false
+  # Standalone mode: no Kibana Fleet "APM integration" package is installed, so skip
+  # apm-server's precondition that waits for Fleet-provisioned index templates. Data
+  # still lands in traces-apm-default/metrics-apm-default data streams; only the
+  # Fleet-managed Kibana quickstart dashboards are unavailable.
+  data_streams.wait_for_integration: false
+
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]
+  username: "${ELASTICSEARCH_USERNAME}"
+  password: "${ELASTICSEARCH_PASSWORD}"
+
+setup.kibana:
+  host: "http://kibana:5601"
+
+logging:
+  level: info
+  to_stderr: true

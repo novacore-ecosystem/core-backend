@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option csharp_namespace = "NovaCore.BuildingBlock.Contract.Protos.Auth";
+
+package novacore.auth;
+
+service AuthGrpcService {
+  rpc GetUserRoles(GetUserRolesRequest) returns (GetUserRolesResponse);
+  rpc CheckEmailExists (CheckEmailExistsRequest) returns (CheckEmailExistsResponse);
+}
+
+message CheckEmailExistsRequest {
+  string email = 1;
+}
+
+message CheckEmailExistsResponse {
+  bool exists = 1;
+  string user_id = 2;
+}
+
+message GetUserRolesRequest {
+  string user_id = 1;
+}
+
+message GetUserRolesResponse {
+  repeated string roles = 1;
+}

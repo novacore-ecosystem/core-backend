@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+option csharp_namespace = "NovaCore.BuildingBlock.Contract.Protos.User";
+
+package novacore.user;
+
+service UserGrpcService {
+  rpc CreateUserProfile (CreateUserProfileRequest) returns (CreateUserProfileResponse);
+  rpc GetUser (GetUserRequest) returns (GetUserResponse);
+  // Batch lookup - one round trip instead of N. Every requested user_id gets exactly one
+  // response item, found=false (not omitted) for any id that doesn't resolve, so a caller never
+  // has to guess which ids vanished. Mirrors inventory.proto's GetProductsStock convention.
+  rpc GetUsers (GetUsersRequest) returns (GetUsersResponse);
+}
+
+message CreateUserProfileRequest {
+  string user_id = 1;
+  string email = 2;
+  string user_name = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string phone_number = 6;
+  string correlation_id = 7;
+  string middle_name = 8;
+}
+
+message CreateUserProfileResponse {
+  bool success = 1;
+  string user_id = 2;
+  string error_code = 3;
+  string message = 4;
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserResponse {
+  bool found = 1;
+  string user_id = 2;
+  string email = 3;
+  string user_name = 4;
+  string first_name = 5;
+  string middle_name = 6;
+  string last_name = 7;
+  // Formatted at a fixed default locale - a gRPC caller is a service, not a request with its own
+  // Accept-Language header. See docs/tasks/2026-07-28/Task13_grpc-proto-getuser-getusers.md.
+  string display_name = 8;
+  string phone_number = 9;
+  repeated string roles = 10;
+  string status = 11;
+}
+
+message GetUsersRequest {
+  repeated string user_ids = 1;
+}
+
+message UserProfileItem {
+  bool found = 1;
+  string user_id = 2;
+  string email = 3;
+  string user_name = 4;
+  string first_name = 5;
+  string middle_name = 6;
+  string last_name = 7;
+  string display_name = 8;
+  string phone_number = 9;
+  repeated string roles = 10;
+  string status = 11;
+}
+
+message GetUsersResponse {
+  repeated UserProfileItem items = 1;
+}

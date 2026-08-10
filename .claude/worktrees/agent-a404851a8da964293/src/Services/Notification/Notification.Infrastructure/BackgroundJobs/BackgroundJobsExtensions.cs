@@ -1,0 +1,28 @@
+using NovaCore.BuildingBlock.Infrastructure.BackgroundJobs;
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace NovaCore.Notification.Infrastructure.BackgroundJobs;
+
+public static class BackgroundJobsExtensions
+{
+    public static IServiceCollection AddBackgroundJobs(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddHangfireScheduling(configuration, typeof(BackgroundJobsExtensions));
+        return services;
+    }
+
+    public static void UseBackgroundJobsDashboard(this IApplicationBuilder app)
+    {
+        app.UseHangfireJobsDashboard("Notification Service - Background Jobs");
+    }
+
+    public static void UseBackgroundJobsScheduling(this IApplicationBuilder app)
+    {
+        app.UseHangfireScheduling();
+    }
+}

@@ -1,0 +1,4 @@
+# 2026-08-06 — Progress
+
+- [x] Task 1 — PaymentService production-ready foundation (`Task1_paymentservice-foundation.md`) — done: architecture + domain model (30 aggregates) + migration-ready schema + CQRS/API proof-of-concept slice (Payment/PaymentIntent/Refund). Business workflows (gateway integration, webhooks, settlement, accounts/billing CQRS) intentionally postponed — see the task file's "Planned phases".
+- [x] Task 2 — Sync OrderService/UserService with the PaymentService boundary (`Task2_order-user-payment-architecture-sync.md`) — done: slimmed `OrderPayment`/`UserPaymentMethod` to lightweight references, deleted duplicated enums/VOs, new migrations, new `docs/reference/payment-ownership-boundaries.md`. No PaymentService change, no live integration wired (still Phase 7 future work).

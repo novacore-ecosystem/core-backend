@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+option csharp_namespace = "NovaCore.BuildingBlock.Contract.Protos.Inventory";
+
+package novacore.inventory;
+
+service InventoryGrpcService {
+  rpc GetProductStock (GetProductStockRequest) returns (GetProductStockResponse);
+  rpc GetProductsStock (GetProductsStockRequest) returns (GetProductsStockResponse);
+  rpc DeductStock (DeductStockRequest) returns (DeductStockResponse);
+  rpc RestockStock (RestockStockRequest) returns (RestockStockResponse);
+}
+
+message GetProductStockRequest {
+  string product_id = 1;
+  // Omit (or leave empty) for the whole-product rollup across every variation and warehouse.
+  optional string variant_id = 2;
+}
+
+message GetProductStockResponse {
+  string product_id = 1;
+  string variant_id = 2;
+  int32 total_quantity = 3;
+}
+
+// Batch rollup across every warehouse for each requested variation - one round trip instead of N.
+// A variation id with no inventory rows at all comes back as total_quantity 0, not omitted.
+message GetProductsStockRequest {
+  repeated string variant_ids = 1;
+}
+
+message VariantStock {
+  string variant_id = 1;
+  int32 total_quantity = 2;
+}
+
+message GetProductsStockResponse {
+  repeated VariantStock items = 1;
+}
+
+message DeductStockItem {
+  string variant_id = 1;
+  int32 quantity = 2;
+}
+
+// deduction_id is the idempotency key for this whole batch (Order Service passes its OrderId) -
+// resubmitting the same deduction_id (saga retry, Kafka redelivery) replays the original
+// stored outcome instead of decrementing stock a second time. All items either deduct together
+// or none do - never a partial deduction.
+message DeductStockRequest {
+  string deduction_id = 1;
+  string reason = 2;
+  repeated DeductStockItem items = 3;
+}
+
+message InsufficientStockItem {
+  string variant_id = 1;
+  int32 requested_quantity = 2;
+  int32 available_quantity = 3;
+}
+
+message DeductStockResponse {
+  bool success = 1;
+  // Set when success is false and the cause isn't insufficient stock, e.g. "VariationNotFound".
+  string failure_code = 2;
+  repeated InsufficientStockItem insufficient_items = 3;
+}
+
+// Reverses a previously successful DeductStock call, looked up by the same deduction_id - the
+// compensating action for CreateOrderSaga's DeductInventoryStep. Idempotent: reversing an
+// already-reversed (or never-succeeded) deduction_id is a no-op success.
+message RestockStockRequest {
+  string deduction_id = 1;
+  string reason = 2;
+}
+
+message RestockStockResponse {
+  bool success = 1;
+}

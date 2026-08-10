@@ -1,0 +1,30 @@
+global using System;
+global using System.Collections.Generic;
+global using System.Threading;
+global using System.Threading.Tasks;
+
+global using NovaCore.BuildingBlock.Application.Abstractions.CQRS;
+global using NovaCore.BuildingBlock.Application.Abstractions.Common;
+global using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
+global using NovaCore.BuildingBlock.Criteria.Requests;
+global using NovaCore.BuildingBlock.Contract;
+
+global using NovaCore.Inventory.Application.Abstractions.Persistence.InventoryCounts;
+global using NovaCore.Inventory.Application.Abstractions.Persistence.InventoryDocuments;
+global using NovaCore.Inventory.Application.Abstractions.Persistence.InventoryLots;
+global using NovaCore.Inventory.Application.Abstractions.Persistence.InventoryReservations;
+global using NovaCore.Inventory.Application.Abstractions.Persistence.InventorySerials;
+global using NovaCore.Inventory.Application.Abstractions.Persistence.InventoryTransactions;
+global using NovaCore.Inventory.Application.Features.InventoryLots.DTOs;
+global using NovaCore.Inventory.Application.Features.InventoryReservations.DTOs;
+global using NovaCore.Inventory.Application.Features.InventorySerials.DTOs;
+global using NovaCore.Inventory.Domain.Entities;
+global using NovaCore.Inventory.Domain.Entities.InventoryCounts;
+global using NovaCore.Inventory.Domain.Entities.InventoryDocuments;
+global using NovaCore.Inventory.Domain.Entities.InventoryLots;
+global using NovaCore.Inventory.Domain.Entities.InventoryReservations;
+global using NovaCore.Inventory.Domain.Entities.InventorySerials;
+global using NovaCore.Inventory.Domain.Entities.InventoryTransactions;
+global using NovaCore.Inventory.Domain.Entities.Inventories;
+global using NovaCore.Inventory.Domain.Entities.Warehouses;
+global using NovaCore.Inventory.Domain.Enums;

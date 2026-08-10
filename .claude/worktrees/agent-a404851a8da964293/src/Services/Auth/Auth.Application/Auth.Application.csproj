@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Auth.Domain\Auth.Domain.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlock.Application\BuildingBlock.Application.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Messaging/BuildingBlock.Messaging.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Mapster" />
+    <PackageReference Include="Mapster.DependencyInjection" />
+    <!-- Pinned above the central version (MediatR 12.5.0); this service has not yet been migrated to MediatR 12.x's IRequest changes. -->
+    <PackageReference Include="MediatR" VersionOverride="14.2.0" />
+    <PackageReference Include="Scrutor" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.Auth.Application</RootNamespace>
+    <AssemblyName>NovaCore.Auth.Application</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

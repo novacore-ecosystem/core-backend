@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\BuildingBlock.Persistence\BuildingBlock.Persistence.csproj" />
+    <ProjectReference Include="..\BuildingBlock.Observability\BuildingBlock.Observability.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.BuildingBlock.Persistence.Mongo</RootNamespace>
+    <AssemblyName>NovaCore.BuildingBlock.Persistence.Mongo</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MongoDB.Driver" />
+    <PackageReference Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" />
+  </ItemGroup>
+
+</Project>

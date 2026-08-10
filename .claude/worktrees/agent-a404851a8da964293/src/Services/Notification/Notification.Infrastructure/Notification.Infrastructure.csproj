@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.Notification.Infrastructure</RootNamespace>
+    <AssemblyName>NovaCore.Notification.Infrastructure</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Notification.Application/Notification.Application.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Infrastructure/BuildingBlock.Infrastructure.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Contract/BuildingBlock.Contract.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Messaging/BuildingBlock.Messaging.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Messaging.Kafka/BuildingBlock.Messaging.Kafka.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.SharedKernel/BuildingBlock.SharedKernel.csproj" />
+  </ItemGroup>
+
+</Project>

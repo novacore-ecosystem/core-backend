@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.Order.Persistence</RootNamespace>
+    <AssemblyName>NovaCore.Order.Persistence</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Order.Application/Order.Application.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Domain/BuildingBlock.Domain.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Persistence/BuildingBlock.Persistence.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Persistence.Ef/BuildingBlock.Persistence.Ef.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Saga/BuildingBlock.Saga.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlock.Observability\BuildingBlock.Observability.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.Xml" />
+    <PackageReference Include="Npgsql.OpenTelemetry" />
+  </ItemGroup>
+
+</Project>
