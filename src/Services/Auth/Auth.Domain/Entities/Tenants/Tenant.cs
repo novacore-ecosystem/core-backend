@@ -10,7 +10,7 @@ namespace NovaCore.Auth.Domain.Entities.Tenants;
 /// TenantId. Carries only bootstrap/branding identity - subscription, billing, licensing and
 /// feature management are explicitly out of scope for this aggregate.
 /// </summary>
-public sealed class Tenant : AggregateRoot<Guid>, IAuditable
+public sealed class Tenant : AggregateRoot<Guid>, IAuditable, ISoftDeleteEntity
 {
     public TenantCode Code { get; private set; } = null!;
     public string Name { get; private set; } = string.Empty;
@@ -19,6 +19,8 @@ public sealed class Tenant : AggregateRoot<Guid>, IAuditable
     public int Version { get; private set; } = 1;
     public TenantMetadata Metadata { get; private set; } = new();
     public bool IsActive { get; private set; } = true;
+    public bool IsDeleted { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
 
     public ICollection<TenantLocale> Locales { get; private set; } = [];
 
@@ -128,6 +130,30 @@ public sealed class Tenant : AggregateRoot<Guid>, IAuditable
     public void Deactivate()
     {
         IsActive = false;
+    }
+
+    /// <summary>Soft-delete - deactivates the tenant and marks it deleted so it drops out of every
+    /// normal query (see ISoftDeleteEntity's global query filter). Distinct from Deactivate(): a
+    /// disabled tenant can be re-enabled, a deleted one cannot come back through this API surface.
+    /// Idempotent, mirrors User.Delete()'s shape.</summary>
+    public void Delete()
+    {
+        if (IsDeleted)
+            return;
+
+        IsActive = false;
+        MarkDeleted();
+    }
+
+    /// <summary>Framework-facing assignment point for ISoftDeleteEntity - idempotent, only ever
+    /// called from Delete() above so IsActive and IsDeleted/DeletedAt never drift out of sync.</summary>
+    public void MarkDeleted()
+    {
+        if (IsDeleted)
+            return;
+
+        IsDeleted = true;
+        DeletedAt = DateTime.UtcNow;
     }
 
     public static bool IsValidName(string? name) => name.IsNotNullOrWhiteSpace();

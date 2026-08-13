@@ -171,8 +171,10 @@ public static class DependencyInjection
     // AccountWriteService.DeleteIfExistAsync is a bare `return repo.DeleteIfExistAsync(id, ct);`)
     // - they deliberately do NOT implement IPersistenceService (see that interface's own "not a
     // dumping ground" guidance) and so are not picked up by AddPersistenceServices below.
-    // Tenant/Scope are pre-existing, unrelated to this authentication-flow refactor, and were left
-    // exactly as they were rather than mass-converted.
+    // Scope is pre-existing, unrelated to this authentication-flow refactor, and was left exactly
+    // as it was rather than mass-converted. Tenant's Read/Write services were promoted to
+    // IPersistenceService below once they grew past a single bare decorator method (Tenant
+    // Management CRUD) - see AddPersistenceServices.
     private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
         services.AddScopedByInterface(typeof(IRepository<>), typeof(AuthDbContext));
@@ -181,8 +183,6 @@ public static class DependencyInjection
         services.AddScoped<IAccountWriteService, AccountWriteService>();
 
         services.AddScoped<IRefreshTokenWriteService, RefreshTokenWriteService>();
-
-        services.AddScoped<ITenantWriteService, TenantWriteService>();
 
         services.AddScoped<IScopeReadService, ScopeReadService>();
         services.AddScoped<IScopeWriteService, ScopeWriteService>();
@@ -198,7 +198,7 @@ public static class DependencyInjection
     // scanning for a different marker - no per-service manual registration needed. Currently:
     // AccountReadService, RefreshTokenReadService, TenantClientReadService,
     // EffectivePermissionReadService, RoleReadService, RoleWriteService, PermissionReadService,
-    // PermissionWriteService. A new Persistence Service only needs to implement
+    // PermissionWriteService, TenantReadService, TenantWriteService. A new Persistence Service only needs to implement
     // IPersistenceService alongside its own interface to be picked up here.
     private static IServiceCollection AddPersistenceServices(this IServiceCollection services)
     {
