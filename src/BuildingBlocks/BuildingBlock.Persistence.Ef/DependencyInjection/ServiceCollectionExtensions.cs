@@ -2,8 +2,6 @@ using NovaCore.BuildingBlock.Application.Abstractions.Services;
 using NovaCore.BuildingBlock.Persistence.Audit;
 using NovaCore.BuildingBlock.Persistence.Ef.DbContext;
 using NovaCore.BuildingBlock.Persistence.Ef.Interceptors;
-using NovaCore.BuildingBlock.Persistence.Ef.Repository;
-using NovaCore.BuildingBlock.Persistence.Repository;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -33,9 +31,6 @@ public static class ServiceCollectionExtensions
         // directly (see TenantAssignmentInterceptor), so no DI-resolved request-identity service
         // is registered here at all.
         services.TryAddEnumerable(ServiceDescriptor.Scoped<ISaveChangesInterceptor, TenantAssignmentInterceptor>());
-
-        services.TryAddScoped(typeof(IRepository<>), typeof(GenericRepository<,>));
-        services.TryAddScoped(typeof(IRepository<,>), typeof(EntityGenericRepository<,,>));
 
         services.AddDbContext<TContext>((serviceProvider, options) =>
         {
