@@ -29,4 +29,13 @@ public sealed class TenantClientReadService(AuthDbContext dbContext) : ITenantCl
             .AsNoTracking()
             .AnyAsync(c => c.PublicKey == key, ct);
     }
+
+    public async Task<IReadOnlyList<TenantClient>> ListByTenantAsync(Guid tenantId, CancellationToken ct = default)
+    {
+        return await dbContext.TenantClients
+            .AsNoTracking()
+            .Where(c => c.TenantId == tenantId)
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync(ct);
+    }
 }

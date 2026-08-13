@@ -10,6 +10,14 @@ namespace NovaCore.Auth.Persistence.Contexts.Tenants.Read;
 
 public sealed class TenantReadService(AuthDbContext dbContext) : ITenantReadService, IPersistenceService
 {
+    public async Task<Tenant?> GetByIdAsync(Guid id, CancellationToken ct = default)
+    {
+        return await dbContext.Tenants
+            .AsNoTracking()
+            .Include(t => t.Locales)
+            .FirstOrDefaultAsync(t => t.Id == id, ct);
+    }
+
     public async Task<Tenant?> GetByCodeAsync(string code, CancellationToken ct = default)
     {
         return await dbContext.Tenants

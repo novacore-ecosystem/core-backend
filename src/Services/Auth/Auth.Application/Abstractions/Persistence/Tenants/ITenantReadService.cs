@@ -4,6 +4,11 @@ namespace NovaCore.Auth.Application.Abstractions.Persistence.Tenants;
 
 public interface ITenantReadService
 {
+    /// <summary>Includes Locales - callers needing the full editing/bootstrap payload (detail,
+    /// bootstrap) get it in one round trip; lighter callers (existence checks) use GetByCodeAsync/
+    /// ExistsByCodeAsync instead.</summary>
+    Task<Tenant?> GetByIdAsync(Guid id, CancellationToken ct = default);
+
     Task<Tenant?> GetByCodeAsync(string code, CancellationToken ct = default);
 
     Task<bool> ExistsByCodeAsync(string code, CancellationToken ct = default);
