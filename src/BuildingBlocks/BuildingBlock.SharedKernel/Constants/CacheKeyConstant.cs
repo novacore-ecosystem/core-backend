@@ -133,6 +133,25 @@ public static class CacheKeyConstant
     }
 
     /// <summary>
+    /// Tenant bootstrap version cache - the read-through cache a future Notification Hub
+    /// connection handler compares against (see docs/services/auth-service.md, "Redis Version
+    /// Cache"). Auth (writer, via TenantVersionCache) and Notification (reader, on Hub connect)
+    /// share one physical Redis instance, so the key is explicitly namespaced by service.
+    /// </summary>
+    public static class Tenants
+    {
+        private const string Prefix = "auth:tenants";
+
+        /// <summary>Cached bootstrap Version for one tenant. Pattern: auth:tenants:version:{tenantId}</summary>
+        public static string Version(Guid tenantId) => $"{Prefix}:version:{tenantId}";
+
+        /// <summary>Short TTL - refreshed on read-through miss and actively invalidated on every
+        /// bootstrap-affecting Tenant change (see TenantVersionChangedIntegrationEvent), so a long
+        /// TTL would only matter for the narrow window between a miss and the next write.</summary>
+        public const int DefaultTtlMinutes = 10;
+    }
+
+    /// <summary>
     /// Notification channel runtime-config cache patterns. Keyed by channel type name (string,
     /// not the enum itself - SharedKernel can't depend on NovaCore.Notification.Domain).
     /// </summary>

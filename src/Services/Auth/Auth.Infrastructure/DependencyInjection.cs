@@ -30,6 +30,7 @@ public static class DependencyInjection
             .AddAppLogger()
             .AddRedisCache(configuration)
             .AddRoleCaching(configuration)
+            .AddTenantCaching()
             .AddBackgroundJobs(configuration)
             .AddInboxOutboxCleanupJobs(configuration)
             .AddHttpAuditMetadataProvider("Auth")
@@ -66,6 +67,13 @@ public static class DependencyInjection
             var roleCache = provider.GetRequiredService<RoleCacheService>();
             return new CachedAuthServiceDecorator(innerAuthService, roleCache);
         });
+
+        return services;
+    }
+
+    private static IServiceCollection AddTenantCaching(this IServiceCollection services)
+    {
+        services.AddScoped<ITenantVersionCache, TenantVersionCache>();
 
         return services;
     }

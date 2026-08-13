@@ -16,4 +16,8 @@ public sealed class ActorHubFacade<THub, TRoot, TSite>(IHubContext<THub, TRoot> 
     public TSite MemberAll() => hub.Clients.Group(ActorGroups.Broadcast(AppRoleConstant.User));
     public TSite Admin(Guid userId) => hub.Clients.Group(ActorGroups.Admin(userId));
     public TSite Member(Guid userId) => hub.Clients.Group(ActorGroups.Member(userId));
+
+    /// <summary>Every connection belonging to one tenant - backend foundation for tenant-wide
+    /// notification, see ActorGroups.Tenant.</summary>
+    public TSite Tenant(Guid tenantId) => hub.Clients.Group(ActorGroups.Tenant(tenantId));
 }

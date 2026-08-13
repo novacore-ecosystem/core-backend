@@ -18,6 +18,17 @@ public sealed class TenantReadService(AuthDbContext dbContext) : ITenantReadServ
             .FirstOrDefaultAsync(t => t.Id == id, ct);
     }
 
+    public async Task<(int Version, bool IsActive)?> GetVersionAsync(Guid id, CancellationToken ct = default)
+    {
+        var result = await dbContext.Tenants
+            .AsNoTracking()
+            .Where(t => t.Id == id)
+            .Select(t => new { t.Version, t.IsActive })
+            .FirstOrDefaultAsync(ct);
+
+        return result is null ? null : (result.Version, result.IsActive);
+    }
+
     public async Task<Tenant?> GetByCodeAsync(string code, CancellationToken ct = default)
     {
         return await dbContext.Tenants

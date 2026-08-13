@@ -22,4 +22,9 @@ public sealed class SignalRRealtimeNotifier(
     {
         await hub.AdminAll().OrderCreated(notification);
     }
+
+    public async Task PushTenantBootstrapVersionChangedAsync(Guid tenantId, int version, CancellationToken ct = default)
+    {
+        await hub.Tenant(tenantId).BootstrapVersionChanged(version);
+    }
 }

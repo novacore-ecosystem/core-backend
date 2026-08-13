@@ -7,6 +7,10 @@ package novacore.auth;
 service AuthGrpcService {
   rpc GetUserRoles(GetUserRolesRequest) returns (GetUserRolesResponse);
   rpc CheckEmailExists (CheckEmailExistsRequest) returns (CheckEmailExistsResponse);
+  // Source-of-truth lookup for a tenant's bootstrap version - backend foundation for the future
+  // Notification Hub version-check flow (see docs/services/auth-service.md, "gRPC Version
+  // Lookup"). Deliberately returns only Version/IsActive, never the bootstrap payload itself.
+  rpc GetTenantVersion (GetTenantVersionRequest) returns (GetTenantVersionResponse);
 }
 
 message CheckEmailExistsRequest {
@@ -24,4 +28,15 @@ message GetUserRolesRequest {
 
 message GetUserRolesResponse {
   repeated string roles = 1;
+}
+
+message GetTenantVersionRequest {
+  string tenant_id = 1;
+}
+
+message GetTenantVersionResponse {
+  bool found = 1;
+  string tenant_id = 2;
+  int32 version = 3;
+  bool is_active = 4;
 }

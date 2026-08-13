@@ -13,6 +13,10 @@ public interface ITenantReadService
 
     Task<bool> ExistsByCodeAsync(string code, CancellationToken ct = default);
 
+    /// <summary>Lean projection (no Locales include) for the version-cache read-through and the
+    /// GetTenantVersion gRPC call - both only ever need Version/IsActive, not the full aggregate.</summary>
+    Task<(int Version, bool IsActive)?> GetVersionAsync(Guid id, CancellationToken ct = default);
+
     /// <summary>Database-level search + pagination for the Tenant Management list screen -
     /// matches against Code/Name, case-insensitive. Search happens entirely in the query (no
     /// in-memory filtering); count and page are separate queries against the same filter.</summary>

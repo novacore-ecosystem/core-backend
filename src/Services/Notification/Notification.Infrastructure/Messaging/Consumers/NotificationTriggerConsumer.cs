@@ -2,6 +2,7 @@ using System.Text.Json;
 
 using NovaCore.BuildingBlock.Application.Abstractions.Services;
 using NovaCore.BuildingBlock.Contract.Events.Order;
+using NovaCore.BuildingBlock.Contract.Events.Tenant;
 using NovaCore.BuildingBlock.Contract.Events.User;
 using NovaCore.BuildingBlock.Messaging.Abstractions;
 
@@ -11,6 +12,7 @@ using NovaCore.Notification.Application.Features.NotificationDispatches.Commands
 using NovaCore.Notification.Application.Features.NotificationDispatches.DTOs;
 using NovaCore.Notification.Application.Features.OrderRealtime.Commands.NotifyNewOrderToAdmins;
 using NovaCore.Notification.Application.Features.OrderRealtime.Commands.NotifyOrderStatusUpdated;
+using NovaCore.Notification.Application.Features.TenantRealtime.Commands.NotifyTenantVersionChanged;
 using NovaCore.Notification.Application.Features.UserNotifications.Commands.CreateUserNotification;
 using NovaCore.Notification.Domain.Enums;
 using NovaCore.Notification.Domain.ValueObjects;
@@ -48,6 +50,7 @@ public sealed class NotificationTriggerConsumer(
         nameof(OrderCreatedIntegrationEvent).ToLowerInvariant(),
         nameof(OrderConfirmedIntegrationEvent).ToLowerInvariant(),
         nameof(OrderCancelledIntegrationEvent).ToLowerInvariant(),
+        nameof(TenantVersionChangedIntegrationEvent).ToLowerInvariant(),
     ];
 
     public async Task HandleAsync(
@@ -77,6 +80,10 @@ public sealed class NotificationTriggerConsumer(
 
             case nameof(OrderCancelledIntegrationEvent):
                 await HandleOrderCancelledAsync(message, ct);
+                break;
+
+            case nameof(TenantVersionChangedIntegrationEvent):
+                await HandleTenantVersionChangedAsync(message, ct);
                 break;
 
             default:
@@ -144,6 +151,13 @@ public sealed class NotificationTriggerConsumer(
 
         await sender.Send(new NotifyOrderStatusUpdatedCommand(
             data.OrderId, data.CustomerId, Status: "Cancelled", data.Reason, TotalAmount: null), ct);
+    }
+
+    private async Task HandleTenantVersionChangedAsync(string message, CancellationToken ct)
+    {
+        var data = Deserialize<TenantVersionChangedIntegrationEvent>(message);
+
+        await sender.Send(new NotifyTenantVersionChangedCommand(data.TenantId, data.Version), ct);
     }
 
     private static T Deserialize<T>(string message) =>

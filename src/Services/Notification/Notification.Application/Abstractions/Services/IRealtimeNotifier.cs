@@ -19,4 +19,9 @@ public interface IRealtimeNotifier
 
     /// <summary>Structured new-order push to every connected admin (IAdminSiteActions.OrderCreated).</summary>
     Task PushNewOrderToAdminsAsync(NewOrderNotificationDto notification, CancellationToken ct = default);
+
+    /// <summary>Backend foundation for the future Hub version-check flow - pushes to every
+    /// connection in the tenant's group (IGlobalHubBase.BootstrapVersionChanged), see
+    /// docs/services/auth-service.md, "Notification Hub Version Check".</summary>
+    Task PushTenantBootstrapVersionChangedAsync(Guid tenantId, int version, CancellationToken ct = default);
 }

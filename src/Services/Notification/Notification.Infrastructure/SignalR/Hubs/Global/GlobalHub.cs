@@ -14,6 +14,12 @@ namespace NovaCore.Notification.Infrastructure.SignalR.Hubs.Global;
 public interface IGlobalHubBase : IAppHub
 {
     Task ReceiveNotification(NotificationDto message);
+
+    /// <summary>Backend foundation for the future Hub version-check flow (see docs/services/
+    /// auth-service.md, "Notification Hub Version Check") - informs a connection that its
+    /// tenant's bootstrap Version changed, so it knows a refetch is needed. Client-side refetch
+    /// orchestration is deliberately not implemented yet (see "Important Scope Boundary").</summary>
+    Task BootstrapVersionChanged(int version);
 }
 
 public interface IGlobalHubClient
@@ -51,6 +57,11 @@ public partial class GlobalHub(
             await Groups.AddToGroupAsync(Context.ConnectionId, ActorGroups.Member(this.UserId));
             await Groups.AddToGroupAsync(Context.ConnectionId, ActorGroups.Broadcast(AppRoleConstant.User));
         }
+
+        // Backend foundation for tenant-wide notification (BootstrapVersionChanged, ...) - see
+        // ActorGroups.Tenant and docs/services/auth-service.md, "Tenant Group Notification".
+        if (this.TenantId is { } tenantId)
+            await Groups.AddToGroupAsync(Context.ConnectionId, ActorGroups.Tenant(tenantId));
 
         await base.OnConnectedAsync();
     }

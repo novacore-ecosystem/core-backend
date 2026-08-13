@@ -16,6 +16,12 @@ public abstract class HubBase<T>()
         .Select(r => r.Value)
         .ToArray() ?? [];
 
+    /// <summary>Same claim Auth's JwtTokenGenerator embeds (AppClaimTypes.TenantId) - null for
+    /// the Root client, which carries no tenant. Backend foundation for tenant-group notification,
+    /// see ActorGroups.Tenant.</summary>
+    protected Guid? TenantId =>
+        Guid.TryParse(Context.User?.FindFirst(AppClaimTypes.TenantId)?.Value, out var id) ? id : null;
+
     protected async Task AddGroupAsync(string groupName)
     {
         await Groups.AddToGroupAsync(this.ConnectionId, groupName);
