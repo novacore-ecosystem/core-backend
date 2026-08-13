@@ -16,7 +16,10 @@ public class AccountRole : IdentityUserRole<Guid>, IEntity
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    private AccountRole() { }
+    // Must be public: ASP.NET Core Identity's UserStore requires TUserRole : IdentityUserRole<TKey>, new()
+    // with an accessible parameterless constructor (it's instantiated via generic constraint from
+    // Identity's own assembly). Controlled construction is still expected through Create() below.
+    public AccountRole() { }
 
     internal static AccountRole Create(Guid accountId, Guid roleId)
     {
