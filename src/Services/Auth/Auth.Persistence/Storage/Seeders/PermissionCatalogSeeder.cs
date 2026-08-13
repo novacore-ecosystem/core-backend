@@ -69,6 +69,11 @@ public class PermissionCatalogSeeder(AuthDbContext context)
         ("users", Permissions.Users.Reindex),
         ("users", Permissions.Users.Full),
 
+        ("tenant", Permissions.Tenant.View),
+        ("tenant", Permissions.Tenant.Manage),
+        ("tenant", Permissions.Tenant.RotateClient),
+        ("tenant", Permissions.Tenant.Full),
+
         ("system", Permissions.System.MessagingView),
         ("system", Permissions.System.MessagingRequeue),
         ("system", Permissions.System.Full),
