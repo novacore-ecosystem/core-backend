@@ -166,15 +166,15 @@ public static class DependencyInjection
     // generic shape - Account mutation itself goes through ASP.NET Identity's UserManager, not
     // this repository at all), so it stays manually registered.
     //
-    // The Write Services registered here by hand (Account/RefreshToken/TenantClient) are each a
-    // single Repository-method decorator with no meaningful grouping of their own (e.g.
+    // The Write Services registered here by hand (Account/RefreshToken) are each a single
+    // Repository-method decorator with no meaningful grouping of their own (e.g.
     // AccountWriteService.DeleteIfExistAsync is a bare `return repo.DeleteIfExistAsync(id, ct);`)
     // - they deliberately do NOT implement IPersistenceService (see that interface's own "not a
     // dumping ground" guidance) and so are not picked up by AddPersistenceServices below.
     // Scope is pre-existing, unrelated to this authentication-flow refactor, and was left exactly
-    // as it was rather than mass-converted. Tenant's Read/Write services were promoted to
-    // IPersistenceService below once they grew past a single bare decorator method (Tenant
-    // Management CRUD) - see AddPersistenceServices.
+    // as it was rather than mass-converted. Tenant's and TenantClient's Read/Write services were
+    // promoted to IPersistenceService below once they grew past a single bare decorator method
+    // (Tenant Management CRUD, client rotation) - see AddPersistenceServices.
     private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
         services.AddScopedByInterface(typeof(IRepository<>), typeof(AuthDbContext));
@@ -187,8 +187,6 @@ public static class DependencyInjection
         services.AddScoped<IScopeReadService, ScopeReadService>();
         services.AddScoped<IScopeWriteService, ScopeWriteService>();
 
-        services.AddScoped<ITenantClientWriteService, TenantClientWriteService>();
-
         return services;
     }
 
@@ -196,10 +194,10 @@ public static class DependencyInjection
     // Application-facing interface - see IPersistenceService's own doc comment) are discovered
     // automatically here via the exact same generic Scrutor helper IRepository<> uses above, just
     // scanning for a different marker - no per-service manual registration needed. Currently:
-    // AccountReadService, RefreshTokenReadService, TenantClientReadService,
+    // AccountReadService, RefreshTokenReadService, TenantClientReadService, TenantClientWriteService,
     // EffectivePermissionReadService, RoleReadService, RoleWriteService, PermissionReadService,
-    // PermissionWriteService, TenantReadService, TenantWriteService. A new Persistence Service only needs to implement
-    // IPersistenceService alongside its own interface to be picked up here.
+    // PermissionWriteService, TenantReadService, TenantWriteService. A new Persistence Service
+    // only needs to implement IPersistenceService alongside its own interface to be picked up here.
     private static IServiceCollection AddPersistenceServices(this IServiceCollection services)
     {
         services.AddScopedByInterface(typeof(IPersistenceService), typeof(AuthDbContext));
