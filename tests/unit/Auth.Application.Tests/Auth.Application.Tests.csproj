@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.Auth.Application.Tests</RootNamespace>
+    <AssemblyName>NovaCore.Auth.Application.Tests</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="NSubstitute" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/Services/Auth/Auth.Application/Auth.Application.csproj" />
+    <ProjectReference Include="../Common/NovaCore.TestKit/NovaCore.TestKit.csproj" />
+  </ItemGroup>
+
+</Project>
