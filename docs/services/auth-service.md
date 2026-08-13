@@ -19,9 +19,21 @@
 | POST | `/login` | `Login.cs` | Resolves tenant context from the `X-Tenant-Client-Key` header, then issues AccessToken/RefreshToken cookies |
 | POST | `/logout` | `Logout.cs` | Revoke refresh token, clear cookies |
 | POST | `/refresh-token` | `RefreshToken.cs` | Reads `RefreshToken` cookie, validates against Redis, issues new tokens. **Also filtered at the Gateway** — see [gateway.md](gateway.md) |
-| GET | `/tenants` | `ListTenants.cs` | Root-only. Tenant discovery/selection list for the Root Portal |
+| GET | `/tenants` | `ListTenants.cs` | Paginated/searchable Tenant Management list, `tenant:view` |
+| GET | `/tenants/{id}` | `GetTenant.cs` | Full Tenant Management editing payload, `tenant:view` |
+| POST | `/tenants` | `CreateTenant.cs` | Create tenant, `tenant:manage` |
+| PUT | `/tenants/{id}` | `UpdateTenant.cs` | Update name/branding, bumps bootstrap Version, `tenant:manage` |
+| POST | `/tenants/{id}/disable` | `DisableTenant.cs` | Idempotent deactivate, `tenant:manage` |
+| DELETE | `/tenants/{id}` | `DeleteTenant.cs` | Soft delete (`ISoftDeleteEntity`), `tenant:manage` |
+| PUT | `/tenants/{id}/translations` | `UpsertTenantTranslation.cs` | Key-level dictionary upsert, `tenant:manage` |
+| PUT | `/tenants/{id}/dictionary/{language}` | `UpdateTenantDictionary.cs` | Bulk per-language dictionary merge-update, `tenant:manage` |
+| PUT | `/tenants/{id}/config` | `UpdateTenantConfig.cs` | Per-locale config merge-update (fallback if no `language` query param), `tenant:manage` |
+| POST | `/tenants/{id}/client/rotate` | `RotateTenantClient.cs` | Revoke every Active TenantClient, issue a new one, `tenant:rotate-client` |
+| GET | `/bootstrap` | `GetTenantBootstrap.cs` | Pre-authentication bootstrap, identified by `X-Tenant-Client-Key` (anonymous) |
 | POST/GET/PUT/DELETE | `/roles`, `/roles/{id}`, `/roles/{id}/permissions` | `CreateRole.cs`/`ListRoles.cs`/`GetRole.cs`/`UpdateRole.cs`/`UpdateRolePermissions.cs`/`DeleteRole.cs` | Role CRUD + permission-set replacement, `role:view`/`role:manage` |
 | GET/PUT/DELETE | `/permissions`, `/permissions/{id}` | `ListPermissions.cs`/`GetPermission.cs`/`UpdatePermission.cs`/`DeletePermission.cs` | Permission catalog read + regroup + delete (system permissions blocked), `permission:view`/`permission:manage` |
+
+See "Tenant Management & Bootstrap APIs (Phase 5)" below for the full contract of every `/tenants*`/`/bootstrap` route.
 
 ## DI composition (`Auth.API/DependencyInjection.cs`, `Auth.API/ApplicationPipeline.cs`)
 
@@ -316,8 +328,9 @@ as before.
   `AccountRole` assignment propagating this event, `RoleUpdated`/`RoleDeleted`-triggered propagation
   (only `RolePermission` changes propagate), any caching layer for
   `IUserReadService.GetEffectivePermissionsAsync` (kept as a plain DB read, matching how `Roles`
-  worked before `IRoleCacheReader` existed), Root Tenant Management / Bootstrap / Configuration /
-  Dictionary APIs.
+  worked before `IRoleCacheReader` existed). Root Tenant Management / Bootstrap / Configuration /
+  Dictionary APIs were deferred at the time this note was written - see "Tenant Management &
+  Bootstrap APIs (Phase 5)" below, they are now implemented.
 - **Found, not fixed (pre-existing, unrelated)**: `UserWriteService`'s constructor injects
   `IRepository<UserEntity, Guid>`, but only `IRepository<TEntity>` (no `TId` overload) is ever
   Scrutor-registered anywhere in this codebase (`AddScopedByInterface(typeof(IRepository<>), ...)`
@@ -379,6 +392,117 @@ a new architecture, not a token-flow redesign, not a mass refactor of every exis
 - **No token/permission/refresh-token/tenant-context behavior changed.** This phase touched zero
   business logic - only which interface(s) five pre-existing classes implement and how they reach
   the DI container.
+
+## Tenant Management & Bootstrap APIs (Phase 5)
+
+Introduced 2026-08-13. Fills the gap the earlier phases explicitly deferred: full CRUD/search over
+`Tenant` (list/detail/create/update/disable/delete), translation/config/dictionary editing, client
+rotation, a pre-authentication bootstrap endpoint, and the backend-only foundation for a future
+Notification Hub version-check flow. `Tenant`'s domain surface itself did not change beyond adding
+`ISoftDeleteEntity` and a `Delete()` method - every other operation composes the `Create`/`Rename`/
+`UpdateBranding`/`UpdateMetadata`/`Activate`/`Deactivate`/`SetLocale`/`RemoveLocale`/
+`IncrementVersion` methods that already existed from Phase 1.
+
+### Tenant Management APIs
+
+| API | Route | Permission | Notes |
+|---|---|---|---|
+| List Tenants | `GET /tenants?search=&page=&pageSize=` | `tenant:view` | DB-level `ILIKE` search on Code/Name (`TenantReadService.SearchAsync`), `PaginatedResult<TenantSummaryResponse>` - same abstraction Promotion/Notification's paginated lists use. Lightweight by design: `Id`/`Code`/`Name`/`LogoUrl`/`IsActive` only. |
+| Get Tenant | `GET /tenants/{id}` | `tenant:view` | `TenantDetailResponse` - comprehensive, never used for listing. Returns raw per-locale `Configuration`/`Dictionary` (for editing, including the fallback row) plus a separately-computed `Translations` merged-effective view per supported non-default language (see "Merged Tenant Translations" below), and non-secret client identity (`PublicKey` is safe to expose - see `TenantClient`'s class doc comment, there is no secret to redact). |
+| Create Tenant | `POST /tenants` | `tenant:manage` | `{ code, name, logoUrl?, faviconUrl? }`. Code uniqueness checked in the handler (`ExistsByCodeAsync` → `ConflictException`); format validated by `TenantCode.Create` (domain). |
+| Update Tenant | `PUT /tenants/{id}` | `tenant:manage` | `{ name, logoUrl?, faviconUrl? }`. Bumps `Version` and enqueues `TenantVersionChangedIntegrationEvent` atomically (see "Versioning" below) - name/branding are bootstrap-relevant. |
+| Disable Tenant | `POST /tenants/{id}/disable` | `tenant:manage` | `Tenant.Deactivate()` - idempotent no-op if already disabled. Does not bump `Version`: a disabled tenant's bootstrap is rejected outright (`ConflictException`), not served with different content. |
+| Delete Tenant | `DELETE /tenants/{id}` | `tenant:manage` | Soft delete only (`Tenant.Delete()`, `ISoftDeleteEntity` - first non-`User` adopter). Drops out of every normal query via the global `!IsDeleted` filter; a repeat delete surfaces as `NotFoundException`, same as any other operation against an already-deleted tenant. |
+| Upsert Translation | `PUT /tenants/{id}/translations` | `tenant:manage` | `{ language, key, value }` - merges one key into that language's `DictionaryJson`, every other key preserved (`JsonMergeHelper`). Bumps `Version`. |
+| Update Dictionary | `PUT /tenants/{id}/dictionary/{language}` | `tenant:manage` | Bulk payload merged onto the stored dictionary for one language - unspecified keys preserved, other languages' rows untouched (each is a separate `TenantLocale` row). Bumps `Version`. |
+| Update Config | `PUT /tenants/{id}/config?language=` | `tenant:manage` | Merged onto one locale's `ConfigurationJson`; omit `language` to target the tenant-wide fallback/default resource. Bumps `Version`. |
+| Rotate Client | `POST /tenants/{id}/client/rotate` | `tenant:rotate-client` (separate from `tenant:manage` - a credential-affecting operation) | Revokes every currently-`Active` `TenantClient` for the tenant (`RevocationReason.Superseded`) and issues a new one, atomically. Returns only the new `PublicKey` - a previously stored key is never returned again. Does **not** bump `Version` - rotation changes which client key resolves to this tenant, not the bootstrap content served once resolved. |
+
+### Merged Tenant Translations
+
+`Tenant` has no "default language" field - the existing null-`LanguageCode` fallback row (see
+"Tenant foundation" above) already plays that role. For each language in
+`LanguageCodeConstant.SupportedLanguages` (`en`, `vi`), `TenantTranslationMerger.BuildEffective`
+(`Auth.Application/Common/`) computes `effective(language) = fallback merged with that language's
+override, override wins key by key` for both `ConfigurationJson` and `DictionaryJson`
+(`JsonMergeHelper` - recursive `JsonObject` merge). The fallback resource itself is **never**
+returned as an entry in the merged collection, since it has no language code to key it by - this
+is structural, not a filter that could be bypassed. Shared between `GetTenantQuery` (detail) and
+`GetTenantBootstrapQuery` (bootstrap) so both return identical merge semantics.
+
+### Tenant Bootstrap API
+
+`GET /bootstrap` is deliberately **not** `GET /tenants/{id}/bootstrap` behind Root authorization -
+it is pre-authentication, identified by the `X-Tenant-Client-Key` header, the exact same mechanism
+`Login` already uses to resolve a Tenant before credentials are checked (`ITenantClientReadService.
+GetByPublicKeyAsync` + `TenantClient.IsUsable()`). This is the tenant's own frontend application
+calling before a user has logged in, to render its initial shell - not a Root Portal concern.
+`AllowAnonymous()`, same generic-failure shape as `Login` (unknown/invalid/revoked/expired key all
+surface as one `UnauthorizedException`, so a caller can't enumerate valid keys). The Root client is
+rejected (`BadRequestException` - no tenant to bootstrap); a disabled tenant is rejected
+(`ConflictException`). Response (`TenantBootstrapResponse`): `Version`, `Tenant` (`Id`/`Code`/`Name`/
+`LogoUrl`/`FaviconUrl`), `SupportedLanguages`, and `Translations` (the same merged-effective view
+Detail returns). Deliberately lightweight - never the full editing payload.
+
+> **TODO** (left in `GetTenantBootstrapHandler`): confirm whether the Root Portal (`nova-console`)
+> needs its own bootstrap contract, or genuinely never calls this endpoint. Not decidable from the
+> existing domain model - `TenantClient.IsRootClient` exists, but no consumer of a "Root bootstrap"
+> has been identified yet.
+
+### Versioning
+
+`Tenant.Version`/`Tenant.IncrementVersion()` already existed from Phase 1 but were never called
+anywhere - this phase is what wires them up. Bumped by: Update Tenant, Upsert Translation, Update
+Dictionary, Update Config. **Not** bumped by: Create (starts at `1`), Disable, Delete, Rotate
+Client - each of those either sets an initial value or changes something other than served
+bootstrap content (see each API's row above for the specific reasoning).
+
+```text
+Tenant update / translation / dictionary / config change
+        v
+tenant.IncrementVersion()  (inside the same IUnitOfWork.ExecuteTransactionAsync as the write)
+        v
+outboxStore.EnqueueAsync(TenantVersionChangedIntegrationEvent)   <- same transaction, atomic
+        v
+Outbox relay -> Kafka topic "tenantversionchangedintegrationevent"
+        v
+Notification.Infrastructure's NotificationTriggerConsumer (existing fan-in consumer, extended
+with a new topic/case - not a new consumer type, see its own class doc comment for why a
+Hub-dependent type can't be constructor-injected directly into a Kafka consumer)
+        v
+NotifyTenantVersionChangedCommand -> IRealtimeNotifier.PushTenantBootstrapVersionChangedAsync
+        v
+ActorHubFacade.Tenant(tenantId).BootstrapVersionChanged(version)  -> every connection in
+GlobalHub's "tenant:{tenantId}" group (joined in OnConnectedAsync from the access token's
+AppClaimTypes.TenantId claim)
+```
+
+**Implemented now**: the full chain above, end to end, including the SignalR push. Also: a
+read-through Redis cache (`Auth.Infrastructure.Caching.TenantVersionCache` - cache miss falls back
+to `TenantReadService.GetVersionAsync`, a lean Version/IsActive-only projection) and a
+`GetTenantVersion` gRPC RPC (`auth.proto`/`AuthGrpcServiceImpl`) as the fast-path/source-of-truth
+pair a future Hub *connection* handler is expected to read from.
+
+**Deliberately deferred** (see the task's own "Important Scope Boundary" - no client-side refresh
+orchestration yet): a Hub connection handler that actually performs the version-check-on-connect
+comparison; anything that reads `TenantVersionCache`/calls the gRPC RPC at runtime (both exist,
+neither is called yet); Notification writing to Redis itself (`AddRedisCache` throws without a
+configured connection string, and Notification has never depended on Redis before - wiring it in
+just for this would turn an optional piece of infrastructure into a mandatory one for the whole
+service, so `NotifyTenantVersionChangedHandler` only pushes over SignalR); any client-side
+auto-reload, state reconciliation, or bootstrap re-fetch orchestration in `nova-console`.
+
+### Known frontend/backend contract gap
+
+`nova-console`'s Tenant feature UI, hooks, Zod schemas, and DTOs were already built ahead of this
+phase, deliberately isolated behind an in-memory dev adapter (`services/tenant/tenant.dev-adapter.ts`,
+explicit comment: "MUST be replaced with real service calls once the backend exposes Tenant CRUD
+endpoints"). Two contract mismatches to resolve when wiring the real endpoints up:
+- `GET /tenants` now returns `PaginatedResult<TenantSummaryResponse>` (`{ items, pageNumber,
+  pageSize, totalCount, ... }`), not a bare `TenantSummaryDto[]` - `listTenants()` needs updating.
+- The frontend's Zod `code` pattern (`/^[a-z0-9][a-z0-9-]*[a-z0-9]$/`, kebab-case) does not match
+  the domain's actual `TenantCode` format (`^[a-z][a-z0-9]*(_[a-z0-9]+)*$`, snake_case) - the
+  domain, not the frontend's pre-existing assumption, is the source of truth.
 
 ## Known state
 
