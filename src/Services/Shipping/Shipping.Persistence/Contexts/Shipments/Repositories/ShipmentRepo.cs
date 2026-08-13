@@ -15,9 +15,14 @@ public sealed class ShipmentRepo(ShippingDbContext dbContext)
 
     public async Task<Shipment?> GetByShipmentNumberAsync(string shipmentNumber, CancellationToken ct = default)
     {
+        // Compare the value object itself, not s.ShipmentNumber.Value - ShipmentConfig maps
+        // ShipmentNumber via HasConversion, which EF can translate for an Equal on the mapped
+        // property directly, but not for an arbitrary member access (.Value) inside the
+        // expression tree (throws "could not be translated" at query time).
+        var number = ShipmentNumber.Create(shipmentNumber);
         return await _dbContext.Shipments
             .AsNoTracking()
             .Include(s => s.Items)
-            .FirstOrDefaultAsync(s => s.ShipmentNumber.Value == shipmentNumber, ct);
+            .FirstOrDefaultAsync(s => s.ShipmentNumber == number, ct);
     }
 }
