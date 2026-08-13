@@ -1,0 +1,242 @@
+########################################################################################
+# NovaCore LOCAL development stack
+#
+# Purpose: the smallest set of running containers that lets nova-console (frontend) do
+# real end-to-end development against Auth + User + Audit + Notification, through the
+# same Gateway nova-console already talks to in every other environment.
+#
+# What this file does NOT do:
+#   - Start PostgreSQL or Redis - both are assumed to already be running on this machine
+#     as long-lived "global" containers shared across projects. See README.md.
+#   - Start Kafka, Elasticsearch, Kibana, Seq, or the APM server - none of them block
+#     startup for these 4 services (verified from source, see README.md "Why Kafka/ES/
+#     Seq/APM aren't here"), so they're simply omitted to keep this stack lightweight.
+#   - Start Product/Inventory/Order/Payment/Promotion - out of scope for nova-console's
+#     current priority; the Gateway's routing config already only points at what's here.
+#
+# Build context is the repo root (two levels up) so Dockerfiles resolve their COPY paths
+# exactly like the root docker-compose.yml - these are the *same* Dockerfiles, unmodified.
+########################################################################################
+
+services:
+  # One-shot job: creates this stack's databases inside the developer's existing global
+  # Postgres instance, if they don't already exist. Every API service waits on this
+  # completing successfully before it starts.
+  db-init:
+    image: ${POSTGRES_IMAGE:-postgres:16-alpine}
+    container_name: novacore-local-db-init
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    entrypoint:
+      [
+        "psql",
+        "-h", "${POSTGRES_HOST}",
+        "-p", "${POSTGRES_PORT}",
+        "-U", "${POSTGRES_USER}",
+        "-v", "ON_ERROR_STOP=1",
+        "-f", "/init-db.sql"
+      ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./init-db.sql:/init-db.sql:ro
+    restart: "no"
+
+  # The only local infrastructure this compose owns - Audit/Notification domain data.
+  # No global Mongo instance is assumed (unlike Postgres/Redis).
+  mongo:
+    image: ${MONGO_IMAGE:-mongo:7}
+    container_name: novacore-local-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    ports:
+      - "127.0.0.1:${MONGO_PORT}:27017"
+    volumes:
+      - novacore_local_mongo_data:/data/db
+      # Reuses the root project's own bootstrap script unmodified - same collections/
+      # indexes, no parallel init mechanism.
+      - ../../scripts/mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ============= MICROSERVICES =============
+  # Container/service names intentionally match the root docker-compose.yml exactly
+  # (auth-api, user-api, audit-api, notification-api). The Gateway's Dockerfile-baked
+  # appsettings.json already routes to these exact hostnames - matching names means zero
+  # Gateway route configuration is needed here.
+
+  auth-api:
+    build:
+      context: ../..
+      dockerfile: src/Services/Auth/Auth.API/Dockerfile
+    container_name: novacore-local-auth-api
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORT: "8080"
+      ASPNETCORE_GRPC_PORT: "5002"
+      # Domain data + Hangfire storage, both on the global Postgres instance.
+      ConnectionStrings__DefaultConnection: Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=auth_db;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__Hangfire: Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=auth_hangfire_db;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      # Global Redis - required at startup (role cache, refresh-token cache).
+      Cache__ConnectionString: ${REDIS_HOST}:${REDIS_PORT}
+      Cache__KeyPrefix: "auth:"
+      Jwt__SecretKey: ${JWT_SECRET_KEY}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      # User's gRPC endpoint, reached over the compose network by service name.
+      Grpc__UserService__Url: http://user-api:5002
+      # Kafka/Elasticsearch/Seq/APM intentionally left unset - all are non-blocking when
+      # unreachable (see README.md), so there's nothing to point them at locally.
+    ports:
+      - "127.0.0.1:${AUTH_PUBLIC_HTTP_PORT}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  user-api:
+    build:
+      context: ../..
+      dockerfile: src/Services/User/User.API/Dockerfile
+    container_name: novacore-local-user-api
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORT: "8080"
+      ASPNETCORE_GRPC_PORT: "5002"
+      ConnectionStrings__DefaultConnection: Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=user_db;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      ConnectionStrings__Hangfire: Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=user_hangfire_db;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Cache__ConnectionString: ${REDIS_HOST}:${REDIS_PORT}
+      Cache__KeyPrefix: "user:"
+      Jwt__SecretKey: ${JWT_SECRET_KEY}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Grpc__AuthService__Url: http://auth-api:5002
+      # Elasticsearch__Url intentionally unset - User's own startup code treats the search
+      # index as a soft dependency (try/catch around EnsureIndexAsync) and degrades search
+      # endpoints rather than failing to boot. See README.md.
+    ports:
+      - "127.0.0.1:${USER_PUBLIC_HTTP_PORT}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  audit-api:
+    build:
+      context: ../..
+      dockerfile: src/Services/Audit/Audit.API/Dockerfile
+    container_name: novacore-local-audit-api
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+      mongo:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORT: "8080"
+      # Domain data is 100% Mongo; Hangfire storage is still Postgres (global instance).
+      ConnectionStrings__Mongo: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/?authSource=admin
+      Mongo__DatabaseName: ${AUDIT_MONGO_DATABASE}
+      ConnectionStrings__Hangfire: Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=audit_hangfire_db;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Jwt__SecretKey: ${JWT_SECRET_KEY}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      # Actor display-name enrichment on GetAuditLog - fail-open in code if unreachable.
+      Grpc__UserService__Url: http://user-api:5002
+      # No Redis, no Elasticsearch, no APM/tracing in Audit's code at all - nothing to set.
+    ports:
+      - "127.0.0.1:${AUDIT_PUBLIC_HTTP_PORT}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  notification-api:
+    build:
+      context: ../..
+      dockerfile: src/Services/Notification/Notification.API/Dockerfile
+    container_name: novacore-local-notification-api
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+      mongo:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORT: "8080"
+      ConnectionStrings__Mongo: mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongo:27017/?authSource=admin
+      Mongo__DatabaseName: ${NOTIFICATION_MONGO_DATABASE}
+      ConnectionStrings__Hangfire: Host=${POSTGRES_HOST};Port=${POSTGRES_PORT};Database=notification_hangfire_db;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      Jwt__SecretKey: ${JWT_SECRET_KEY}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      # No Redis in Notification's code (no AddRedisCache call) - SignalR runs single-
+      # instance with no backplane, which is exactly what one replica needs.
+    ports:
+      - "127.0.0.1:${NOTIFICATION_PUBLIC_HTTP_PORT}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ============= API GATEWAY =============
+  # The only container nova-console talks to (NEXT_PUBLIC_API_BASE_URL=http://localhost:5000/api).
+  # No depends_on on the 4 services above: the Gateway's own startup only needs Redis - its
+  # YARP routes are static config and tolerate a downstream service being down (that route
+  # 502s until the service comes up), so it can start independently either way.
+  gateway:
+    build:
+      context: ../..
+      dockerfile: src/ApiGateways/YarpApiGateway/Dockerfile
+    container_name: novacore-local-gateway
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      Gateway__Redis__ConnectionString: ${REDIS_HOST}:${REDIS_PORT}
+      Gateway__Jwt__SecretKey: ${JWT_SECRET_KEY}
+      Gateway__Jwt__Issuer: ${JWT_ISSUER}
+      Gateway__Jwt__Audience: ${JWT_AUDIENCE}
+      # No Gateway__Services__*__Url overrides needed - appsettings.json already routes
+      # to http://auth-api:8080, http://user-api:8080, http://audit-api:8080,
+      # http://notification-api:8080 (+ /hubs/ for SignalR), matching this file's
+      # service names exactly.
+    ports:
+      - "${GATEWAY_PUBLIC_PORT}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  novacore_local_mongo_data:
