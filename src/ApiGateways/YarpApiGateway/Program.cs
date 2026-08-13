@@ -22,6 +22,12 @@ var app = builder.Build();
 app.UseRedisTracing();
 app.MapHealthChecks("/health");
 app.UseCorrelationId();
+// Must run before authentication/authorization: the CORS middleware answers preflight
+// OPTIONS requests directly and short-circuits the pipeline, so a browser's preflight never
+// reaches UseGatewayAuthorization (which would otherwise 401 it - preflight requests are
+// sent without credentials/cookies per the CORS spec, so RequireAuth routes always look
+// unauthenticated to it).
+app.UseCors(DependencyInjection.CorsPolicyName);
 app.UseAuthentication();
 app.UseRefreshTokenFilter();
 app.UseGatewayAuthorization();

@@ -13,6 +13,15 @@ namespace NovaCore.YarpApiGateway;
 
 public static class DependencyInjection
 {
+    // The Gateway is the only hop a browser ever talks to cross-origin (individual services
+    // are only reached server-to-server via YARP) - so this is the one CORS policy that
+    // actually needs to be enforced for a browser client like nova-console. Configured inline
+    // rather than via the shared BuildingBlock.Web.Cors extension used by the other services -
+    // that project also drags in Carter/MediatR/FluentValidation, which this deliberately
+    // lightweight Gateway (YARP + JWT + Redis only) has no other reason to depend on.
+    public const string CorsPolicyName = "NovaConsole";
+    private static readonly string[] AllowedOrigins = ["http://localhost:3000", "http://localhost:5000"];
+
     public static IServiceCollection AddGatewayServices(this IServiceCollection services, IConfiguration configuration)
     {
         var gatewayOptions = configuration.GetSection("Gateway").Get<GatewayOptions>()
@@ -23,6 +32,12 @@ public static class DependencyInjection
         services.AddHttpClient();
         services.AddHealthChecks();
         services.AddRefreshTokenCache(gatewayOptions.Redis.ConnectionString);
+        services.AddCors(options =>
+            options.AddPolicy(CorsPolicyName, policy =>
+                policy.WithOrigins(AllowedOrigins)
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials()));
 
         AddAuthentication(services, gatewayOptions);
         AddReverseProxy(services, gatewayOptions);
