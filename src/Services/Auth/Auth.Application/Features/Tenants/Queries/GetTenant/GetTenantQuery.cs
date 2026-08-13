@@ -1,5 +1,7 @@
 using System.Text.Json;
 
+using NovaCore.Auth.Application.Common;
+
 namespace NovaCore.Auth.Application.Features.Tenants.Queries.GetTenant;
 
 /// <summary>Root Portal Tenant Management editing screen - the comprehensive counterpart to
@@ -26,13 +28,6 @@ public sealed record TenantDetailResponse(
 /// A null LanguageCode is the fallback/default resource (see TenantLocale).</summary>
 public sealed record TenantLocaleResponse(
     string? LanguageCode,
-    JsonElement Configuration,
-    JsonElement Dictionary);
-
-/// <summary>Effective (fallback merged with this language's override) view for one supported
-/// non-default language - see docs/services/auth-service.md, "Merged Tenant Translations". The
-/// fallback resource itself is never exposed as an entry here - see GetTenantHandler.</summary>
-public sealed record EffectiveTranslationResponse(
     JsonElement Configuration,
     JsonElement Dictionary);
 

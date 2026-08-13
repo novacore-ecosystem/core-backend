@@ -31,7 +31,7 @@ public sealed class GetTenantHandler(
             tenant.IsActive,
             tenant.Version,
             [.. tenant.Locales.Select(ToLocaleResponse)],
-            BuildEffectiveTranslations(tenant),
+            TenantTranslationMerger.BuildEffective(tenant, LanguageCodeConstant.SupportedLanguages),
             LanguageCodeConstant.SupportedLanguages,
             [.. clients.Select(ToClientSummary)],
             tenant.CreatedAt,
@@ -42,33 +42,6 @@ public sealed class GetTenantHandler(
         locale.LanguageCode?.Value,
         ParseJson(locale.ConfigurationJson),
         ParseJson(locale.DictionaryJson));
-
-    /// <summary>Effective view per supported non-default language - fallback (null LanguageCode)
-    /// merged with that language's override, override wins. The fallback resource itself never
-    /// appears as an entry, since it has no language code to key it by (see docs/services/
-    /// auth-service.md, "Merged Tenant Translations").</summary>
-    private static Dictionary<string, EffectiveTranslationResponse> BuildEffectiveTranslations(Tenant tenant)
-    {
-        var fallback = tenant.Locales.FirstOrDefault(l => l.LanguageCode is null);
-        var fallbackConfigJson = fallback?.ConfigurationJson ?? "{}";
-        var fallbackDictionaryJson = fallback?.DictionaryJson ?? "{}";
-
-        var result = new Dictionary<string, EffectiveTranslationResponse>(StringComparer.Ordinal);
-
-        foreach (var language in LanguageCodeConstant.SupportedLanguages)
-        {
-            var overrideLocale = tenant.Locales.FirstOrDefault(l => l.LanguageCode?.Value == language);
-
-            var mergedConfig = JsonMergeHelper.Merge(fallbackConfigJson, overrideLocale?.ConfigurationJson);
-            var mergedDictionary = JsonMergeHelper.Merge(fallbackDictionaryJson, overrideLocale?.DictionaryJson);
-
-            result[language] = new EffectiveTranslationResponse(
-                mergedConfig.Deserialize<JsonElement>(),
-                mergedDictionary.Deserialize<JsonElement>());
-        }
-
-        return result;
-    }
 
     private static TenantClientSummaryResponse ToClientSummary(TenantClient client) => new(
         client.Id,
