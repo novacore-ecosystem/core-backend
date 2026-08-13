@@ -51,15 +51,19 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<UserDbContext>();
     await dbContext.Database.MigrateAsync();
 
-    var searchIndexer = scope.ServiceProvider.GetRequiredService<IUserSearchIndexer>();
     try
     {
+        // GetRequiredService is inside the try, not just EnsureIndexAsync() - the Elasticsearch
+        // client is built lazily on first resolution (BuildingBlock.Search's AddSingleton
+        // factory), so a missing/invalid Elasticsearch:Url throws right here, not only once the
+        // indexer is used. Elasticsearch is a read-model dependency, not a hard requirement to
+        // serve traffic - don't let a transient ES outage/misconfiguration take down the whole
+        // API on boot.
+        var searchIndexer = scope.ServiceProvider.GetRequiredService<IUserSearchIndexer>();
         await searchIndexer.EnsureIndexAsync();
     }
     catch (Exception ex)
     {
-        // Elasticsearch is a read-model dependency, not a hard requirement to serve traffic -
-        // don't let a transient ES outage/misconfiguration take down the whole API on boot.
         app.Logger.LogError(ex, "Failed to ensure the user search index exists. Search endpoints will be degraded until Elasticsearch connectivity is restored.");
     }
 }
