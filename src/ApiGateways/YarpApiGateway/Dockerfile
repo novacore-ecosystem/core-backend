@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
-COPY ["NovaCore.sln", "./"]
+COPY ["NovaCore.sln", "Directory.Packages.props", "./"]
 
 # Copy BuildingBlocks
 COPY ["src/BuildingBlocks/BuildingBlock.Domain/BuildingBlock.Domain.csproj", "src/BuildingBlocks/BuildingBlock.Domain/"]
@@ -39,4 +39,4 @@ COPY --from=publish /app/publish .
 
 EXPOSE 5000 5001
 
-ENTRYPOINT ["dotnet", "YarpApiGateway.dll"]
+ENTRYPOINT ["dotnet", "NovaCore.YarpApiGateway.dll"]

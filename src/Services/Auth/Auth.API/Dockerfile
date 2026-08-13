@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
 
-COPY ["NovaCore.sln", "./"]
+COPY ["NovaCore.sln", "Directory.Packages.props", "./"]
 COPY ["src/BuildingBlocks/BuildingBlock.Domain/BuildingBlock.Domain.csproj", "src/BuildingBlocks/BuildingBlock.Domain/"]
 COPY ["src/BuildingBlocks/BuildingBlock.Infrastructure/BuildingBlock.Infrastructure.csproj", "src/BuildingBlocks/BuildingBlock.Infrastructure/"]
 COPY ["src/BuildingBlocks/BuildingBlock.Application/BuildingBlock.Application.csproj", "src/BuildingBlocks/BuildingBlock.Application/"]
@@ -42,4 +42,4 @@ COPY --from=publish /app/publish .
 
 EXPOSE 8080 5002
 
-ENTRYPOINT ["dotnet", "Auth.API.dll"]
+ENTRYPOINT ["dotnet", "NovaCore.Auth.API.dll"]
