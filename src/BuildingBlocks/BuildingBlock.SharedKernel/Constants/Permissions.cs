@@ -94,6 +94,16 @@ public static class Permissions
         public const string Full = "users:full";
     }
 
+    /// <summary>Root Tenant Management (see docs/services/auth-service.md) - distinct from the
+    /// foundational `User` key above, which every non-Root account carries for its own tenant.</summary>
+    public static class Tenant
+    {
+        public const string View = "tenant:view";
+        public const string Manage = "tenant:manage";
+        public const string RotateClient = "tenant:rotate-client";
+        public const string Full = "tenant:full";
+    }
+
     /// <summary>Platform-operational capabilities (e.g. dead-letter queue management) not owned by any single business module.</summary>
     public static class System
     {
@@ -115,6 +125,7 @@ public static class Permissions
         Audit.View, Audit.Full,
         Notification.View, Notification.Manage, Notification.ChannelToggle, Notification.ChannelConfigure, Notification.CampaignManage, Notification.Send, Notification.Full,
         Users.View, Users.Manage, Users.Reindex, Users.Full,
+        Tenant.View, Tenant.Manage, Tenant.RotateClient, Tenant.Full,
         System.MessagingView, System.MessagingRequeue, System.Full,
     }.ToFrozenSet();
 }

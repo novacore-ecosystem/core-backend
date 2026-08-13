@@ -182,7 +182,6 @@ public static class DependencyInjection
 
         services.AddScoped<IRefreshTokenWriteService, RefreshTokenWriteService>();
 
-        services.AddScoped<ITenantReadService, TenantReadService>();
         services.AddScoped<ITenantWriteService, TenantWriteService>();
 
         services.AddScoped<IScopeReadService, ScopeReadService>();

@@ -8,8 +8,12 @@ public interface ITenantReadService
 
     Task<bool> ExistsByCodeAsync(string code, CancellationToken ct = default);
 
-    /// <summary>Root Portal tenant discovery/selection (see ListTenantsQuery) - no pagination,
-    /// same reasoning as INotificationChannelReadService.ListAsync: an operator-facing picker list,
-    /// not a customer-facing paged catalog.</summary>
-    Task<IReadOnlyList<Tenant>> ListAsync(CancellationToken ct = default);
+    /// <summary>Database-level search + pagination for the Tenant Management list screen -
+    /// matches against Code/Name, case-insensitive. Search happens entirely in the query (no
+    /// in-memory filtering); count and page are separate queries against the same filter.</summary>
+    Task<(IReadOnlyList<Tenant> Items, int TotalCount)> SearchAsync(
+        string? search,
+        int page,
+        int pageSize,
+        CancellationToken ct = default);
 }
