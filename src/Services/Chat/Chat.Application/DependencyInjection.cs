@@ -8,6 +8,8 @@ using MapsterMapper;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using NovaCore.Chat.Application.Abstractions.Persistence;
+
 namespace NovaCore.Chat.Application;
 
 public static class DependencyInjection
@@ -19,6 +21,8 @@ public static class DependencyInjection
             .AddApplicationBehaviors()
             .AddMapster()
             .AddFluentValidation();
+
+        services.AddScoped<OptimisticConcurrencyRetry>();
 
         return services;
     }

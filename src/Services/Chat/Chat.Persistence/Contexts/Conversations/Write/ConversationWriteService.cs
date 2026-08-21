@@ -31,4 +31,9 @@ public sealed class ConversationWriteService(
     {
         await conversationRepo.UpdateAsync(id, c => c.Open(), ct);
     }
+
+    public async Task RecordActivityAsync(Guid id, long messageSequence, CancellationToken ct = default)
+    {
+        await conversationRepo.UpdateAsync(id, c => c.RecordActivity(messageSequence), ct);
+    }
 }

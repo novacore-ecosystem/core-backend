@@ -13,4 +13,7 @@ public interface IConversationWriteService
 
     /// <summary>Stages only - callers that need this alongside another aggregate's write in the same transaction own the commit (see ClaimConversationHandler).</summary>
     Task OpenAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Stages only - SendMessageHandler commits this alongside the new Message in the same transaction.</summary>
+    Task RecordActivityAsync(Guid id, long messageSequence, CancellationToken ct = default);
 }
