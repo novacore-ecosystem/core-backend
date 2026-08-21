@@ -22,6 +22,7 @@ public sealed class StartGuestConversationHandler(
         var conversation = Conversation.Create(
             ConversationType.OneToOne,
             ConversationLifecycle.Session,
+            reason: request.Reason,
             status: ConversationStatus.Queued);
         conversation.AssignContact(contact.Id);
         await conversationWriteService.CreateAsync(conversation, ct);

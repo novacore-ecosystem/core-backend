@@ -10,7 +10,8 @@ namespace NovaCore.Chat.Application.Features.Conversations.Commands.StartGuestCo
 public sealed record StartGuestConversationCommand(
     string DisplayName,
     string? Email = null,
-    string? Phone = null) : ICommand<StartGuestConversationResponse>;
+    string? Phone = null,
+    string? Reason = null) : ICommand<StartGuestConversationResponse>;
 
 public sealed record StartGuestConversationResponse(
     Guid ContactId,

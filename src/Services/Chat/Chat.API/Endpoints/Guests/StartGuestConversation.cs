@@ -9,7 +9,8 @@ namespace NovaCore.Chat.API.Endpoints.Guests;
 public sealed record StartGuestConversationRequest(
     string DisplayName,
     string? Email = null,
-    string? Phone = null);
+    string? Phone = null,
+    string? Reason = null);
 
 /// <summary>
 /// Spec section 39's guest entry point - a guest submits basic contact info before starting a
@@ -52,7 +53,8 @@ public sealed class StartGuestConversationEndpoint : ICarterModule
         var command = new StartGuestConversationCommand(
             request.DisplayName.Trim(),
             request.Email?.Trim(),
-            request.Phone?.Trim());
+            request.Phone?.Trim(),
+            request.Reason?.Trim());
 
         var response = await sender.Send(command, ct);
 

@@ -11,6 +11,7 @@ public sealed record CreateConversationRequest(
     string? Title = null,
     string? Description = null,
     string? Avatar = null,
+    string? Reason = null,
     ConversationPriority Priority = ConversationPriority.Normal);
 
 public sealed class CreateConversationEndpoint : ICarterModule
@@ -46,6 +47,7 @@ public sealed class CreateConversationEndpoint : ICarterModule
             request.Title?.Trim(),
             request.Description?.Trim(),
             request.Avatar?.Trim(),
+            request.Reason?.Trim(),
             request.Priority);
 
         var response = await sender.Send(command, ct);

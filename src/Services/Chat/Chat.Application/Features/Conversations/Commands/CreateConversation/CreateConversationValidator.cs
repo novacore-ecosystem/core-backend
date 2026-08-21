@@ -15,5 +15,8 @@ public sealed class CreateConversationValidator : AbstractValidator<CreateConver
 
         RuleFor(x => x.Description)
             .MaximumLength(2000).WithMessage("Description must not exceed 2000 characters");
+
+        RuleFor(x => x.Reason)
+            .MaximumLength(500).WithMessage("Reason must not exceed 500 characters");
     }
 }

@@ -13,6 +13,7 @@ public sealed class CreateConversationHandler(IConversationWriteService conversa
             request.Title,
             request.Description,
             request.Avatar,
+            request.Reason,
             request.Priority);
 
         await conversationWriteService.CreateAsync(conversation, ct);

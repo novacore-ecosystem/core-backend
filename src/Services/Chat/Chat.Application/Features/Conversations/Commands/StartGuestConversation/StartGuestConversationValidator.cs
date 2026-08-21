@@ -21,5 +21,8 @@ public sealed class StartGuestConversationValidator : AbstractValidator<StartGue
         RuleFor(x => x.Phone)
             .Must(PhoneNumber.IsValid).WithMessage("Phone number is not valid")
             .When(x => x.Phone is not null);
+
+        RuleFor(x => x.Reason)
+            .MaximumLength(500).WithMessage("Reason must not exceed 500 characters");
     }
 }

@@ -6,6 +6,7 @@ public sealed record CreateConversationCommand(
     string? Title = null,
     string? Description = null,
     string? Avatar = null,
+    string? Reason = null,
     ConversationPriority Priority = ConversationPriority.Normal) : ICommand<CreateConversationResponse>;
 
 public sealed record CreateConversationResponse(Guid ConversationId);

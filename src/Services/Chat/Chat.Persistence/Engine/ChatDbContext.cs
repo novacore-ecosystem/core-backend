@@ -24,6 +24,7 @@ public sealed class ChatDbContext(DbContextOptions<ChatDbContext> options)
     public DbSet<ConversationRole> ConversationRoles { get; set; } = null!;
     public DbSet<ConversationPermission> ConversationPermissions { get; set; } = null!;
     public DbSet<Sticker> Stickers { get; set; } = null!;
+    public DbSet<ConversationReasonSuggestion> ConversationReasonSuggestions { get; set; } = null!;
 
     // Owned & mapping entities
     public DbSet<ConversationContact> ConversationContacts { get; set; } = null!;
@@ -49,6 +50,7 @@ public sealed class ChatDbContext(DbContextOptions<ChatDbContext> options)
     public DbSet<ConversationRoleTranslation> ConversationRoleTranslations { get; set; } = null!;
     public DbSet<ConversationPermissionTranslation> ConversationPermissionTranslations { get; set; } = null!;
     public DbSet<StickerTranslation> StickerTranslations { get; set; } = null!;
+    public DbSet<ConversationReasonSuggestionTranslation> ConversationReasonSuggestionTranslations { get; set; } = null!;
 
     // System Tables
     public DbSet<OutboxMessage> OutboxMessages { get; set; } = null!;

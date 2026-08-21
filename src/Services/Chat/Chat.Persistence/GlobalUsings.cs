@@ -23,6 +23,7 @@ global using NovaCore.Chat.Domain.Entities.Pins;
 global using NovaCore.Chat.Domain.Entities.Polls;
 global using NovaCore.Chat.Domain.Entities.Queues;
 global using NovaCore.Chat.Domain.Entities.ReadStates;
+global using NovaCore.Chat.Domain.Entities.ReasonSuggestions;
 global using NovaCore.Chat.Domain.Entities.Responsibilities;
 global using NovaCore.Chat.Domain.Entities.Roles;
 global using NovaCore.Chat.Domain.Entities.Schedules;

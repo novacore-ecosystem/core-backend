@@ -18,6 +18,7 @@ public sealed class ConversationConfig : IEntityTypeConfiguration<Conversation>
         builder.Property(x => x.Title).HasMaxLength(200);
         builder.Property(x => x.Description).HasMaxLength(2000);
         builder.Property(x => x.Avatar).HasMaxLength(500);
+        builder.Property(x => x.Reason).HasMaxLength(500);
         builder.Property(x => x.Priority).HasConversion<byte>().IsRequired();
         builder.Property(x => x.LastActivityAt).IsRequired();
         builder.Property(x => x.LastMessageSequence).IsRequired();

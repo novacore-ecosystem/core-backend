@@ -24,6 +24,7 @@ public sealed class Conversation : AggregateRoot<Guid>, IAuditable, ITenantEntit
     public string? Title { get; private set; }
     public string? Description { get; private set; }
     public string? Avatar { get; private set; }
+    public string? Reason { get; private set; }
     public ConversationPriority Priority { get; private set; }
     public DateTime? ClosedAt { get; private set; }
     public DateTime LastActivityAt { get; private set; }
@@ -53,6 +54,7 @@ public sealed class Conversation : AggregateRoot<Guid>, IAuditable, ITenantEntit
         string? title = null,
         string? description = null,
         string? avatar = null,
+        string? reason = null,
         ConversationPriority priority = ConversationPriority.Normal,
         ConversationStatus status = ConversationStatus.Open,
         ChatMetadata? metadata = null)
@@ -68,6 +70,7 @@ public sealed class Conversation : AggregateRoot<Guid>, IAuditable, ITenantEntit
             Title = title,
             Description = description,
             Avatar = avatar,
+            Reason = reason,
             Priority = priority,
             LastActivityAt = now,
             LastMessageSequence = 0,

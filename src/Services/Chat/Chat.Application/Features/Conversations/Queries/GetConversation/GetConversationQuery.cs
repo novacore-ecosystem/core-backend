@@ -10,6 +10,7 @@ public sealed record GetConversationResponse(
     string? Title,
     string? Description,
     string? Avatar,
+    string? Reason,
     ConversationPriority Priority,
     DateTime? ClosedAt,
     DateTime LastActivityAt,
