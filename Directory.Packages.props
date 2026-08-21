@@ -69,6 +69,10 @@
     <!-- Mail -->
     <PackageVersion Include="MailKit" Version="4.17.0" />
 
+    <!-- Media / file metadata -->
+    <PackageVersion Include="SixLabors.ImageSharp" Version="4.1.1" />
+    <PackageVersion Include="TagLibSharp" Version="2.3.0" />
+
     <!-- Observability -->
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.0" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.17.0" />

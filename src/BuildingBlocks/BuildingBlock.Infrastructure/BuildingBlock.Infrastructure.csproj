@@ -29,6 +29,8 @@
     <PackageReference Include="Hangfire.AspNetCore" />
     <PackageReference Include="Hangfire.PostgreSql" />
     <PackageReference Include="OpenTelemetry.Instrumentation.StackExchangeRedis" />
+    <PackageReference Include="SixLabors.ImageSharp" />
+    <PackageReference Include="TagLibSharp" />
   </ItemGroup>
 
 </Project>

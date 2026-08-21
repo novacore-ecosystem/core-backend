@@ -30,6 +30,9 @@ public sealed class SendMessageHandler(
     OptimisticConcurrencyRetry concurrencyRetry,
     IUnitOfWork unitOfWork) : ICommandHandler<SendMessageCommand, SendMessageResponse>
 {
+    /// <summary>Placeholder business limit for message attachments - not yet exposed as configuration; MaxParseSizeBytes matches FileParsingOptions' own default ceiling.</summary>
+    private static readonly FileSizePolicy AttachmentSizePolicy = new(AllowedSizeBytes: 25 * 1024 * 1024, MaxParseSizeBytes: 100 * 1024 * 1024);
+
     public async Task<SendMessageResponse> Handle(SendMessageCommand request, CancellationToken ct = default)
     {
         var callerId = currentUser.GetUserId() ?? throw new UnauthorizedException();
@@ -41,6 +44,7 @@ public sealed class SendMessageHandler(
                 a.ContentType,
                 a.SizeBytes,
                 a.StorageKey,
+                AttachmentSizePolicy,
                 a.Width,
                 a.Height,
                 a.DurationSeconds is null ? null : TimeSpan.FromSeconds(a.DurationSeconds.Value)))
