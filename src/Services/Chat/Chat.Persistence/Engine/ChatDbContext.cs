@@ -1,8 +1,13 @@
 using NovaCore.BuildingBlock.Persistence.Ef.DbContext;
+using NovaCore.BuildingBlock.Persistence.Ef.Inbox;
+using NovaCore.BuildingBlock.Persistence.Ef.Outbox;
 
-namespace NovaCore.Chat.Persistence;
+namespace NovaCore.Chat.Persistence.Engine;
 
-public sealed class ChatDbContext(DbContextOptions<ChatDbContext> options) : DbContextBase(options)
+public sealed class ChatDbContext(DbContextOptions<ChatDbContext> options)
+    : DbContextBase(options),
+    IOutboxDbContext,
+    IInboxDbContext
 {
     // Aggregate Roots
     public DbSet<Conversation> Conversations { get; set; } = null!;
@@ -44,4 +49,9 @@ public sealed class ChatDbContext(DbContextOptions<ChatDbContext> options) : DbC
     public DbSet<ConversationRoleTranslation> ConversationRoleTranslations { get; set; } = null!;
     public DbSet<ConversationPermissionTranslation> ConversationPermissionTranslations { get; set; } = null!;
     public DbSet<StickerTranslation> StickerTranslations { get; set; } = null!;
+
+    // System Tables
+    public DbSet<OutboxMessage> OutboxMessages { get; set; } = null!;
+    public DbSet<InboxMessage> InboxMessages { get; set; } = null!;
+    public DbSet<InboxRetryHistory> InboxRetryHistories { get; set; } = null!;
 }
