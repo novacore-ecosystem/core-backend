@@ -31,4 +31,14 @@ public sealed class MessageReadService(IMessageRepository messageRepo, ChatDbCon
             .Select(m => (long?)m.Sequence)
             .MaxAsync(ct) ?? 0;
     }
+
+    public async Task<IReadOnlyList<Message>> GetSinceSequenceAsync(Guid conversationId, long afterSequence, int limit, CancellationToken ct = default)
+    {
+        return await dbContext.Messages
+            .AsNoTracking()
+            .Where(m => m.ConversationId == conversationId && m.Sequence > afterSequence)
+            .OrderBy(m => m.Sequence)
+            .Take(limit)
+            .ToListAsync(ct);
+    }
 }

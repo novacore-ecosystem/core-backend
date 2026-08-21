@@ -1,5 +1,9 @@
+using Mapster;
+
 using Microsoft.AspNetCore.Authorization;
 
+using NovaCore.Chat.Application.Abstractions.Persistence.Messages;
+using NovaCore.Chat.Application.Features.Messages.DTOs;
 using NovaCore.Chat.Infrastructure.SignalR.Groups;
 
 namespace NovaCore.Chat.Infrastructure.SignalR.Hubs;
@@ -16,9 +20,12 @@ namespace NovaCore.Chat.Infrastructure.SignalR.Hubs;
 /// establishes the connection/group mechanics.
 /// </summary>
 [Authorize]
-public sealed class ChatHub : HubBase<IChatHubClient>
+public sealed class ChatHub(IMessageReadService messageReadService) : HubBase<IChatHubClient>
 {
     public const string Path = "/hubs/chat";
+
+    /// <summary>Bounds a single recovery response - a much larger gap than this means the client should fall back to a normal paged history load instead of one hub call.</summary>
+    private const int MaxRecoveryBatch = 200;
 
     public async Task JoinConversation(Guid conversationId)
     {
@@ -28,5 +35,18 @@ public sealed class ChatHub : HubBase<IChatHubClient>
     public async Task LeaveConversation(Guid conversationId)
     {
         await RemoveGroupAsync(ConversationGroups.Conversation(conversationId));
+    }
+
+    /// <summary>
+    /// Gap recovery - the caller (any participant, including the original sender reconnecting
+    /// after a disconnect) supplies the last sequence it knows about and gets back everything
+    /// after it, up to MaxRecoveryBatch. Works uniformly whether the missed messages were sent
+    /// through SignalR or REST, since both paths land in the same Messages table.
+    /// </summary>
+    public async Task<IReadOnlyList<ChatMessageDto>> RecoverMessages(Guid conversationId, long afterSequence)
+    {
+        var messages = await messageReadService.GetSinceSequenceAsync(conversationId, afterSequence, MaxRecoveryBatch);
+
+        return [.. messages.Select(m => m.Adapt<ChatMessageDto>())];
     }
 }
