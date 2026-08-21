@@ -6,6 +6,8 @@ using NovaCore.BuildingBlock.SharedKernel.Security;
 
 using Microsoft.IdentityModel.Tokens;
 
+using NovaCore.Chat.Application.Common;
+
 namespace NovaCore.Chat.Infrastructure.Security.Jwt;
 
 /// <summary>

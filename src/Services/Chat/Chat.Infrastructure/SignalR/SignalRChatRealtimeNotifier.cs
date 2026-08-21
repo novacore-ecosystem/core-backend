@@ -9,4 +9,9 @@ public sealed class SignalRChatRealtimeNotifier(ConversationHubFacade hub) : ICh
     {
         await hub.Conversation(conversationId).ReceiveMessage(message);
     }
+
+    public async Task PushConversationClosedAsync(Guid conversationId, DateTime closedAt, CancellationToken ct = default)
+    {
+        await hub.Conversation(conversationId).ConversationClosed(conversationId, closedAt);
+    }
 }

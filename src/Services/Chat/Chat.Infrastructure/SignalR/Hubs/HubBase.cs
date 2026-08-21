@@ -3,6 +3,8 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 
+using NovaCore.Chat.Application.Common;
+
 namespace NovaCore.Chat.Infrastructure.SignalR.Hubs;
 
 /// <summary>Mirrors Notification.Infrastructure's own HubBase&lt;T&gt; - same shape, kept per-service rather than shared since each service's Hub set differs.</summary>
@@ -16,7 +18,7 @@ public abstract class HubBase<T>() : Hub<T> where T : class
         .Select(r => r.Value)
         .ToArray() ?? [];
 
-    protected bool IsGuest => Roles.Contains(Security.ChatRoleConstants.Guest);
+    protected bool IsGuest => Roles.Contains(ChatRoleConstants.Guest);
 
     protected async Task AddGroupAsync(string groupName)
     {

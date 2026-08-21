@@ -14,4 +14,11 @@ public sealed class ConversationAssignmentReadService(IConversationAssignmentRep
     {
         return await assignmentRepo.ExistsByIdAsync(id, ct);
     }
+
+    public async Task<ConversationAssignment?> GetActiveByConversationIdAsync(Guid conversationId, CancellationToken ct = default)
+    {
+        return await assignmentRepo.GetAsync(
+            a => a.ConversationId == conversationId && a.Status == ConversationAssignmentStatus.Active,
+            ct);
+    }
 }

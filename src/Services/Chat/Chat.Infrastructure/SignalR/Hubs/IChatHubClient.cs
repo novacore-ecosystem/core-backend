@@ -6,4 +6,6 @@ namespace NovaCore.Chat.Infrastructure.SignalR.Hubs;
 public interface IChatHubClient
 {
     Task ReceiveMessage(ChatMessageDto message);
+
+    Task ConversationClosed(Guid conversationId, DateTime closedAt);
 }
