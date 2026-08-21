@@ -20,4 +20,10 @@ public sealed class ConversationWriteService(
         await conversationRepo.DeleteByIdAsync(id, ct);
         await unitOfWork.SaveChangesAsync(ct);
     }
+
+    public async Task CloseAsync(Guid id, CancellationToken ct = default)
+    {
+        await conversationRepo.UpdateAsync(id, c => c.Close(), ct);
+        await unitOfWork.SaveChangesAsync(ct);
+    }
 }
