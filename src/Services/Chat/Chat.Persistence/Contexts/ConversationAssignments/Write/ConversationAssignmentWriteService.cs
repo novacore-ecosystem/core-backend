@@ -20,4 +20,9 @@ public sealed class ConversationAssignmentWriteService(
         await assignmentRepo.DeleteByIdAsync(id, ct);
         await unitOfWork.SaveChangesAsync(ct);
     }
+
+    public async Task ReleaseAsync(Guid id, CancellationToken ct = default)
+    {
+        await assignmentRepo.UpdateAsync(id, a => a.Release(), ct);
+    }
 }

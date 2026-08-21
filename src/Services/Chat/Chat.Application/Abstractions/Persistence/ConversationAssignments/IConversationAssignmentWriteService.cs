@@ -7,4 +7,7 @@ public interface IConversationAssignmentWriteService
 
     /// <summary>Commits via bare SaveChangesAsync.</summary>
     Task DeleteAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Stages only - callers that need this alongside another aggregate's write in the same transaction own the commit (see AcceptHandoverInvitationHandler).</summary>
+    Task ReleaseAsync(Guid id, CancellationToken ct = default);
 }

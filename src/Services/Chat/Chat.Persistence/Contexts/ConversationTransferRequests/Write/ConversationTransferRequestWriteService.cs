@@ -20,4 +20,15 @@ public sealed class ConversationTransferRequestWriteService(
         await requestRepo.DeleteByIdAsync(id, ct);
         await unitOfWork.SaveChangesAsync(ct);
     }
+
+    public async Task AcceptAsync(Guid id, CancellationToken ct = default)
+    {
+        await requestRepo.UpdateAsync(id, r => r.Accept(), ct);
+    }
+
+    public async Task RejectAsync(Guid id, CancellationToken ct = default)
+    {
+        await requestRepo.UpdateAsync(id, r => r.Reject(), ct);
+        await unitOfWork.SaveChangesAsync(ct);
+    }
 }
