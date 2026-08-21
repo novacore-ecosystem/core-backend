@@ -200,6 +200,9 @@ public static class DependencyInjection
         services.AddScoped<IMessageReadService, MessageReadService>();
         services.AddScoped<IMessageWriteService, MessageWriteService>();
 
+        services.AddScoped<IMessageMentionReadService, MessageMentionReadService>();
+        services.AddScoped<IMessageReactionReadService, MessageReactionReadService>();
+
         services.AddScoped<IPollReadService, PollReadService>();
         services.AddScoped<IPollWriteService, PollWriteService>();
 
