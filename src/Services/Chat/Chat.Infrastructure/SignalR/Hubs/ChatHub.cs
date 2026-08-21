@@ -49,4 +49,15 @@ public sealed class ChatHub(IMessageReadService messageReadService) : HubBase<IC
 
         return [.. messages.Select(m => m.Adapt<ChatMessageDto>())];
     }
+
+    /// <summary>No persisted state - just relayed live to whoever else is currently in the group.</summary>
+    public async Task StartTyping(Guid conversationId)
+    {
+        await Clients.OthersInGroup(ConversationGroups.Conversation(conversationId)).UserTyping(conversationId, UserId);
+    }
+
+    public async Task StopTyping(Guid conversationId)
+    {
+        await Clients.OthersInGroup(ConversationGroups.Conversation(conversationId)).UserStoppedTyping(conversationId, UserId);
+    }
 }

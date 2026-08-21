@@ -8,4 +8,9 @@ public interface IChatHubClient
     Task ReceiveMessage(ChatMessageDto message);
 
     Task ConversationClosed(Guid conversationId, DateTime closedAt);
+
+    /// <summary>Ephemeral, no persistence - a lost event (disconnect) is fine, currently-connected participants just see live typing activity.</summary>
+    Task UserTyping(Guid conversationId, Guid userId);
+
+    Task UserStoppedTyping(Guid conversationId, Guid userId);
 }
