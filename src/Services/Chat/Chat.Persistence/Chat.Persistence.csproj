@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.Chat.Persistence</RootNamespace>
+    <AssemblyName>NovaCore.Chat.Persistence</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Chat.Application/Chat.Application.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Domain/BuildingBlock.Domain.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Persistence/BuildingBlock.Persistence.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Persistence.Ef/BuildingBlock.Persistence.Ef.csproj" />
+  </ItemGroup>
+
+</Project>

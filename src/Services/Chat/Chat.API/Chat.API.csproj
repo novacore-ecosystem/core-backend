@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.Chat.API</RootNamespace>
+    <AssemblyName>NovaCore.Chat.API</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Carter" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Chat.Application/Chat.Application.csproj" />
+    <ProjectReference Include="../Chat.Infrastructure/Chat.Infrastructure.csproj" />
+    <ProjectReference Include="../Chat.Persistence/Chat.Persistence.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Web/BuildingBlock.Web.csproj" />
+  </ItemGroup>
+
+</Project>
