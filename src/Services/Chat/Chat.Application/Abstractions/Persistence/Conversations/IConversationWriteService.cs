@@ -10,4 +10,7 @@ public interface IConversationWriteService
 
     /// <summary>Commits via bare SaveChangesAsync.</summary>
     Task CloseAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Stages only - callers that need this alongside another aggregate's write in the same transaction own the commit (see ClaimConversationHandler).</summary>
+    Task OpenAsync(Guid id, CancellationToken ct = default);
 }

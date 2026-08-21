@@ -5,4 +5,6 @@ public interface IConversationQueueReadService
     Task<ConversationQueue?> GetByIdAsync(Guid id, CancellationToken ct = default);
 
     Task<bool> ExistsByIdAsync(Guid id, CancellationToken ct = default);
+
+    Task<ConversationQueue?> GetByCodeAsync(string code, CancellationToken ct = default);
 }

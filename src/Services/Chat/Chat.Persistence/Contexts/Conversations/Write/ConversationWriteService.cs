@@ -26,4 +26,9 @@ public sealed class ConversationWriteService(
         await conversationRepo.UpdateAsync(id, c => c.Close(), ct);
         await unitOfWork.SaveChangesAsync(ct);
     }
+
+    public async Task OpenAsync(Guid id, CancellationToken ct = default)
+    {
+        await conversationRepo.UpdateAsync(id, c => c.Open(), ct);
+    }
 }

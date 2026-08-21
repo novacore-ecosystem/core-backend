@@ -176,6 +176,9 @@ public static class DependencyInjection
         services.AddScoped<IConversationQueueReadService, ConversationQueueReadService>();
         services.AddScoped<IConversationQueueWriteService, ConversationQueueWriteService>();
 
+        services.AddScoped<IConversationQueueItemReadService, ConversationQueueItemReadService>();
+        services.AddScoped<IConversationQueueItemWriteService, ConversationQueueItemWriteService>();
+
         services.AddScoped<IConversationAssignmentReadService, ConversationAssignmentReadService>();
         services.AddScoped<IConversationAssignmentWriteService, ConversationAssignmentWriteService>();
 

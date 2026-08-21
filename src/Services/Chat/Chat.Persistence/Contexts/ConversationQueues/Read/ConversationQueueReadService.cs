@@ -14,4 +14,10 @@ public sealed class ConversationQueueReadService(IConversationQueueRepository qu
     {
         return await queueRepo.ExistsByIdAsync(id, ct);
     }
+
+    public async Task<ConversationQueue?> GetByCodeAsync(string code, CancellationToken ct = default)
+    {
+        var normalized = EntityCode.Create(code);
+        return await queueRepo.GetAsync(q => q.Code == normalized, ct);
+    }
 }
