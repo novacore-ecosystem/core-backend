@@ -28,10 +28,15 @@ public sealed class ConversationQueueItemReadService(ChatDbContext dbContext) : 
 
         if (afterEnqueuedAtTicks is not null && afterConversationId is not null)
         {
+            // Guid has no natural ordering, and relational (>/<) comparison on it is not reliably
+            // translatable across EF providers - the tiebreak below only excludes the exact
+            // already-seen row rather than establishing a total order past an exact-tick tie. Same
+            // documented trade-off as InteractionCursor: acceptable for a live queue feed, not the
+            // kind of gapless guarantee message sequencing needs.
             var afterEnqueuedAt = new DateTime(afterEnqueuedAtTicks.Value, DateTimeKind.Utc);
             query = query.Where(i =>
                 i.EnqueuedAt > afterEnqueuedAt ||
-                (i.EnqueuedAt == afterEnqueuedAt && i.ConversationId.CompareTo(afterConversationId.Value) > 0));
+                (i.EnqueuedAt == afterEnqueuedAt && i.ConversationId != afterConversationId));
         }
 
         return await query
