@@ -24,6 +24,7 @@ using NovaCore.Chat.Application.Abstractions.Persistence.ConversationSchedules;
 using NovaCore.Chat.Application.Abstractions.Persistence.ConversationTasks;
 using NovaCore.Chat.Application.Abstractions.Persistence.ConversationTransferRequests;
 using NovaCore.Chat.Application.Abstractions.Persistence.Contacts;
+using NovaCore.Chat.Application.Abstractions.Persistence.ConversationRatings;
 using NovaCore.Chat.Application.Abstractions.Persistence.ConversationReasonSuggestions;
 using NovaCore.Chat.Application.Abstractions.Persistence.Conversations;
 using NovaCore.Chat.Application.Abstractions.Persistence.Messages;
@@ -47,6 +48,8 @@ using NovaCore.Chat.Persistence.Contexts.ConversationTasks.Read;
 using NovaCore.Chat.Persistence.Contexts.ConversationTasks.Write;
 using NovaCore.Chat.Persistence.Contexts.ConversationTransferRequests.Read;
 using NovaCore.Chat.Persistence.Contexts.ConversationTransferRequests.Write;
+using NovaCore.Chat.Persistence.Contexts.ConversationRatings.Read;
+using NovaCore.Chat.Persistence.Contexts.ConversationRatings.Write;
 using NovaCore.Chat.Persistence.Contexts.ConversationReasonSuggestions.Read;
 using NovaCore.Chat.Persistence.Contexts.ConversationReasonSuggestions.Write;
 using NovaCore.Chat.Persistence.Contexts.Contacts.Read;
@@ -114,6 +117,8 @@ public static class DependencyInjection
 
             builder.Entity<ConversationReasonSuggestion>().IsRoot(x => x.Id);
             builder.Entity<ConversationReasonSuggestionTranslation>().BelongsTo<ConversationReasonSuggestion>(x => x.Id);
+
+            builder.Entity<ConversationRating>().IsRoot(x => x.Id);
 
             builder.Entity<Message>().IsRoot(x => x.Id);
             builder.Entity<MessageAttachment>().BelongsTo<Message>(x => x.MessageId);
@@ -185,6 +190,9 @@ public static class DependencyInjection
 
         services.AddScoped<IConversationReasonSuggestionReadService, ConversationReasonSuggestionReadService>();
         services.AddScoped<IConversationReasonSuggestionWriteService, ConversationReasonSuggestionWriteService>();
+
+        services.AddScoped<IConversationRatingReadService, ConversationRatingReadService>();
+        services.AddScoped<IConversationRatingWriteService, ConversationRatingWriteService>();
 
         services.AddScoped<IMessageReadService, MessageReadService>();
         services.AddScoped<IMessageWriteService, MessageWriteService>();

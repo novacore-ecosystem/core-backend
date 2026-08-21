@@ -13,6 +13,7 @@ global using NovaCore.Chat.Domain.Entities.Messages;
 global using NovaCore.Chat.Domain.Entities.Permissions;
 global using NovaCore.Chat.Domain.Entities.Polls;
 global using NovaCore.Chat.Domain.Entities.Queues;
+global using NovaCore.Chat.Domain.Entities.Ratings;
 global using NovaCore.Chat.Domain.Entities.ReasonSuggestions;
 global using NovaCore.Chat.Domain.Entities.Responsibilities;
 global using NovaCore.Chat.Domain.Entities.Roles;

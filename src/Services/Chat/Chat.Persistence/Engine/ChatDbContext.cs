@@ -25,6 +25,7 @@ public sealed class ChatDbContext(DbContextOptions<ChatDbContext> options)
     public DbSet<ConversationPermission> ConversationPermissions { get; set; } = null!;
     public DbSet<Sticker> Stickers { get; set; } = null!;
     public DbSet<ConversationReasonSuggestion> ConversationReasonSuggestions { get; set; } = null!;
+    public DbSet<ConversationRating> ConversationRatings { get; set; } = null!;
 
     // Owned & mapping entities
     public DbSet<ConversationContact> ConversationContacts { get; set; } = null!;
