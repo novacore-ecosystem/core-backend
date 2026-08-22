@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.Content.Domain.Tests</RootNamespace>
+    <AssemblyName>NovaCore.Content.Domain.Tests</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/Services/Content/Content.Domain/Content.Domain.csproj" />
+    <ProjectReference Include="../Common/NovaCore.TestKit/NovaCore.TestKit.csproj" />
+  </ItemGroup>
+
+</Project>
