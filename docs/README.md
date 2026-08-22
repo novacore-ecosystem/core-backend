@@ -53,6 +53,7 @@ Every document below belongs to exactly one of four responsibilities. Don't mix 
 ## Services
 
 - [services/auth-service.md](services/auth-service.md) — Auth Service (the reference implementation)
+- [services/content-service.md](services/content-service.md) — Content Service (Content Platform / Content Engine)
 - [services/user-service.md](services/user-service.md) — User Service
 - [services/product-service.md](services/product-service.md) — Product Service
 - [services/inventory-service.md](services/inventory-service.md) — Inventory Service

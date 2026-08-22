@@ -219,6 +219,25 @@ services:
     networks:
       - default
 
+  content-api:
+    image: ${CONTENT_CONTAINER_NAME}
+    build:
+      context: .
+      dockerfile: ./src/Services/Content/Content.API/Dockerfile
+    depends_on:
+      pg:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      seq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      apm-server:
+        condition: service_healthy
+    networks:
+      - default
+
   # ============= DATABASES =============
   pg:
     image: ${POSTGRES_IMAGE}

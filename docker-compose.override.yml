@@ -228,6 +228,38 @@ services:
       retries: 3
       start_period: 40s
 
+  content-api:
+    container_name: ${CONTENT_CONTAINER_NAME}
+    ports:
+      - "${CONTENT_PUBLIC_HTTP_PORT}:${CONTENT_HTTP_PORT}"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${CONTENT_URLS}
+      - ASPNETCORE_HTTP_PORT=${CONTENT_HTTP_PORT}
+      # Database
+      - ConnectionStrings__DefaultConnection=${CONTENT_DB_CONNECTION}
+      # Logging
+      - Logging__Seq__Url=${SEQ_URL}
+      - Logging__Elasticsearch__Url=${ELASTICSEARCH_URL}
+      - Logging__Elasticsearch__Username=${ELASTICSEARCH_APP_USERNAME}
+      - Logging__Elasticsearch__Password=${ELASTICSEARCH_PASSWORD}
+      # Observability (APM/tracing - see docs/setup/observability.md)
+      - Observability__ApmServerUrl=${APM_SERVER_URL}
+      # JWT (validation only - tokens are issued by Auth)
+      - Jwt__SecretKey=${AUTH_JWT_SECRET_KEY}
+      - Jwt__Issuer=${AUTH_JWT_ISSUER}
+      - Jwt__Audience=${AUTH_JWT_AUDIENCE}
+      - Jwt__AccessTokenExpirationMinutes=${AUTH_JWT_ACCESS_TOKEN_EXPIRATION_MINUTES}
+      - Jwt__RefreshTokenExpirationDays=${AUTH_JWT_REFRESH_TOKEN_EXPIRATION_DAYS}
+      # Kafka
+      - Kafka__BootstrapServers=${CONTENT_KAFKA_BROKERS}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   inventory-api:
     container_name: ${INVENTORY_CONTAINER_NAME}
     ports:
