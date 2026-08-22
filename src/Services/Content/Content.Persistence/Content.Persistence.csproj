@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>NovaCore.Content.Persistence</RootNamespace>
+    <AssemblyName>NovaCore.Content.Persistence</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Content.Application/Content.Application.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Domain/BuildingBlock.Domain.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Persistence/BuildingBlock.Persistence.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Persistence.Ef/BuildingBlock.Persistence.Ef.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/BuildingBlock.Observability/BuildingBlock.Observability.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.Xml" />
+    <PackageReference Include="Npgsql.OpenTelemetry" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>
