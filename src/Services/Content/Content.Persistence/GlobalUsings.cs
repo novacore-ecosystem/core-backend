@@ -17,3 +17,4 @@ global using NovaCore.Content.Domain.Entities.Workflows;
 global using NovaCore.Content.Domain.Enums;
 global using NovaCore.Content.Domain.Metadata;
 global using NovaCore.Content.Domain.ValueObjects;
+global using ContentEntity = NovaCore.Content.Domain.Entities.Contents.Content;
