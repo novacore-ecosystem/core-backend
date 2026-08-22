@@ -1,18 +1,15 @@
-using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
-
 using NovaCore.Content.Application.Abstractions.Persistence.Contents;
 using NovaCore.Content.Persistence.Contexts.Contents.Repositories;
 
 namespace NovaCore.Content.Persistence.Contexts.Contents.Write;
 
-public sealed class ContentWriteService(
-    IContentRepository contentRepo,
-    IUnitOfWork unitOfWork) : IContentWriteService
+public sealed class ContentWriteService(IContentRepository contentRepo) : IContentWriteService
 {
     public async Task CreateAsync(ContentEntity content, CancellationToken ct = default)
     {
         await contentRepo.AddAsync(content, ct);
-        await unitOfWork.SaveChangesAsync(ct);
+        // no commit here - the calling handler wraps this in its own ExecuteTransactionAsync
+        // alongside the ContentCreatedIntegrationEvent Outbox enqueue.
     }
 
     public async Task PublishAsync(Guid id, Guid versionId, DateTime publishedAt, CancellationToken ct = default)

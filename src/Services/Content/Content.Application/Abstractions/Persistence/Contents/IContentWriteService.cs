@@ -2,7 +2,11 @@ namespace NovaCore.Content.Application.Abstractions.Persistence.Contents;
 
 public interface IContentWriteService
 {
-    /// <summary>Self-commits (bare SaveChangesAsync) - a brand-new Content is a single-aggregate write.</summary>
+    /// <summary>
+    /// Non-committing - the caller wraps this in unitOfWork.ExecuteTransactionAsync alongside the
+    /// resulting ContentCreatedIntegrationEvent Outbox enqueue, so creation and the event commit
+    /// atomically.
+    /// </summary>
     Task CreateAsync(ContentEntity content, CancellationToken ct = default);
 
     /// <summary>
