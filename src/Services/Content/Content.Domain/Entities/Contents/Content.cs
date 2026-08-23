@@ -9,7 +9,7 @@ namespace NovaCore.Content.Domain.Entities.Contents;
 /// ContentVersion. Article and every future content type are built entirely on this model; there
 /// is no Article-specific table or field anywhere in this aggregate.
 /// </summary>
-public sealed class Content : AggregateRoot<Guid>, IAuditable, ITenantEntity
+public sealed class Content : AggregateRoot<Guid>, IAuditable, ITenantEntity, ISoftDeleteEntity
 {
     public Guid ContentTypeId { get; private set; }
     public ContentType ContentType { get; private set; } = default!;
@@ -24,6 +24,8 @@ public sealed class Content : AggregateRoot<Guid>, IAuditable, ITenantEntity
     public Guid? UpdatedBy { get; private set; }
     public DateTime? PublishedAt { get; private set; }
     public DateTime? ArchivedAt { get; private set; }
+    public bool IsDeleted { get; private set; }
+    public DateTime? DeletedAt { get; private set; }
 
     public ICollection<ContentVersion> Versions { get; private set; } = [];
     public ICollection<ContentPublication> Publications { get; private set; } = [];
@@ -45,14 +47,16 @@ public sealed class Content : AggregateRoot<Guid>, IAuditable, ITenantEntity
     private Content() { }
 
     /// <summary>
-    /// Creates a Content together with its required first ContentVersion in one call - a Content
-    /// with no version at all would have nothing to edit, publish, or render, so the invariant is
-    /// resolved here rather than left to a caller round-trip (same reasoning Product.Create
-    /// applies to its required Variant collection).
+    /// Creates a Content together with its required first ContentVersion - and that version's
+    /// required first localized payload for <paramref name="language"/> - in one call. A Content
+    /// with no version, or a version with no language at all, would have nothing to edit, publish,
+    /// or render, so both invariants are resolved here rather than left to a caller round-trip
+    /// (same reasoning Product.Create applies to its required Variant collection).
     /// </summary>
     public static Content Create(
         Guid contentTypeId,
         ContentSlug slug,
+        LanguageCode language,
         string title,
         string summary,
         string body,
@@ -70,9 +74,13 @@ public sealed class Content : AggregateRoot<Guid>, IAuditable, ITenantEntity
             CreatedBy = createdBy,
         };
 
-        var firstVersion = ContentVersion.Create(content.Id, 1, title, summary, body, createdBy, metadata);
+        var firstVersion = ContentVersion.Create(content.Id, 1, createdBy);
         content.Versions.Add(firstVersion);
         content.CurrentVersionId = firstVersion.Id;
+
+        var localization = ContentLocalization.Create(content.Id, firstVersion.Id, language, title, summary, body, metadata);
+        firstVersion.Localizations.Add(localization);
+        content.Localizations.Add(localization);
 
         return content;
     }
@@ -86,13 +94,16 @@ public sealed class Content : AggregateRoot<Guid>, IAuditable, ITenantEntity
 
     #region Versioning
 
-    public ContentVersion CreateDraftVersion(string title, string summary, string body, Guid createdBy, ContentMetadata? metadata = null)
+    /// <summary>Creates a new, language-less draft version - callers add its first localization via
+    /// <see cref="UpsertLocalization"/> immediately after (see <see cref="CreateDraftVersion"/> for
+    /// the common one-language-at-creation case).</summary>
+    private ContentVersion AddVersion(Guid createdBy)
     {
         if (Status == ContentStatus.Archived)
             throw ExceptionFactory.InvalidStatus("Cannot create a new version on an archived content item.");
 
         var nextVersionNumber = Versions.Count == 0 ? 1 : Versions.Max(v => v.VersionNumber) + 1;
-        var version = ContentVersion.Create(Id, nextVersionNumber, title, summary, body, createdBy, metadata);
+        var version = ContentVersion.Create(Id, nextVersionNumber, createdBy);
         Versions.Add(version);
         CurrentVersionId = version.Id;
         UpdatedBy = createdBy;
@@ -100,25 +111,34 @@ public sealed class Content : AggregateRoot<Guid>, IAuditable, ITenantEntity
         return version;
     }
 
-    public void UpdateDraft(Guid versionId, string title, string summary, string body, Guid updatedBy, ContentMetadata? metadata = null)
+    public ContentVersion CreateDraftVersion(LanguageCode language, string title, string summary, string body, Guid createdBy, ContentMetadata? metadata = null)
     {
-        var version = Versions.FirstOrDefault(v => v.Id == versionId)
-            ?? throw ExceptionFactory.EntityNotFound<ContentVersion>(versionId);
+        var version = AddVersion(createdBy);
+        UpsertLocalization(version.Id, language, title, summary, body, createdBy, metadata);
 
-        version.UpdateContent(title, summary, body, metadata);
-        UpdatedBy = updatedBy;
+        return version;
     }
 
     /// <summary>
-    /// Restores a previous version's content into a brand-new current version, preserving every
-    /// prior version untouched - history is never overwritten or destroyed by a restore.
+    /// Restores a previous version's full language set into a brand-new current version,
+    /// preserving every prior version untouched - history is never overwritten or destroyed by a
+    /// restore. Every language the target version carried comes back, not just one.
     /// </summary>
     public ContentVersion RestoreVersion(Guid versionId, Guid restoredBy)
     {
-        var target = Versions.FirstOrDefault(v => v.Id == versionId)
-            ?? throw ExceptionFactory.EntityNotFound<ContentVersion>(versionId);
+        var target = GetOwnedVersion(versionId);
+        if (target.Localizations.Count == 0)
+            throw ExceptionFactory.InvalidState("Cannot restore a version that has no localized content.");
 
-        return CreateDraftVersion(target.Title, target.Summary, target.Body, restoredBy, target.Metadata);
+        var restored = AddVersion(restoredBy);
+        foreach (var localization in target.Localizations)
+        {
+            UpsertLocalization(
+                restored.Id, localization.Culture, localization.Title, localization.Summary,
+                localization.Body, restoredBy, localization.Metadata);
+        }
+
+        return restored;
     }
 
     #endregion
@@ -174,6 +194,8 @@ public sealed class Content : AggregateRoot<Guid>, IAuditable, ITenantEntity
     public ContentPublication Publish(Guid versionId, DateTime publishedAt)
     {
         var version = GetOwnedVersion(versionId);
+        if (version.Localizations.Count == 0)
+            throw ExceptionFactory.InvalidState("Cannot publish a version that has no localized content.");
 
         var publication = Publications
             .Where(p => p.VersionId == versionId)
@@ -352,21 +374,74 @@ public sealed class Content : AggregateRoot<Guid>, IAuditable, ITenantEntity
         Relationships.Remove(relationship);
     }
 
-    public ContentLocalization UpsertLocalization(LanguageCode culture, Guid versionId)
+    /// <summary>
+    /// The single mechanism for writing a language's content into a version - used identically by
+    /// draft editing (upsert onto the current version) and by the Translation API (upsert a new
+    /// culture onto an existing version). Creates the localization row if this version doesn't
+    /// carry <paramref name="culture"/> yet, otherwise updates it in place. A version that has
+    /// already been published or archived is immutable - translate into a new version instead.
+    /// </summary>
+    public ContentLocalization UpsertLocalization(
+        Guid versionId,
+        LanguageCode culture,
+        string title,
+        string summary,
+        string body,
+        Guid updatedBy,
+        ContentMetadata? metadata = null)
     {
-        GetOwnedVersion(versionId);
+        var version = GetOwnedVersion(versionId);
+        if (version.Status is ContentStatus.Published or ContentStatus.Archived)
+            throw ExceptionFactory.InvalidStatus("Cannot edit a version that has already been published or archived - create a new version instead.");
 
-        var existing = Localizations.FirstOrDefault(l => l.Culture == culture);
+        var existing = version.GetLocalization(culture);
         if (existing is not null)
         {
-            existing.ChangeVersion(versionId);
+            existing.UpdateContent(title, summary, body, metadata);
+            UpdatedBy = updatedBy;
             return existing;
         }
 
-        var localization = ContentLocalization.Create(Id, culture, versionId);
+        var localization = ContentLocalization.Create(Id, versionId, culture, title, summary, body, metadata);
+        version.Localizations.Add(localization);
         Localizations.Add(localization);
+        UpdatedBy = updatedBy;
 
         return localization;
+    }
+
+    #endregion
+
+    // ============================================================================
+    // Soft Delete
+    // Deleting a Content only hides it from normal queries (ISoftDeleteEntity's global query
+    // filter) - identity, versions, and localizations are untouched and restore brings it back
+    // exactly as it was. Permanent removal is a separate, time-delayed background job.
+    // ============================================================================
+
+    #region Soft Delete
+
+    public void Delete()
+    {
+        MarkDeleted();
+    }
+
+    public void MarkDeleted()
+    {
+        if (IsDeleted)
+            return;
+
+        IsDeleted = true;
+        DeletedAt = DateTime.UtcNow;
+    }
+
+    public void Restore()
+    {
+        if (!IsDeleted)
+            return;
+
+        IsDeleted = false;
+        DeletedAt = null;
     }
 
     #endregion

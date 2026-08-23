@@ -19,17 +19,6 @@ public sealed class ContentVersionConfig : IEntityTypeConfiguration<ContentVersi
             .HasConversion<byte>()
             .IsRequired();
 
-        builder.Property(x => x.Title).HasMaxLength(500).IsRequired();
-        builder.Property(x => x.Summary).HasMaxLength(1000);
-        builder.Property(x => x.Body).HasColumnType("text");
-
-        builder.Property(x => x.Metadata)
-            .HasConversion(
-                x => x.ToJson(),
-                x => MetadataBase.FromJson<ContentMetadata>(x))
-            .HasColumnType("jsonb")
-            .IsRequired();
-
         builder.Property(x => x.CreatedBy).IsRequired();
 
         // Relationships
@@ -37,6 +26,8 @@ public sealed class ContentVersionConfig : IEntityTypeConfiguration<ContentVersi
             .WithMany(c => c.Versions)
             .HasForeignKey(x => x.ContentId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Localizations are configured from ContentLocalizationConfig (single source per relationship).
 
         // Indexes
         builder.HasIndex(x => new { x.ContentId, x.VersionNumber }).IsUnique();

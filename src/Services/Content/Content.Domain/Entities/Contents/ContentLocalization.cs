@@ -1,19 +1,33 @@
+using System.Text.Json;
+
 namespace NovaCore.Content.Domain.Entities.Contents;
 
 /// <summary>
-/// One culture's localization record for a Content, pointing at the ContentVersion carrying that
-/// culture's translated payload. Kept as a proper join record (culture + version + its own
-/// status) rather than per-language fields on Content/ContentVersion, so draft and published
-/// localization state stay distinguishable per culture.
+/// One culture's localized payload within a specific <see cref="ContentVersion"/> - title,
+/// summary, structured JSON body (Editor.js-compatible, persisted as PostgreSQL jsonb) and
+/// per-language SEO metadata. This is the sole owner of editorial content: a ContentVersion
+/// carries no body of its own, only the version-level lifecycle (VersionNumber/Status) shared by
+/// every language in it. Unique per (VersionId, Culture) - the same culture may appear across many
+/// versions of the same Content, each with its own independently-edited payload.
 /// </summary>
 public sealed class ContentLocalization : BaseEntity<Guid>, IAuditable, ITenantEntity
 {
+    private const int MaxTitleLength = 500;
+    private const int MaxSummaryLength = 1000;
+
     public Guid ContentId { get; private set; }
     public Content Content { get; private set; } = default!;
-    public LanguageCode Culture { get; private set; } = null!;
     public Guid VersionId { get; private set; }
     public ContentVersion Version { get; private set; } = default!;
-    public ContentStatus Status { get; private set; }
+    public LanguageCode Culture { get; private set; } = null!;
+    public string Title { get; private set; } = string.Empty;
+    public string Summary { get; private set; } = string.Empty;
+
+    /// <summary>Structured JSON document (Editor.js output), stored as PostgreSQL jsonb. The domain
+    /// treats this as an opaque validated JSON string - it never parses Editor.js-specific
+    /// internals (block types, etc.), only that the payload is syntactically valid JSON.</summary>
+    public string Body { get; private set; } = "{}";
+    public ContentMetadata Metadata { get; private set; } = new();
 
     public Guid TenantId { get; private set; }
 
@@ -27,27 +41,74 @@ public sealed class ContentLocalization : BaseEntity<Guid>, IAuditable, ITenantE
 
     internal static ContentLocalization Create(
         Guid contentId,
-        LanguageCode culture,
         Guid versionId,
-        ContentStatus status = ContentStatus.Draft)
+        LanguageCode culture,
+        string title,
+        string summary,
+        string body,
+        ContentMetadata? metadata = null)
     {
+        ValidateTitle(title);
+        ValidateBody(body);
+
         return new ContentLocalization
         {
             Id = Guid.CreateVersion7(),
             ContentId = contentId,
-            Culture = culture,
             VersionId = versionId,
-            Status = status,
+            Culture = culture,
+            Title = title,
+            Summary = summary,
+            Body = body,
+            Metadata = metadata ?? new ContentMetadata(),
         };
     }
 
-    internal void ChangeVersion(Guid versionId)
+    internal void UpdateContent(string title, string summary, string body, ContentMetadata? metadata)
     {
-        VersionId = versionId;
+        ValidateTitle(title);
+        ValidateBody(body);
+
+        Title = title;
+        Summary = summary;
+        Body = body;
+        Metadata = metadata ?? Metadata;
     }
 
-    internal void ChangeStatus(ContentStatus status)
+    public static bool IsValidTitle(string? title)
+        => !string.IsNullOrWhiteSpace(title) && title.Length <= MaxTitleLength;
+
+    public static bool IsValidSummary(string? summary)
+        => summary is null || summary.Length <= MaxSummaryLength;
+
+    public static bool IsValidBody(string? body)
     {
-        Status = status;
+        if (string.IsNullOrWhiteSpace(body))
+            return false;
+
+        try
+        {
+            using var _ = JsonDocument.Parse(body);
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static void ValidateTitle(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            throw ExceptionFactory.RequiredField("Content localization title cannot be empty.");
+
+        if (title.Length > MaxTitleLength)
+            throw ExceptionFactory.ValueTooLarge($"Content localization title cannot exceed {MaxTitleLength} characters.");
+    }
+
+    private static void ValidateBody(string body)
+    {
+        if (!IsValidBody(body))
+            throw ExceptionFactory.InvalidFormat("Content body must be a valid JSON document.");
     }
 }

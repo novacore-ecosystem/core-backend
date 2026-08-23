@@ -2,9 +2,11 @@ using NovaCore.BuildingBlock.Application.Abstractions.Outbox;
 using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
 using NovaCore.BuildingBlock.Application.Exceptions;
 using NovaCore.BuildingBlock.Contract.Events.Content;
+using NovaCore.BuildingBlock.Domain.ValueObjects;
 
 using NovaCore.Content.Application.Abstractions.Persistence.ContentTypes;
 using NovaCore.Content.Application.Abstractions.Persistence.Contents;
+using NovaCore.Content.Application.Common;
 
 namespace NovaCore.Content.Application.Features.Contents.Commands.CreateContent;
 
@@ -44,9 +46,12 @@ public sealed class CreateContentHandler(
 
     private async Task<ContentEntity> SaveContentAsync(CreateContentCommand request, ContentSlug slug, CancellationToken ct)
     {
+        var language = LanguageCode.Create(ContentLanguageDefaults.OrDefault(request.Language));
+
         var content = ContentEntity.Create(
             request.ContentTypeId,
             slug,
+            language,
             request.Title,
             request.Summary,
             request.Body,

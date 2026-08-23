@@ -12,11 +12,10 @@ public sealed class ContentReadService(IContentRepository contentRepo, ContentDb
             id,
             query => query
                 .Include(c => c.ContentType)
-                .Include(c => c.Versions)
+                .Include(c => c.Versions).ThenInclude(v => v.Localizations)
                 .Include(c => c.Publications)
                 .Include(c => c.WorkflowInstances)
                 .Include(c => c.Relationships)
-                .Include(c => c.Localizations)
                 .Include(c => c.TaxonomyAssignments).ThenInclude(a => a.Taxonomy)
                 .Include(c => c.Audiences)
                 .Include(c => c.Contributors),

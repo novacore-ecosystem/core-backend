@@ -10,6 +10,7 @@ namespace NovaCore.Content.API.Endpoints.Contents;
 public sealed record CreateContentRequest(
     Guid ContentTypeId,
     string Slug,
+    string? Language,
     string Title,
     string Summary,
     string Body,
@@ -50,6 +51,7 @@ public sealed class CreateContentEndpoint : ICarterModule
         var command = new CreateContentCommand(
             request.ContentTypeId,
             request.Slug.Trim(),
+            request.Language?.Trim() ?? string.Empty,
             request.Title.Trim(),
             request.Summary.Trim(),
             request.Body,

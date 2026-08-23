@@ -9,6 +9,7 @@ public sealed record GetContentByIdResult(
     string Slug,
     ContentStatus Status,
     ContentVisibility Visibility,
+    bool IsDeleted,
     Guid? CurrentVersionId,
     Guid? PublishedVersionId,
     DateTime? PublishedAt,
@@ -18,5 +19,9 @@ public sealed record GetContentByIdVersionResult(
     Guid VersionId,
     int VersionNumber,
     ContentStatus Status,
+    IReadOnlyCollection<GetContentByIdLocalizationResult> Localizations);
+
+public sealed record GetContentByIdLocalizationResult(
+    string Culture,
     string Title,
     string Summary);

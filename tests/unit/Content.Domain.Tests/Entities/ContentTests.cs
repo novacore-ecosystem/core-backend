@@ -1,5 +1,6 @@
 using NovaCore.BuildingBlock.Domain.Enums;
 using NovaCore.BuildingBlock.Domain.Exceptions;
+using NovaCore.BuildingBlock.Domain.ValueObjects;
 using NovaCore.Content.Domain.Entities.Contents;
 using NovaCore.Content.Domain.Enums;
 using NovaCore.Content.Domain.ValueObjects;
@@ -10,20 +11,24 @@ namespace NovaCore.Content.Domain.Tests.Entities;
 
 public class ContentTests
 {
+    private static readonly LanguageCode English = LanguageCode.Create("en");
+    private static readonly LanguageCode Vietnamese = LanguageCode.Create("vi");
+
     private static ContentEntity CreateValidContent(ContentVisibility visibility = ContentVisibility.Private)
         => ContentEntity.Create(
             Guid.CreateVersion7(),
             ContentSlug.Create("first-article"),
+            English,
             "First Article",
             "Summary",
-            "Body",
+            "{\"blocks\":[]}",
             Guid.CreateVersion7(),
             visibility);
 
     #region Create
 
     [Fact]
-    public void Create_ValidInput_CreatesContentWithOneDraftVersion()
+    public void Create_ValidInput_CreatesContentWithOneDraftVersionAndLocalization()
     {
         var content = CreateValidContent();
 
@@ -32,6 +37,11 @@ public class ContentTests
         content.CurrentVersionId.ShouldBe(content.Versions.Single().Id);
         content.Versions.Single().VersionNumber.ShouldBe(1);
         content.PublishedVersionId.ShouldBeNull();
+
+        var localization = content.Versions.Single().Localizations.Single();
+        localization.Culture.ShouldBe(English);
+        localization.Title.ShouldBe("First Article");
+        content.Localizations.ShouldContain(localization);
     }
 
     [Theory]
@@ -43,9 +53,25 @@ public class ContentTests
         Action act = () => ContentEntity.Create(
             Guid.CreateVersion7(),
             ContentSlug.Create("slug"),
+            English,
             title!,
             "summary",
-            "body",
+            "{}",
+            Guid.CreateVersion7());
+
+        act.ShouldThrowDomainException<InvalidArgumentException>(MessageCode.InvalidInput);
+    }
+
+    [Fact]
+    public void Create_InvalidJsonBody_ThrowsInvalidFormat()
+    {
+        Action act = () => ContentEntity.Create(
+            Guid.CreateVersion7(),
+            ContentSlug.Create("slug"),
+            English,
+            "Title",
+            "summary",
+            "not-json",
             Guid.CreateVersion7());
 
         act.ShouldThrowDomainException<InvalidArgumentException>(MessageCode.InvalidInput);
@@ -60,11 +86,12 @@ public class ContentTests
     {
         var content = CreateValidContent();
 
-        var second = content.CreateDraftVersion("Second Title", "Summary", "Body", Guid.CreateVersion7());
+        var second = content.CreateDraftVersion(English, "Second Title", "Summary", "{}", Guid.CreateVersion7());
 
         second.VersionNumber.ShouldBe(2);
         content.Versions.Count.ShouldBe(2);
         content.CurrentVersionId.ShouldBe(second.Id);
+        second.Localizations.Single().Title.ShouldBe("Second Title");
     }
 
     [Fact]
@@ -73,22 +100,25 @@ public class ContentTests
         var content = CreateValidContent();
         content.Archive();
 
-        Action act = () => content.CreateDraftVersion("Title", "Summary", "Body", Guid.CreateVersion7());
+        Action act = () => content.CreateDraftVersion(English, "Title", "Summary", "{}", Guid.CreateVersion7());
 
         act.ShouldThrowDomainException<InvalidStatusException>(MessageCode.InvalidInput);
     }
 
     [Fact]
-    public void RestoreVersion_CreatesNewVersionCopyingTargetContent_PreservesHistory()
+    public void RestoreVersion_CreatesNewVersionCopyingEveryLanguage_PreservesHistory()
     {
         var content = CreateValidContent();
         var firstVersionId = content.CurrentVersionId!.Value;
-        content.CreateDraftVersion("Second Title", "Second Summary", "Second Body", Guid.CreateVersion7());
+        content.UpsertLocalization(firstVersionId, Vietnamese, "Bai Viet Dau Tien", "Tom tat", "{}", Guid.CreateVersion7());
+        content.CreateDraftVersion(English, "Second Title", "Second Summary", "{}", Guid.CreateVersion7());
 
         var restored = content.RestoreVersion(firstVersionId, Guid.CreateVersion7());
 
         content.Versions.Count.ShouldBe(3);
-        restored.Title.ShouldBe("First Article");
+        restored.Localizations.Count.ShouldBe(2);
+        restored.GetLocalization(English)!.Title.ShouldBe("First Article");
+        restored.GetLocalization(Vietnamese)!.Title.ShouldBe("Bai Viet Dau Tien");
         content.CurrentVersionId.ShouldBe(restored.Id);
         content.Versions.ShouldContain(v => v.Id == firstVersionId);
     }
@@ -101,6 +131,85 @@ public class ContentTests
         Action act = () => content.RestoreVersion(Guid.CreateVersion7(), Guid.CreateVersion7());
 
         act.ShouldThrowDomainException<EntityNotFoundException>(MessageCode.NotFound);
+    }
+
+    #endregion
+
+    #region Localization / Translation
+
+    [Fact]
+    public void UpsertLocalization_NewCulture_AddsLocalizationToVersion()
+    {
+        var content = CreateValidContent();
+        var versionId = content.CurrentVersionId!.Value;
+
+        var localization = content.UpsertLocalization(versionId, Vietnamese, "Bai Viet", "Tom tat", "{}", Guid.CreateVersion7());
+
+        content.Versions.Single().Localizations.Count.ShouldBe(2);
+        localization.Culture.ShouldBe(Vietnamese);
+    }
+
+    [Fact]
+    public void UpsertLocalization_ExistingCulture_UpdatesInPlace()
+    {
+        var content = CreateValidContent();
+        var versionId = content.CurrentVersionId!.Value;
+
+        var updated = content.UpsertLocalization(versionId, English, "Updated Title", "Updated Summary", "{}", Guid.CreateVersion7());
+
+        content.Versions.Single().Localizations.Count.ShouldBe(1);
+        updated.Title.ShouldBe("Updated Title");
+    }
+
+    [Fact]
+    public void UpsertLocalization_OnPublishedVersion_ThrowsInvalidStatus()
+    {
+        var content = CreateValidContent();
+        var versionId = content.CurrentVersionId!.Value;
+        content.Publish(versionId, DateTime.UtcNow);
+
+        Action act = () => content.UpsertLocalization(versionId, Vietnamese, "Title", "Summary", "{}", Guid.CreateVersion7());
+
+        act.ShouldThrowDomainException<InvalidStatusException>(MessageCode.InvalidInput);
+    }
+
+    #endregion
+
+    #region Soft Delete
+
+    [Fact]
+    public void Delete_MarksDeletedWithTimestamp()
+    {
+        var content = CreateValidContent();
+
+        content.Delete();
+
+        content.IsDeleted.ShouldBeTrue();
+        content.DeletedAt.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void Delete_CalledTwice_IsIdempotent()
+    {
+        var content = CreateValidContent();
+        content.Delete();
+        var firstDeletedAt = content.DeletedAt;
+
+        content.Delete();
+
+        content.DeletedAt.ShouldBe(firstDeletedAt);
+    }
+
+    [Fact]
+    public void Restore_DeletedContent_ClearsDeletedState()
+    {
+        var content = CreateValidContent();
+        content.Delete();
+
+        content.Restore();
+
+        content.IsDeleted.ShouldBeFalse();
+        content.DeletedAt.ShouldBeNull();
     }
 
     #endregion
@@ -180,7 +289,7 @@ public class ContentTests
     {
         var content = CreateValidContent();
         var firstVersionId = content.CurrentVersionId!.Value;
-        var draft = content.CreateDraftVersion("Draft Title", "Draft Summary", "Draft Body", Guid.CreateVersion7());
+        var draft = content.CreateDraftVersion(English, "Draft Title", "Draft Summary", "{}", Guid.CreateVersion7());
 
         content.Publish(firstVersionId, DateTime.UtcNow);
 

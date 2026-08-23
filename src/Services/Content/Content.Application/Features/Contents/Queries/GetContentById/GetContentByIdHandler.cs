@@ -18,11 +18,16 @@ public sealed class GetContentByIdHandler(IContentReadService contentReadService
             content.Slug.Value,
             content.Status,
             content.Visibility,
+            content.IsDeleted,
             content.CurrentVersionId,
             content.PublishedVersionId,
             content.PublishedAt,
             [.. content.Versions
                 .OrderByDescending(v => v.VersionNumber)
-                .Select(v => new GetContentByIdVersionResult(v.Id, v.VersionNumber, v.Status, v.Title, v.Summary))]);
+                .Select(v => new GetContentByIdVersionResult(
+                    v.Id,
+                    v.VersionNumber,
+                    v.Status,
+                    [.. v.Localizations.Select(l => new GetContentByIdLocalizationResult(l.Culture.Value, l.Title, l.Summary))]))]);
     }
 }

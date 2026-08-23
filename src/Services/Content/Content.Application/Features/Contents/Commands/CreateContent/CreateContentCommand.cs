@@ -3,6 +3,7 @@ namespace NovaCore.Content.Application.Features.Contents.Commands.CreateContent;
 public sealed record CreateContentCommand(
     Guid ContentTypeId,
     string Slug,
+    string Language,
     string Title,
     string Summary,
     string Body,
