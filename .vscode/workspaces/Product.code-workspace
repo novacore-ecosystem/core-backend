@@ -1,96 +1,28 @@
 {
   "folders": [
     {
-      "name": "[ROOT] core-backend",
-      "path": "../.."
+      "name": "scripts",
+      "path": "../../dev/Product"
     },
     {
-      "name": "Product.Domain",
-      "path": "../../src/Services/Product/Product.Domain"
+      "name": "docs",
+      "path": "../../docs"
     },
     {
-      "name": "Product.Application",
-      "path": "../../src/Services/Product/Product.Application"
+      "name": "gateways",
+      "path": "../../src/ApiGateways"
     },
     {
-      "name": "Product.Infrastructure",
-      "path": "../../src/Services/Product/Product.Infrastructure"
+      "name": "shared",
+      "path": "../../src/BuildingBlocks"
     },
     {
-      "name": "Product.Persistence",
-      "path": "../../src/Services/Product/Product.Persistence"
+      "name": "service",
+      "path": "../../src/Services/Product"
     },
     {
-      "name": "Product.API",
-      "path": "../../src/Services/Product/Product.API"
-    },
-    {
-      "name": "BuildingBlock.Application",
-      "path": "../../src/BuildingBlocks/BuildingBlock.Application"
-    },
-    {
-      "name": "BuildingBlock.Contract",
-      "path": "../../src/BuildingBlocks/BuildingBlock.Contract"
-    },
-    {
-      "name": "BuildingBlock.Criteria",
-      "path": "../../src/BuildingBlocks/BuildingBlock.Criteria"
-    },
-    {
-      "name": "BuildingBlock.Domain",
-      "path": "../../src/BuildingBlocks/BuildingBlock.Domain"
-    },
-    {
-      "name": "BuildingBlock.Grpc",
-      "path": "../../src/BuildingBlocks/BuildingBlock.Grpc"
-    },
-    {
-      "name": "BuildingBlock.Infrastructure",
-      "path": "../../src/BuildingBlocks/BuildingBlock.Infrastructure"
-    },
-    {
-      "name": "BuildingBlock.Messaging",
-      "path": "../../src/BuildingBlocks/BuildingBlock.Messaging"
-    },
-    {
-      "name": "BuildingBlock.Messaging.Kafka",
-      "path": "../../src/BuildingBlocks/BuildingBlock.Messaging.Kafka"
-    },
-    {
-      "name": "BuildingBlock.Observability",
-      "path": "../../src/BuildingBlocks/BuildingBlock.Observability"
-    },
-    {
-      "name": "BuildingBlock.Persistence",
-      "path": "../../src/BuildingBlocks/BuildingBlock.Persistence"
-    },
-    {
-      "name": "BuildingBlock.Persistence.Ef",
-      "path": "../../src/BuildingBlocks/BuildingBlock.Persistence.Ef"
-    },
-    {
-      "name": "BuildingBlock.Search",
-      "path": "../../src/BuildingBlocks/BuildingBlock.Search"
-    },
-    {
-      "name": "BuildingBlock.SharedKernel",
-      "path": "../../src/BuildingBlocks/BuildingBlock.SharedKernel"
-    },
-    {
-      "name": "BuildingBlock.Web",
-      "path": "../../src/BuildingBlocks/BuildingBlock.Web"
-    },
-    {
-      "name": "YarpApiGateway",
-      "path": "../../src/ApiGateways/YarpApiGateway"
-    },
-    {
-      "name": "NovaCore.TestKit",
-      "path": "../../tests/unit/Common/NovaCore.TestKit"
-    },
-    {
-      "name": "Product.Domain.Tests",
-      "path": "../../tests/unit/Product.Domain.Tests"
+      "name": "tests",
+      "path": "../../tests"
     }
   ],
   "settings": {
@@ -102,12 +34,7 @@
       "**/dist": true,
       "**/build": true,
       "**/.next": true,
-      "**/coverage": true,
-      "src/Services": true,
-      "src/BuildingBlocks": true,
-      "src/ApiGateways": true,
-      "tests/unit": true,
-      "tests/integration": true
+      "**/coverage": true
     },
     "search.exclude": {
       "**/bin": true,
@@ -116,12 +43,7 @@
       "**/dist": true,
       "**/build": true,
       "**/.next": true,
-      "**/coverage": true,
-      "src/Services": true,
-      "src/BuildingBlocks": true,
-      "src/ApiGateways": true,
-      "tests/unit": true,
-      "tests/integration": true
+      "**/coverage": true
     },
     "files.watcherExclude": {
       "**/bin": true,
