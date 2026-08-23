@@ -2,7 +2,7 @@
   "folders": [
     {
       "name": "scripts",
-      "path": "../../dev/Notification"
+      "path": "../../scripts/Notification"
     },
     {
       "name": "docs",

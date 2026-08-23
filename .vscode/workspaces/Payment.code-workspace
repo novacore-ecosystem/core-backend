@@ -2,7 +2,7 @@
   "folders": [
     {
       "name": "scripts",
-      "path": "../../dev/Payment"
+      "path": "../../scripts/Payment"
     },
     {
       "name": "docs",
