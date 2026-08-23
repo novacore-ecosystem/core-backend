@@ -14,7 +14,9 @@
 #      elasticsearch/apm-server (both are non-blocking Serilog/OTel sinks in application
 #      code - see docs/setup/observability.md - so omitting them is safe), and the
 #      yarp-api-gateway environment lines that pointed at Inventory/Order/Product (those
-#      services don't exist locally either).
+#      services don't exist locally either). content-api's canonical block carries the
+#      same elasticsearch/apm-server depends_on and Logging__Elasticsearch__*/
+#      Observability__ApmServerUrl env lines - dropped here for the same reason.
 #   3. Added chat-api, which has no canonical docker-compose.yml/override.yml entry yet -
 #      see the inline comment on its block below for how that configuration was derived.
 #
@@ -339,6 +341,47 @@ services:
       - Jobs__InboxCleanup__MaxBatchesPerRun=${NOTIFICATION_INBOX_CLEANUP_MAX_BATCHES}
       # Kafka
       - Kafka__BootstrapServers=${NOTIFICATION_KAFKA_BROKERS}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  content-api:
+    image: ${CONTENT_CONTAINER_NAME}
+    build:
+      context: .
+      dockerfile: ./src/Services/Content/Content.API/Dockerfile
+    container_name: ${CONTENT_CONTAINER_NAME}
+    depends_on:
+      pg:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      seq:
+        condition: service_healthy
+    networks:
+      - default
+    ports:
+      - "${CONTENT_PUBLIC_HTTP_PORT}:${CONTENT_HTTP_PORT}"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${CONTENT_URLS}
+      - ASPNETCORE_HTTP_PORT=${CONTENT_HTTP_PORT}
+      # Database
+      - ConnectionStrings__DefaultConnection=${CONTENT_DB_CONNECTION}
+      - ConnectionStrings__Hangfire=${CONTENT_HANGFIRE_DB_CONNECTION}
+      # Logging
+      - Logging__Seq__Url=${SEQ_URL}
+      # JWT (validation only - tokens are issued by Auth)
+      - Jwt__SecretKey=${AUTH_JWT_SECRET_KEY}
+      - Jwt__Issuer=${AUTH_JWT_ISSUER}
+      - Jwt__Audience=${AUTH_JWT_AUDIENCE}
+      - Jwt__AccessTokenExpirationMinutes=${AUTH_JWT_ACCESS_TOKEN_EXPIRATION_MINUTES}
+      - Jwt__RefreshTokenExpirationDays=${AUTH_JWT_REFRESH_TOKEN_EXPIRATION_DAYS}
+      # Kafka
+      - Kafka__BootstrapServers=${CONTENT_KAFKA_BROKERS}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
