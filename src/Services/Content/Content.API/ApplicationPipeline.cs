@@ -3,6 +3,8 @@ using NovaCore.BuildingBlock.Web.ExceptionHandling;
 using NovaCore.BuildingBlock.Web.Middleware;
 using NovaCore.BuildingBlock.Web.Swagger;
 
+using NovaCore.Content.Infrastructure.BackgroundJobs;
+
 namespace NovaCore.Content.API;
 
 public static class ApplicationPipeline
@@ -16,6 +18,8 @@ public static class ApplicationPipeline
         app.UseAuthorization();
         app.MapEndpoints();
         app.UseMiddlewares();
+        app.UseBackgroundJobsDashboard();
+        app.UseBackgroundJobsScheduling();
 
         return app;
     }

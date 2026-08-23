@@ -11,6 +11,7 @@ CREATE DATABASE product_db;
 CREATE DATABASE payment_db;
 CREATE DATABASE promotion_db;
 CREATE DATABASE shipping_db;
+CREATE DATABASE content_db;
 
 -- Create Hangfire databases for background job processing
 CREATE DATABASE auth_hangfire_db;
@@ -18,6 +19,7 @@ CREATE DATABASE user_hangfire_db;
 CREATE DATABASE order_hangfire_db;
 CREATE DATABASE audit_hangfire_db;
 CREATE DATABASE notification_hangfire_db;
+CREATE DATABASE content_hangfire_db;
 
 -- Notes:
 -- - All services connect to same pg container during development

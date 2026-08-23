@@ -54,6 +54,18 @@ public sealed class ContentReadService(IContentRepository contentRepo, ContentDb
         return await dbContext.Contents.AsNoTracking().AnyAsync(c => c.Slug == slug, ct);
     }
 
+    public async Task<IReadOnlyList<Guid>> GetHardDeleteEligibleIdsAsync(DateTime deletedBefore, int batchSize, CancellationToken ct = default)
+    {
+        return await dbContext.Contents
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(c => c.IsDeleted && c.DeletedAt != null && c.DeletedAt < deletedBefore)
+            .OrderBy(c => c.DeletedAt)
+            .Select(c => c.Id)
+            .Take(batchSize)
+            .ToListAsync(ct);
+    }
+
     public async Task<IReadOnlyList<ContentAdminListItem>> SearchAdminAsync(
         CriteriaRequest criteria,
         DateTime? cursorCreatedAt,

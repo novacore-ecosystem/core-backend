@@ -28,6 +28,10 @@ public interface IContentReadService
         string displayLanguage,
         CancellationToken ct = default);
 
+    /// <summary>Ids of soft-deleted Content rows past the hard-delete retention threshold - used
+    /// only by the retention background job. Bypasses the soft-delete query filter.</summary>
+    Task<IReadOnlyList<Guid>> GetHardDeleteEligibleIdsAsync(DateTime deletedBefore, int batchSize, CancellationToken ct = default);
+
     /// <summary>Fetches up to <paramref name="limit"/> + 1 published, non-deleted landing rows,
     /// optionally filtered by content type, resolved to <paramref name="language"/> (falling back to
     /// <paramref name="fallbackLanguage"/>, then to whatever language the version does carry) and

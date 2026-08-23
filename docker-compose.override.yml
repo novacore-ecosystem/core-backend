@@ -238,6 +238,7 @@ services:
       - ASPNETCORE_HTTP_PORT=${CONTENT_HTTP_PORT}
       # Database
       - ConnectionStrings__DefaultConnection=${CONTENT_DB_CONNECTION}
+      - ConnectionStrings__Hangfire=${CONTENT_HANGFIRE_DB_CONNECTION}
       # Logging
       - Logging__Seq__Url=${SEQ_URL}
       - Logging__Elasticsearch__Url=${ELASTICSEARCH_URL}
