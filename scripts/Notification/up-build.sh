@@ -2,4 +2,4 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-"$SCRIPT_DIR/../shared/docker-up.sh" "content-api"
+"$SCRIPT_DIR/../shared/docker-up-build.sh" "notification-api"

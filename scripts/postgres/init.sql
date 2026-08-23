@@ -14,15 +14,10 @@ CREATE DATABASE shipping_db;
 CREATE DATABASE content_db;
 CREATE DATABASE chat_db;
 
--- Create Hangfire databases for background job processing
-CREATE DATABASE auth_hangfire_db;
-CREATE DATABASE user_hangfire_db;
-CREATE DATABASE order_hangfire_db;
-CREATE DATABASE audit_hangfire_db;
-CREATE DATABASE notification_hangfire_db;
-CREATE DATABASE content_hangfire_db;
--- Chat has no Hangfire storage - Chat.Persistence wires no ConnectionStrings__Hangfire
--- (see Chat.Persistence/DependencyInjection.cs), unlike Auth/User/Content.
+-- Hangfire databases are service-specific and are no longer created here - each
+-- service that owns one creates it on demand via scripts/<Service>/init-hangfire-db.sh
+-- (Auth, User, Order, Audit, Notification, Content; Payment/Inventory/Product/Promotion/
+-- Shipping/Chat have no Hangfire storage).
 
 -- Notes:
 -- - All services connect to same pg container during development
