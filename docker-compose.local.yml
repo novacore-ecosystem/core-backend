@@ -15,6 +15,8 @@
 #      code - see docs/setup/observability.md - so omitting them is safe), and the
 #      yarp-api-gateway environment lines that pointed at Inventory/Order/Product (those
 #      services don't exist locally either).
+#   3. Added chat-api, which has no canonical docker-compose.yml/override.yml entry yet -
+#      see the inline comment on its block below for how that configuration was derived.
 #
 # PostgreSQL/MongoDB/Redis/Kafka/Seq were already single shared containers in the
 # canonical compose (see docs/01-architecture-map.md#infrastructure-dependencies) -
@@ -337,6 +339,48 @@ services:
       - Jobs__InboxCleanup__MaxBatchesPerRun=${NOTIFICATION_INBOX_CLEANUP_MAX_BATCHES}
       # Kafka
       - Kafka__BootstrapServers=${NOTIFICATION_KAFKA_BROKERS}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # chat-api has no canonical docker-compose.yml/override.yml entry yet (ChatService is still
+  # being built - see src/Services/Chat). Block authored directly from Chat.Persistence/
+  # Chat.Infrastructure's DependencyInjection.cs: Postgres + JWT validation + Seq logging only -
+  # no Redis/Kafka/Mongo, since Chat.Infrastructure.AddInfrastructure() wires neither a Kafka
+  # producer nor a cache client (unlike Content/Order), and Chat.Persistence has no Hangfire
+  # storage (no ConnectionStrings__Hangfire line, unlike Auth/User/Content).
+  chat-api:
+    image: ${CHAT_CONTAINER_NAME}
+    build:
+      context: .
+      dockerfile: ./src/Services/Chat/Chat.API/Dockerfile
+    container_name: ${CHAT_CONTAINER_NAME}
+    depends_on:
+      pg:
+        condition: service_healthy
+      seq:
+        condition: service_healthy
+    networks:
+      - default
+    ports:
+      - "${CHAT_PUBLIC_HTTP_PORT}:${CHAT_HTTP_PORT}"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${CHAT_URLS}
+      - ASPNETCORE_HTTP_PORT=${CHAT_HTTP_PORT}
+      # Database
+      - ConnectionStrings__DefaultConnection=${CHAT_DB_CONNECTION}
+      # Logging
+      - Logging__Seq__Url=${SEQ_URL}
+      # JWT (validation only - tokens are issued by Auth)
+      - Jwt__SecretKey=${AUTH_JWT_SECRET_KEY}
+      - Jwt__Issuer=${AUTH_JWT_ISSUER}
+      - Jwt__Audience=${AUTH_JWT_AUDIENCE}
+      - Jwt__AccessTokenExpirationMinutes=${AUTH_JWT_ACCESS_TOKEN_EXPIRATION_MINUTES}
+      - Jwt__RefreshTokenExpirationDays=${AUTH_JWT_REFRESH_TOKEN_EXPIRATION_DAYS}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
