@@ -12,6 +12,7 @@ CREATE DATABASE payment_db;
 CREATE DATABASE promotion_db;
 CREATE DATABASE shipping_db;
 CREATE DATABASE content_db;
+CREATE DATABASE chat_db;
 
 -- Create Hangfire databases for background job processing
 CREATE DATABASE auth_hangfire_db;
@@ -20,6 +21,8 @@ CREATE DATABASE order_hangfire_db;
 CREATE DATABASE audit_hangfire_db;
 CREATE DATABASE notification_hangfire_db;
 CREATE DATABASE content_hangfire_db;
+-- Chat has no Hangfire storage - Chat.Persistence wires no ConnectionStrings__Hangfire
+-- (see Chat.Persistence/DependencyInjection.cs), unlike Auth/User/Content.
 
 -- Notes:
 -- - All services connect to same pg container during development
