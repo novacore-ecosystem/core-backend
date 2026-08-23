@@ -5,7 +5,13 @@
 .env.prod
 
 # IDE
-.vscode/
+# .vscode is developer-local by default. Only .vscode/workspaces/*.code-workspace
+# is a tracked project artifact - to track another .vscode path, add an explicit
+# negation for it the same way, rather than un-ignoring .vscode/ wholesale.
+.vscode/*
+!.vscode/workspaces/
+.vscode/workspaces/*
+!.vscode/workspaces/*.code-workspace
 .idea/
 *.swp
 *.swo

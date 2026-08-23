@@ -1,0 +1,128 @@
+{
+  "folders": [
+    {
+      "name": "[ROOT] core-backend",
+      "path": "../.."
+    },
+    {
+      "name": "Promotion.Domain",
+      "path": "../../src/Services/Promotion/Promotion.Domain"
+    },
+    {
+      "name": "Promotion.Application",
+      "path": "../../src/Services/Promotion/Promotion.Application"
+    },
+    {
+      "name": "Promotion.Infrastructure",
+      "path": "../../src/Services/Promotion/Promotion.Infrastructure"
+    },
+    {
+      "name": "Promotion.Persistence",
+      "path": "../../src/Services/Promotion/Promotion.Persistence"
+    },
+    {
+      "name": "Promotion.API",
+      "path": "../../src/Services/Promotion/Promotion.API"
+    },
+    {
+      "name": "BuildingBlock.Application",
+      "path": "../../src/BuildingBlocks/BuildingBlock.Application"
+    },
+    {
+      "name": "BuildingBlock.Contract",
+      "path": "../../src/BuildingBlocks/BuildingBlock.Contract"
+    },
+    {
+      "name": "BuildingBlock.Criteria",
+      "path": "../../src/BuildingBlocks/BuildingBlock.Criteria"
+    },
+    {
+      "name": "BuildingBlock.Domain",
+      "path": "../../src/BuildingBlocks/BuildingBlock.Domain"
+    },
+    {
+      "name": "BuildingBlock.Grpc",
+      "path": "../../src/BuildingBlocks/BuildingBlock.Grpc"
+    },
+    {
+      "name": "BuildingBlock.Infrastructure",
+      "path": "../../src/BuildingBlocks/BuildingBlock.Infrastructure"
+    },
+    {
+      "name": "BuildingBlock.Messaging",
+      "path": "../../src/BuildingBlocks/BuildingBlock.Messaging"
+    },
+    {
+      "name": "BuildingBlock.Messaging.Kafka",
+      "path": "../../src/BuildingBlocks/BuildingBlock.Messaging.Kafka"
+    },
+    {
+      "name": "BuildingBlock.Observability",
+      "path": "../../src/BuildingBlocks/BuildingBlock.Observability"
+    },
+    {
+      "name": "BuildingBlock.Persistence",
+      "path": "../../src/BuildingBlocks/BuildingBlock.Persistence"
+    },
+    {
+      "name": "BuildingBlock.Persistence.Ef",
+      "path": "../../src/BuildingBlocks/BuildingBlock.Persistence.Ef"
+    },
+    {
+      "name": "BuildingBlock.Search",
+      "path": "../../src/BuildingBlocks/BuildingBlock.Search"
+    },
+    {
+      "name": "BuildingBlock.SharedKernel",
+      "path": "../../src/BuildingBlocks/BuildingBlock.SharedKernel"
+    },
+    {
+      "name": "BuildingBlock.Web",
+      "path": "../../src/BuildingBlocks/BuildingBlock.Web"
+    },
+    {
+      "name": "YarpApiGateway",
+      "path": "../../src/ApiGateways/YarpApiGateway"
+    }
+  ],
+  "settings": {
+    "dotnet.projects.loadProjectsOnDemand": true,
+    "files.exclude": {
+      "**/bin": true,
+      "**/obj": true,
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/build": true,
+      "**/.next": true,
+      "**/coverage": true,
+      "src/Services": true,
+      "src/BuildingBlocks": true,
+      "src/ApiGateways": true,
+      "tests/unit": true,
+      "tests/integration": true
+    },
+    "search.exclude": {
+      "**/bin": true,
+      "**/obj": true,
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/build": true,
+      "**/.next": true,
+      "**/coverage": true,
+      "src/Services": true,
+      "src/BuildingBlocks": true,
+      "src/ApiGateways": true,
+      "tests/unit": true,
+      "tests/integration": true
+    },
+    "files.watcherExclude": {
+      "**/bin": true,
+      "**/obj": true,
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/build": true,
+      "**/.next": true,
+      "**/coverage": true
+    }
+  }
+}
