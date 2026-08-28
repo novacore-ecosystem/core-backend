@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
+using NovaCore.BuildingBlock.Web.Extensions;
+
 using Serilog;
 
 using NovaCore.Audit.API;
@@ -7,6 +9,8 @@ using NovaCore.Audit.Application;
 using NovaCore.Audit.Infrastructure;
 using NovaCore.Audit.Persistence;
 var builder = WebApplication.CreateBuilder(args);
+
+await builder.Configuration.AddVaultSecretsAsync();
 
 var seqUrl = builder.Configuration["Logging:Seq:Url"] ?? "http://seq:5341";
 builder.Host.UseSerilog((context, config) =>

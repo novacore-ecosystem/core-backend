@@ -5,6 +5,7 @@ using NovaCore.BuildingBlock.Messaging.Kafka.Tracing;
 using NovaCore.BuildingBlock.Observability.Logging;
 using NovaCore.BuildingBlock.Observability.Tracing;
 using NovaCore.BuildingBlock.Persistence.Mongo.DependencyInjection;
+using NovaCore.BuildingBlock.Web.Extensions;
 
 using Serilog;
 
@@ -13,6 +14,8 @@ using NovaCore.Notification.Application;
 using NovaCore.Notification.Infrastructure;
 using NovaCore.Notification.Persistence;
 var builder = WebApplication.CreateBuilder(args);
+
+await builder.Configuration.AddVaultSecretsAsync();
 
 builder.Host.UseSerilog((context, config) => config.ConfigureAppLogging(context.Configuration, "notification-api"));
 

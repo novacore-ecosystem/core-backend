@@ -1,6 +1,7 @@
 using NovaCore.BuildingBlock.Infrastructure.Observability;
 using NovaCore.BuildingBlock.Observability.Logging;
 using NovaCore.BuildingBlock.Observability.Tracing;
+using NovaCore.BuildingBlock.Web.Extensions;
 
 using Serilog;
 
@@ -8,6 +9,8 @@ using NovaCore.YarpApiGateway;
 using NovaCore.YarpApiGateway.Middleware;
 using NovaCore.YarpApiGateway.Services;
 var builder = WebApplication.CreateBuilder(args);
+
+await builder.Configuration.AddVaultSecretsAsync();
 
 builder.Host.UseSerilog((context, config) => config.ConfigureAppLogging(context.Configuration, "yarp-api-gateway"));
 

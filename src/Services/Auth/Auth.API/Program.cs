@@ -8,12 +8,15 @@ using NovaCore.BuildingBlock.Infrastructure.Observability;
 using NovaCore.BuildingBlock.Messaging.Kafka.Tracing;
 using NovaCore.BuildingBlock.Observability.Logging;
 using NovaCore.BuildingBlock.Observability.Tracing;
+using NovaCore.BuildingBlock.Web.Extensions;
 
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 
 using Serilog;
 var builder = WebApplication.CreateBuilder(args);
+
+await builder.Configuration.AddVaultSecretsAsync();
 
 builder.Host.UseSerilog((context, config) => config.ConfigureAppLogging(context.Configuration, "auth-api"));
 

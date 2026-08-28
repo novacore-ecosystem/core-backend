@@ -5,6 +5,7 @@ using NovaCore.BuildingBlock.Infrastructure.Observability;
 using NovaCore.BuildingBlock.Messaging.Kafka.Tracing;
 using NovaCore.BuildingBlock.Observability.Logging;
 using NovaCore.BuildingBlock.Observability.Tracing;
+using NovaCore.BuildingBlock.Web.Extensions;
 
 using Serilog;
 
@@ -14,6 +15,8 @@ using NovaCore.Inventory.Infrastructure;
 using NovaCore.Inventory.Persistence;
 using NovaCore.Inventory.Persistence.Engine;
 var builder = WebApplication.CreateBuilder(args);
+
+await builder.Configuration.AddVaultSecretsAsync();
 
 builder.Host.UseSerilog((context, config) => config.ConfigureAppLogging(context.Configuration, "inventory-api"));
 

@@ -4,6 +4,7 @@
     <ProjectReference Include="..\..\BuildingBlocks\BuildingBlock.SharedKernel\BuildingBlock.SharedKernel.csproj" />
     <ProjectReference Include="..\..\BuildingBlocks\BuildingBlock.Observability\BuildingBlock.Observability.csproj" />
     <ProjectReference Include="..\..\BuildingBlocks\BuildingBlock.Infrastructure\BuildingBlock.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\BuildingBlocks\BuildingBlock.Web\BuildingBlock.Web.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
