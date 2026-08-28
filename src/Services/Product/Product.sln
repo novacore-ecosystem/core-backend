@@ -45,6 +45,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Product.Domain.Tests", "..\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NovaCore.TestKit", "..\..\..\tests\unit\Common\NovaCore.TestKit\NovaCore.TestKit.csproj", "{399B0FB2-FCAD-4658-97EF-6CD8013E0C4E}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Gateway", "Gateway", "{E7BDDBC6-9FD1-D1D7-ACD8-2C4F8E3D2461}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YarpApiGateway", "..\..\ApiGateways\YarpApiGateway\YarpApiGateway.csproj", "{B4326850-0E55-4D5B-BEF3-0C80DEE26038}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -307,8 +311,23 @@ Global
 		{399B0FB2-FCAD-4658-97EF-6CD8013E0C4E}.Release|x64.Build.0 = Release|Any CPU
 		{399B0FB2-FCAD-4658-97EF-6CD8013E0C4E}.Release|x86.ActiveCfg = Release|Any CPU
 		{399B0FB2-FCAD-4658-97EF-6CD8013E0C4E}.Release|x86.Build.0 = Release|Any CPU
+		{B4326850-0E55-4D5B-BEF3-0C80DEE26038}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4326850-0E55-4D5B-BEF3-0C80DEE26038}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4326850-0E55-4D5B-BEF3-0C80DEE26038}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B4326850-0E55-4D5B-BEF3-0C80DEE26038}.Debug|x64.Build.0 = Debug|Any CPU
+		{B4326850-0E55-4D5B-BEF3-0C80DEE26038}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B4326850-0E55-4D5B-BEF3-0C80DEE26038}.Debug|x86.Build.0 = Debug|Any CPU
+		{B4326850-0E55-4D5B-BEF3-0C80DEE26038}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4326850-0E55-4D5B-BEF3-0C80DEE26038}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4326850-0E55-4D5B-BEF3-0C80DEE26038}.Release|x64.ActiveCfg = Release|Any CPU
+		{B4326850-0E55-4D5B-BEF3-0C80DEE26038}.Release|x64.Build.0 = Release|Any CPU
+		{B4326850-0E55-4D5B-BEF3-0C80DEE26038}.Release|x86.ActiveCfg = Release|Any CPU
+		{B4326850-0E55-4D5B-BEF3-0C80DEE26038}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B4326850-0E55-4D5B-BEF3-0C80DEE26038} = {E7BDDBC6-9FD1-D1D7-ACD8-2C4F8E3D2461}
 	EndGlobalSection
 EndGlobal

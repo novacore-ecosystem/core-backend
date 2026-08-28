@@ -39,6 +39,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Audit.API", "Audit.API\Audi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildingBlock.Web", "..\..\BuildingBlocks\BuildingBlock.Web\BuildingBlock.Web.csproj", "{599BDBC3-8D95-4E61-A8D1-019787CF2DEF}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Gateway", "Gateway", "{E7BDDBC6-9FD1-D1D7-ACD8-2C4F8E3D2461}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YarpApiGateway", "..\..\ApiGateways\YarpApiGateway\YarpApiGateway.csproj", "{214E2DBD-95D1-4847-877D-F0117EF3BDF6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -265,8 +269,23 @@ Global
 		{599BDBC3-8D95-4E61-A8D1-019787CF2DEF}.Release|x64.Build.0 = Release|Any CPU
 		{599BDBC3-8D95-4E61-A8D1-019787CF2DEF}.Release|x86.ActiveCfg = Release|Any CPU
 		{599BDBC3-8D95-4E61-A8D1-019787CF2DEF}.Release|x86.Build.0 = Release|Any CPU
+		{214E2DBD-95D1-4847-877D-F0117EF3BDF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{214E2DBD-95D1-4847-877D-F0117EF3BDF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{214E2DBD-95D1-4847-877D-F0117EF3BDF6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{214E2DBD-95D1-4847-877D-F0117EF3BDF6}.Debug|x64.Build.0 = Debug|Any CPU
+		{214E2DBD-95D1-4847-877D-F0117EF3BDF6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{214E2DBD-95D1-4847-877D-F0117EF3BDF6}.Debug|x86.Build.0 = Debug|Any CPU
+		{214E2DBD-95D1-4847-877D-F0117EF3BDF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{214E2DBD-95D1-4847-877D-F0117EF3BDF6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{214E2DBD-95D1-4847-877D-F0117EF3BDF6}.Release|x64.ActiveCfg = Release|Any CPU
+		{214E2DBD-95D1-4847-877D-F0117EF3BDF6}.Release|x64.Build.0 = Release|Any CPU
+		{214E2DBD-95D1-4847-877D-F0117EF3BDF6}.Release|x86.ActiveCfg = Release|Any CPU
+		{214E2DBD-95D1-4847-877D-F0117EF3BDF6}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{214E2DBD-95D1-4847-877D-F0117EF3BDF6} = {E7BDDBC6-9FD1-D1D7-ACD8-2C4F8E3D2461}
 	EndGlobalSection
 EndGlobal
