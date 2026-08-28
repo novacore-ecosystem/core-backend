@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.EntityFrameworkCore;
 
 using NovaCore.BuildingBlock.Infrastructure.Observability;
 using NovaCore.BuildingBlock.Messaging.Kafka.Tracing;
@@ -13,7 +12,6 @@ using NovaCore.Shipping.API;
 using NovaCore.Shipping.Application;
 using NovaCore.Shipping.Infrastructure;
 using NovaCore.Shipping.Persistence;
-using NovaCore.Shipping.Persistence.Engine;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,12 +39,7 @@ builder.Services
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<ShippingDbContext>();
-    await dbContext.Database.MigrateAsync();
-}
-
+// Migrations and seeding are Shipping.DbMigrator's responsibility, run before this service starts.
 app.UseRedisTracing();
 app.UseApplication();
 
