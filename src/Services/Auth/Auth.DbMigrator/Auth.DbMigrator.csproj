@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Auth.Persistence\Auth.Persistence.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlock.Persistence.Ef\BuildingBlock.Persistence.Ef.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" VersionOverride="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <!-- Overridden above the 10.0.0 central pin: EF Core 10.0.1 (already used repo-wide) floors
+         Microsoft.Extensions.Logging at 10.0.1. Scoped to this project via VersionOverride rather
+         than bumping the shared Directory.Packages.props pin, which cascades into a version
+         conflict for BuildingBlock.Persistence.Mongo's MongoDB.Driver dependency chain. -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" VersionOverride="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" VersionOverride="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" VersionOverride="10.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

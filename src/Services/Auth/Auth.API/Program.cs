@@ -2,7 +2,6 @@ using NovaCore.Auth.API;
 using NovaCore.Auth.Application;
 using NovaCore.Auth.Infrastructure;
 using NovaCore.Auth.Persistence;
-using NovaCore.Auth.Persistence.Engine;
 
 using NovaCore.BuildingBlock.Infrastructure.Observability;
 using NovaCore.BuildingBlock.Messaging.Kafka.Tracing;
@@ -11,7 +10,6 @@ using NovaCore.BuildingBlock.Observability.Tracing;
 using NovaCore.BuildingBlock.Web.Extensions;
 
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.EntityFrameworkCore;
 
 using Serilog;
 var builder = WebApplication.CreateBuilder(args);
@@ -52,13 +50,7 @@ builder.Services
 
 var app = builder.Build();
 
-// Initialize database
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
-    await dbContext.Database.MigrateAsync();
-}
-
+// Migrations and seeding are Auth.DbMigrator's responsibility, run before this service starts.
 app.UseRedisTracing();
 
 // Configure middleware pipeline
