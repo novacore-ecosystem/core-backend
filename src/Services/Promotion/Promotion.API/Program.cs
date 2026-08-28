@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.EntityFrameworkCore;
 
 using NovaCore.BuildingBlock.Infrastructure.Observability;
 using NovaCore.BuildingBlock.Messaging.Kafka.Tracing;
@@ -14,7 +13,6 @@ using NovaCore.Promotion.Application;
 using NovaCore.Promotion.Application.Abstractions.Search;
 using NovaCore.Promotion.Infrastructure;
 using NovaCore.Promotion.Persistence;
-using NovaCore.Promotion.Persistence.Engine;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,11 +40,9 @@ builder.Services
 
 var app = builder.Build();
 
+// Migrations and seeding are Promotion.DbMigrator's responsibility, run before this service starts.
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<PromotionDbContext>();
-    await dbContext.Database.MigrateAsync();
-
     var couponSearchIndexer = scope.ServiceProvider.GetRequiredService<ICouponSearchIndexer>();
     try
     {
