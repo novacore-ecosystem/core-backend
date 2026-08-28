@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.EntityFrameworkCore;
 
 using NovaCore.BuildingBlock.Infrastructure.Observability;
 using NovaCore.BuildingBlock.Messaging.Kafka.Tracing;
@@ -14,7 +13,6 @@ using NovaCore.User.Application;
 using NovaCore.User.Application.Abstractions.Search;
 using NovaCore.User.Infrastructure;
 using NovaCore.User.Persistence;
-using NovaCore.User.Persistence.Engine;
 var builder = WebApplication.CreateBuilder(args);
 
 await builder.Configuration.AddVaultSecretsAsync();
@@ -49,11 +47,9 @@ builder.Services
 
 var app = builder.Build();
 
+// Migrations and seeding are User.DbMigrator's responsibility, run before this service starts.
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<UserDbContext>();
-    await dbContext.Database.MigrateAsync();
-
     try
     {
         // GetRequiredService is inside the try, not just EnsureIndexAsync() - the Elasticsearch
