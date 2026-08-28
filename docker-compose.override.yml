@@ -1,24 +1,15 @@
-x-vault-entrypoint: &vault-entrypoint
-  entrypoint: ["/bin/sh", "/vault/fetch-and-run.sh"]
-
-x-vault-volume: &vault-volume
-  - ./scripts/vault/fetch-and-run.sh:/vault/fetch-and-run.sh:ro
-
 services:
   # ============= API GATEWAY =============
   yarp-api-gateway:
-    <<: *vault-entrypoint
     container_name: ${GATEWAY_CONTAINER_NAME}
     ports:
       - "${GATEWAY_PUBLIC_PORT}:${GATEWAY_HTTP_PORT}"
-    volumes: *vault-volume
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/security,kv/nova-core/dev/infra-redis,kv/nova-core/dev/services/gateway
-    command: ["dotnet", "NovaCore.YarpApiGateway.dll"]
     healthcheck:
       test:
         ["CMD", "curl", "-f", "http://localhost:${GATEWAY_HTTP_PORT}/health"]
@@ -29,12 +20,10 @@ services:
 
   # ============= MICROSERVICES =============
   auth-api:
-    <<: *vault-entrypoint
     container_name: ${AUTH_CONTAINER_NAME}
     ports:
       - "${AUTH_PUBLIC_HTTP_PORT}:${AUTH_HTTP_PORT}"
       - "${AUTH_GRPC_PORT}"
-    volumes: *vault-volume
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ASPNETCORE_URLS=${AUTH_URLS}
@@ -43,7 +32,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/security,kv/nova-core/dev/services/auth
-    command: ["dotnet", "NovaCore.Auth.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -52,12 +40,10 @@ services:
       start_period: 60s
 
   user-api:
-    <<: *vault-entrypoint
     container_name: ${USER_CONTAINER_NAME}
     ports:
       - "${USER_PUBLIC_HTTP_PORT}:${USER_HTTP_PORT}"
       - "${USER_GRPC_PORT}"
-    volumes: *vault-volume
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ASPNETCORE_URLS=${USER_URLS}
@@ -66,7 +52,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/infra-elastic,kv/nova-core/dev/security,kv/nova-core/dev/services/user
-    command: ["dotnet", "NovaCore.User.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -75,11 +60,9 @@ services:
       start_period: 40s
 
   product-api:
-    <<: *vault-entrypoint
     container_name: ${PRODUCT_CONTAINER_NAME}
     ports:
       - "${PRODUCT_PUBLIC_HTTP_PORT}:${PRODUCT_HTTP_PORT}"
-    volumes: *vault-volume
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ASPNETCORE_URLS=${PRODUCT_URLS}
@@ -87,7 +70,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/infra-elastic,kv/nova-core/dev/security,kv/nova-core/dev/services/product
-    command: ["dotnet", "Product.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -96,11 +78,9 @@ services:
       start_period: 40s
 
   content-api:
-    <<: *vault-entrypoint
     container_name: ${CONTENT_CONTAINER_NAME}
     ports:
       - "${CONTENT_PUBLIC_HTTP_PORT}:${CONTENT_HTTP_PORT}"
-    volumes: *vault-volume
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ASPNETCORE_URLS=${CONTENT_URLS}
@@ -108,7 +88,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/security,kv/nova-core/dev/services/content
-    command: ["dotnet", "NovaCore.Content.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -117,12 +96,10 @@ services:
       start_period: 40s
 
   inventory-api:
-    <<: *vault-entrypoint
     container_name: ${INVENTORY_CONTAINER_NAME}
     ports:
       - "${INVENTORY_PUBLIC_HTTP_PORT}:${INVENTORY_HTTP_PORT}"
       - "${INVENTORY_GRPC_PORT}"
-    volumes: *vault-volume
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ASPNETCORE_URLS=${INVENTORY_URLS}
@@ -131,7 +108,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/security,kv/nova-core/dev/services/inventory
-    command: ["dotnet", "Inventory.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -140,11 +116,9 @@ services:
       start_period: 40s
 
   order-api:
-    <<: *vault-entrypoint
     container_name: ${ORDER_CONTAINER_NAME}
     ports:
       - "${ORDER_PUBLIC_HTTP_PORT}:${ORDER_HTTP_PORT}"
-    volumes: *vault-volume
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ASPNETCORE_URLS=${ORDER_URLS}
@@ -152,7 +126,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/security,kv/nova-core/dev/services/order
-    command: ["dotnet", "Order.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -161,11 +134,9 @@ services:
       start_period: 40s
 
   payment-api:
-    <<: *vault-entrypoint
     container_name: ${PAYMENT_CONTAINER_NAME}
     ports:
       - "${PAYMENT_PUBLIC_HTTP_PORT}:${PAYMENT_HTTP_PORT}"
-    volumes: *vault-volume
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ASPNETCORE_URLS=${PAYMENT_URLS}
@@ -173,7 +144,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/security,kv/nova-core/dev/services/payment
-    command: ["dotnet", "Payment.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -182,11 +152,9 @@ services:
       start_period: 40s
 
   promotion-api:
-    <<: *vault-entrypoint
     container_name: ${PROMOTION_CONTAINER_NAME}
     ports:
       - "${PROMOTION_PUBLIC_HTTP_PORT}:${PROMOTION_HTTP_PORT}"
-    volumes: *vault-volume
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ASPNETCORE_URLS=${PROMOTION_URLS}
@@ -194,7 +162,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/infra-elastic,kv/nova-core/dev/security,kv/nova-core/dev/services/promotion
-    command: ["dotnet", "Promotion.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -203,11 +170,9 @@ services:
       start_period: 40s
 
   shipping-api:
-    <<: *vault-entrypoint
     container_name: ${SHIPPING_CONTAINER_NAME}
     ports:
       - "${SHIPPING_PUBLIC_HTTP_PORT}:${SHIPPING_HTTP_PORT}"
-    volumes: *vault-volume
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ASPNETCORE_URLS=${SHIPPING_URLS}
@@ -215,7 +180,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/security,kv/nova-core/dev/services/shipping
-    command: ["dotnet", "NovaCore.Shipping.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -224,11 +188,9 @@ services:
       start_period: 40s
 
   audit-api:
-    <<: *vault-entrypoint
     container_name: ${AUDIT_CONTAINER_NAME}
     ports:
       - "${AUDIT_PUBLIC_HTTP_PORT}:${AUDIT_HTTP_PORT}"
-    volumes: *vault-volume
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ASPNETCORE_URLS=${AUDIT_URLS}
@@ -236,7 +198,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/security,kv/nova-core/dev/services/audit
-    command: ["dotnet", "NovaCore.Audit.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -245,11 +206,9 @@ services:
       start_period: 40s
 
   notification-api:
-    <<: *vault-entrypoint
     container_name: ${NOTIFICATION_CONTAINER_NAME}
     ports:
       - "${NOTIFICATION_PUBLIC_HTTP_PORT}:${NOTIFICATION_HTTP_PORT}"
-    volumes: *vault-volume
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ASPNETCORE_URLS=${NOTIFICATION_URLS}
@@ -257,7 +216,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/security,kv/nova-core/dev/services/notification
-    command: ["dotnet", "NovaCore.Notification.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -266,11 +224,9 @@ services:
       start_period: 40s
 
   chat-api:
-    <<: *vault-entrypoint
     container_name: ${CHAT_CONTAINER_NAME}
     ports:
       - "${CHAT_PUBLIC_HTTP_PORT}:${CHAT_HTTP_PORT}"
-    volumes: *vault-volume
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ASPNETCORE_URLS=${CHAT_URLS}
@@ -278,7 +234,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/security,kv/nova-core/dev/services/chat
-    command: ["dotnet", "NovaCore.Chat.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s

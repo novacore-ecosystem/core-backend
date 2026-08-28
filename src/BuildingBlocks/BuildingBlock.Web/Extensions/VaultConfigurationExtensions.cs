@@ -9,8 +9,8 @@ namespace NovaCore.BuildingBlock.Web.Extensions;
 /// Bootstraps IConfiguration from HashiCorp Vault before the host is built, so every
 /// other Add*(configuration) extension downstream (DB, JWT, Kafka, Redis, ...) reads
 /// secrets transparently through the normal IConfiguration surface. Reads
-/// VAULT_ADDR/VAULT_TOKEN/VAULT_PATHS the same way scripts/vault/fetch-and-run.sh does -
-/// see docker-compose.override.yml's header comment for how those are wired per service.
+/// VAULT_ADDR/VAULT_TOKEN/VAULT_PATHS - see each service's block in docker-compose.override.yml
+/// / docker-compose.development.yml for how those are wired per service.
 /// </summary>
 public static class VaultConfigurationExtensions
 {

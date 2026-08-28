@@ -1,8 +1,4 @@
-x-vault-volume: &vault-volume
-  - ./scripts/vault/fetch-and-run.sh:/vault/fetch-and-run.sh:ro
-
 x-dotnet-defaults: &dotnet-defaults
-  entrypoint: ["/bin/sh", "/vault/fetch-and-run.sh"]
   deploy:
     resources:
       limits:
@@ -24,7 +20,6 @@ services:
       - default
     volumes:
       - ./src/ApiGateways/YarpApiGateway/appsettings.json:/app/appsettings.json:ro
-      - ./scripts/vault/fetch-and-run.sh:/vault/fetch-and-run.sh:ro
     ports:
       - "${GATEWAY_PUBLIC_PORT}:${GATEWAY_HTTP_PORT}"
     environment:
@@ -33,7 +28,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/security,kv/nova-core/dev/infra-redis,kv/nova-core/dev/services/gateway
-    command: ["dotnet", "NovaCore.YarpApiGateway.dll"]
     healthcheck:
       test:
         ["CMD", "curl", "-f", "http://localhost:${GATEWAY_HTTP_PORT}/health"]
@@ -60,7 +54,6 @@ services:
         condition: service_healthy
     networks:
       - default
-    volumes: *vault-volume
     ports:
       - "${AUTH_PUBLIC_HTTP_PORT}:${AUTH_HTTP_PORT}"
       - "${AUTH_GRPC_PORT}"
@@ -72,7 +65,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/security,kv/nova-core/dev/services/auth
-    command: ["dotnet", "NovaCore.Auth.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -99,7 +91,6 @@ services:
         condition: service_healthy
     networks:
       - default
-    volumes: *vault-volume
     ports:
       - "${USER_PUBLIC_HTTP_PORT}:${USER_HTTP_PORT}"
       - "${USER_GRPC_PORT}"
@@ -111,7 +102,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/infra-elastic,kv/nova-core/dev/security,kv/nova-core/dev/services/user
-    command: ["dotnet", "NovaCore.User.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -138,7 +128,6 @@ services:
         condition: service_healthy
     networks:
       - default
-    volumes: *vault-volume
     ports:
       - "${PRODUCT_PUBLIC_HTTP_PORT}:${PRODUCT_HTTP_PORT}"
     environment:
@@ -148,7 +137,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/infra-elastic,kv/nova-core/dev/security,kv/nova-core/dev/services/product
-    command: ["dotnet", "Product.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -171,7 +159,6 @@ services:
         condition: service_healthy
     networks:
       - default
-    volumes: *vault-volume
     ports:
       - "${INVENTORY_PUBLIC_HTTP_PORT}:${INVENTORY_HTTP_PORT}"
       - "${INVENTORY_GRPC_PORT}"
@@ -183,7 +170,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/security,kv/nova-core/dev/services/inventory
-    command: ["dotnet", "Inventory.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -208,7 +194,6 @@ services:
         condition: service_healthy
     networks:
       - default
-    volumes: *vault-volume
     ports:
       - "${ORDER_PUBLIC_HTTP_PORT}:${ORDER_HTTP_PORT}"
     environment:
@@ -218,7 +203,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/security,kv/nova-core/dev/services/order
-    command: ["dotnet", "Order.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -243,7 +227,6 @@ services:
         condition: service_healthy
     networks:
       - default
-    volumes: *vault-volume
     ports:
       - "${PAYMENT_PUBLIC_HTTP_PORT}:${PAYMENT_HTTP_PORT}"
     environment:
@@ -253,7 +236,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/security,kv/nova-core/dev/services/payment
-    command: ["dotnet", "Payment.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -280,7 +262,6 @@ services:
         condition: service_healthy
     networks:
       - default
-    volumes: *vault-volume
     ports:
       - "${PROMOTION_PUBLIC_HTTP_PORT}:${PROMOTION_HTTP_PORT}"
     environment:
@@ -290,7 +271,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/infra-elastic,kv/nova-core/dev/security,kv/nova-core/dev/services/promotion
-    command: ["dotnet", "Promotion.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -315,7 +295,6 @@ services:
         condition: service_healthy
     networks:
       - default
-    volumes: *vault-volume
     ports:
       - "${SHIPPING_PUBLIC_HTTP_PORT}:${SHIPPING_HTTP_PORT}"
     environment:
@@ -325,7 +304,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/security,kv/nova-core/dev/services/shipping
-    command: ["dotnet", "NovaCore.Shipping.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -350,7 +328,6 @@ services:
         condition: service_healthy
     networks:
       - default
-    volumes: *vault-volume
     ports:
       - "${AUDIT_PUBLIC_HTTP_PORT}:${AUDIT_HTTP_PORT}"
     environment:
@@ -360,7 +337,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/security,kv/nova-core/dev/services/audit
-    command: ["dotnet", "NovaCore.Audit.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -385,7 +361,6 @@ services:
         condition: service_healthy
     networks:
       - default
-    volumes: *vault-volume
     ports:
       - "${NOTIFICATION_PUBLIC_HTTP_PORT}:${NOTIFICATION_HTTP_PORT}"
     environment:
@@ -395,7 +370,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/security,kv/nova-core/dev/services/notification
-    command: ["dotnet", "NovaCore.Notification.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -418,7 +392,6 @@ services:
         condition: service_healthy
     networks:
       - default
-    volumes: *vault-volume
     ports:
       - "${CONTENT_PUBLIC_HTTP_PORT}:${CONTENT_HTTP_PORT}"
     environment:
@@ -428,7 +401,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/security,kv/nova-core/dev/services/content
-    command: ["dotnet", "NovaCore.Content.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -449,7 +421,6 @@ services:
         condition: service_healthy
     networks:
       - default
-    volumes: *vault-volume
     ports:
       - "${CHAT_PUBLIC_HTTP_PORT}:${CHAT_HTTP_PORT}"
     environment:
@@ -459,7 +430,6 @@ services:
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
       - VAULT_PATHS=kv/nova-core/dev/security,kv/nova-core/dev/services/chat
-    command: ["dotnet", "NovaCore.Chat.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
