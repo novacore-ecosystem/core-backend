@@ -89,6 +89,7 @@
     <!-- Security / misc -->
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.1.2" />
     <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.10" />
+    <PackageVersion Include="VaultSharp" Version="1.17.5.1" />
   </ItemGroup>
 
 </Project>

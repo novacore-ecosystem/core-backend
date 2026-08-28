@@ -10,6 +10,7 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" VersionOverride="9.0.0" />
     <PackageReference Include="Microsoft.OpenApi" VersionOverride="1.6.17" />
     <PackageReference Include="Swashbuckle.AspNetCore" VersionOverride="6.6.2" />
+    <PackageReference Include="VaultSharp" />
   </ItemGroup>
 
   <ItemGroup>
