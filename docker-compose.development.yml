@@ -32,7 +32,7 @@ services:
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
-      - VAULT_PATHS=nova-core/dev/security,nova-core/dev/infra-redis,nova-core/dev/services/gateway
+      - VAULT_PATHS=kv/nova-core/dev/security,kv/nova-core/dev/infra-redis,kv/nova-core/dev/services/gateway
     command: ["dotnet", "NovaCore.YarpApiGateway.dll"]
     healthcheck:
       test:
@@ -71,7 +71,7 @@ services:
       - ASPNETCORE_GRPC_PORT=${AUTH_GRPC_PORT}
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
-      - VAULT_PATHS=nova-core/dev/infra-kafka,nova-core/dev/infra-redis,nova-core/dev/security,nova-core/dev/services/auth
+      - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/security,kv/nova-core/dev/services/auth
     command: ["dotnet", "NovaCore.Auth.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -110,7 +110,7 @@ services:
       - ASPNETCORE_GRPC_PORT=${USER_GRPC_PORT}
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
-      - VAULT_PATHS=nova-core/dev/infra-kafka,nova-core/dev/infra-redis,nova-core/dev/infra-elastic,nova-core/dev/security,nova-core/dev/services/user
+      - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/infra-elastic,kv/nova-core/dev/security,kv/nova-core/dev/services/user
     command: ["dotnet", "NovaCore.User.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -147,7 +147,7 @@ services:
       - ASPNETCORE_HTTP_PORT=${PRODUCT_HTTP_PORT}
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
-      - VAULT_PATHS=nova-core/dev/infra-kafka,nova-core/dev/infra-redis,nova-core/dev/infra-elastic,nova-core/dev/security,nova-core/dev/services/product
+      - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/infra-elastic,kv/nova-core/dev/security,kv/nova-core/dev/services/product
     command: ["dotnet", "Product.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -182,7 +182,7 @@ services:
       - ASPNETCORE_GRPC_PORT=${INVENTORY_GRPC_PORT}
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
-      - VAULT_PATHS=nova-core/dev/infra-kafka,nova-core/dev/security,nova-core/dev/services/inventory
+      - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/security,kv/nova-core/dev/services/inventory
     command: ["dotnet", "Inventory.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -217,7 +217,7 @@ services:
       - ASPNETCORE_HTTP_PORT=${ORDER_HTTP_PORT}
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
-      - VAULT_PATHS=nova-core/dev/infra-kafka,nova-core/dev/infra-redis,nova-core/dev/security,nova-core/dev/services/order
+      - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/security,kv/nova-core/dev/services/order
     command: ["dotnet", "Order.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -252,7 +252,7 @@ services:
       - ASPNETCORE_HTTP_PORT=${PAYMENT_HTTP_PORT}
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
-      - VAULT_PATHS=nova-core/dev/infra-kafka,nova-core/dev/infra-redis,nova-core/dev/security,nova-core/dev/services/payment
+      - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/security,kv/nova-core/dev/services/payment
     command: ["dotnet", "Payment.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -289,7 +289,7 @@ services:
       - ASPNETCORE_HTTP_PORT=${PROMOTION_HTTP_PORT}
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
-      - VAULT_PATHS=nova-core/dev/infra-kafka,nova-core/dev/infra-redis,nova-core/dev/infra-elastic,nova-core/dev/security,nova-core/dev/services/promotion
+      - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/infra-elastic,kv/nova-core/dev/security,kv/nova-core/dev/services/promotion
     command: ["dotnet", "Promotion.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -324,7 +324,7 @@ services:
       - ASPNETCORE_HTTP_PORT=${SHIPPING_HTTP_PORT}
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
-      - VAULT_PATHS=nova-core/dev/infra-kafka,nova-core/dev/infra-redis,nova-core/dev/security,nova-core/dev/services/shipping
+      - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/infra-redis,kv/nova-core/dev/security,kv/nova-core/dev/services/shipping
     command: ["dotnet", "NovaCore.Shipping.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -359,7 +359,7 @@ services:
       - ASPNETCORE_HTTP_PORT=${AUDIT_HTTP_PORT}
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
-      - VAULT_PATHS=nova-core/dev/infra-kafka,nova-core/dev/security,nova-core/dev/services/audit
+      - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/security,kv/nova-core/dev/services/audit
     command: ["dotnet", "NovaCore.Audit.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -394,7 +394,7 @@ services:
       - ASPNETCORE_HTTP_PORT=${NOTIFICATION_HTTP_PORT}
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
-      - VAULT_PATHS=nova-core/dev/infra-kafka,nova-core/dev/security,nova-core/dev/services/notification
+      - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/security,kv/nova-core/dev/services/notification
     command: ["dotnet", "NovaCore.Notification.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -427,7 +427,7 @@ services:
       - ASPNETCORE_HTTP_PORT=${CONTENT_HTTP_PORT}
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
-      - VAULT_PATHS=nova-core/dev/infra-kafka,nova-core/dev/security,nova-core/dev/services/content
+      - VAULT_PATHS=kv/nova-core/dev/infra-kafka,kv/nova-core/dev/security,kv/nova-core/dev/services/content
     command: ["dotnet", "NovaCore.Content.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -458,7 +458,7 @@ services:
       - ASPNETCORE_HTTP_PORT=${CHAT_HTTP_PORT}
       - VAULT_ADDR=${VAULT_ADDR}
       - VAULT_TOKEN=${VAULT_TOKEN}
-      - VAULT_PATHS=nova-core/dev/security,nova-core/dev/services/chat
+      - VAULT_PATHS=kv/nova-core/dev/security,kv/nova-core/dev/services/chat
     command: ["dotnet", "NovaCore.Chat.API.dll"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
