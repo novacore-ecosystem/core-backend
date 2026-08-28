@@ -8,4 +8,4 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 cd "$REPO_ROOT"
 
-docker-compose up -d --build "$SERVICE"
+docker compose -f ./docker-compose.development.yml --env-file .env.local up -d --build "$SERVICE"
