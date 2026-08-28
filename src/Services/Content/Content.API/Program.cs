@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.EntityFrameworkCore;
 
 using NovaCore.BuildingBlock.Infrastructure.Observability;
 using NovaCore.BuildingBlock.Messaging.Kafka.Tracing;
@@ -13,7 +12,6 @@ using NovaCore.Content.API;
 using NovaCore.Content.Application;
 using NovaCore.Content.Infrastructure;
 using NovaCore.Content.Persistence;
-using NovaCore.Content.Persistence.Engine;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,12 +39,7 @@ builder.Services
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<ContentDbContext>();
-    await dbContext.Database.MigrateAsync();
-}
-
+// Migrations and seeding are Content.DbMigrator's responsibility, run before this service starts.
 app.UseApplication();
 
 app.Run();
