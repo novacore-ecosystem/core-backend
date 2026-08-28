@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.EntityFrameworkCore;
 
 using NovaCore.BuildingBlock.Infrastructure.Observability;
 using NovaCore.BuildingBlock.Messaging.Kafka.Tracing;
@@ -13,7 +12,6 @@ using NovaCore.Payment.API;
 using NovaCore.Payment.Application;
 using NovaCore.Payment.Infrastructure;
 using NovaCore.Payment.Persistence;
-using NovaCore.Payment.Persistence.Engine;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,12 +39,7 @@ builder.Services
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
-    await dbContext.Database.MigrateAsync();
-}
-
+// Migrations and seeding are Payment.DbMigrator's responsibility, run before this service starts.
 app.UseRedisTracing();
 app.UseApplication();
 

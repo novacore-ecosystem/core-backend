@@ -5,15 +5,13 @@ using NovaCore.BuildingBlock.Web.Swagger;
 
 using NovaCore.BuildingBlock.Web.ExceptionHandling;
 
-using NovaCore.Payment.Persistence.Storage.Seeders;
-
 namespace NovaCore.Payment.API;
 
 public static class ApplicationPipeline
 {
     public static WebApplication UseApplication(this WebApplication app)
     {
-        app.SeedDatabase();
+        // Migrations and seeding are Payment.DbMigrator's responsibility, run before this service starts.
         app.UseGlobalExceptionHandling();
         app.UseSwaggerDocumentation(DependencyInjection.WebOptions.SwaggerUiTitle);
         app.UseCorsPolicy(DependencyInjection.WebOptions.CorsAppliedPolicyName ?? DependencyInjection.WebOptions.CorsPolicyName);
@@ -21,15 +19,6 @@ public static class ApplicationPipeline
         app.UseAuthorization();
         app.MapEndpoints();
         app.UseMiddlewares();
-
-        return app;
-    }
-
-    private static WebApplication SeedDatabase(this WebApplication app)
-    {
-        using var scope = app.Services.CreateScope();
-        var seeder = scope.ServiceProvider.GetRequiredService<PaymentSeeder>();
-        seeder.SeedAsync().GetAwaiter().GetResult();
 
         return app;
     }
