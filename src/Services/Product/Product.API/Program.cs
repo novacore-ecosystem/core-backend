@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.EntityFrameworkCore;
 
 using NovaCore.BuildingBlock.Infrastructure.Observability;
 using NovaCore.BuildingBlock.Messaging.Kafka.Tracing;
@@ -14,7 +13,6 @@ using NovaCore.Product.Application;
 using NovaCore.Product.Application.Abstractions.Search;
 using NovaCore.Product.Infrastructure;
 using NovaCore.Product.Persistence;
-using NovaCore.Product.Persistence.Engine;
 var builder = WebApplication.CreateBuilder(args);
 
 await builder.Configuration.AddVaultSecretsAsync();
@@ -42,11 +40,9 @@ builder.Services
 
 var app = builder.Build();
 
+// Migrations and seeding are Product.DbMigrator's responsibility, run before this service starts.
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<ProductDbContext>();
-    await dbContext.Database.MigrateAsync();
-
     var searchIndexer = scope.ServiceProvider.GetRequiredService<IProductSearchIndexer>();
     try
     {
