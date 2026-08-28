@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.EntityFrameworkCore;
 
 using NovaCore.BuildingBlock.Infrastructure.Observability;
 using NovaCore.BuildingBlock.Messaging.Kafka.Tracing;
@@ -13,7 +12,6 @@ using NovaCore.Inventory.API;
 using NovaCore.Inventory.Application;
 using NovaCore.Inventory.Infrastructure;
 using NovaCore.Inventory.Persistence;
-using NovaCore.Inventory.Persistence.Engine;
 var builder = WebApplication.CreateBuilder(args);
 
 await builder.Configuration.AddVaultSecretsAsync();
@@ -47,12 +45,7 @@ builder.Services
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
-    await dbContext.Database.MigrateAsync();
-}
-
+// Migrations and seeding are Inventory.DbMigrator's responsibility, run before this service starts.
 app.UseRedisTracing();
 app.UseApplication();
 
