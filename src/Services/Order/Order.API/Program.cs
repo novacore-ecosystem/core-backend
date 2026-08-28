@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.EntityFrameworkCore;
 
 using NovaCore.BuildingBlock.Infrastructure.Observability;
 using NovaCore.BuildingBlock.Messaging.Kafka.Tracing;
@@ -13,7 +12,6 @@ using NovaCore.Order.API;
 using NovaCore.Order.Application;
 using NovaCore.Order.Infrastructure;
 using NovaCore.Order.Persistence;
-using NovaCore.Order.Persistence.Engine;
 var builder = WebApplication.CreateBuilder(args);
 
 await builder.Configuration.AddVaultSecretsAsync();
@@ -41,12 +39,7 @@ builder.Services
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
-    await dbContext.Database.MigrateAsync();
-}
-
+// Migrations and seeding are Order.DbMigrator's responsibility, run before this service starts.
 app.UseRedisTracing();
 app.UseApplication();
 
