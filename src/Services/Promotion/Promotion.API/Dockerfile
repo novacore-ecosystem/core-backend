@@ -15,6 +15,8 @@ COPY ["src/BuildingBlocks/BuildingBlock.Persistence.Ef/BuildingBlock.Persistence
 COPY ["src/BuildingBlocks/BuildingBlock.Observability/BuildingBlock.Observability.csproj", "src/BuildingBlocks/BuildingBlock.Observability/"]
 COPY ["src/BuildingBlocks/BuildingBlock.Grpc/BuildingBlock.Grpc.csproj", "src/BuildingBlocks/BuildingBlock.Grpc/"]
 COPY ["src/BuildingBlocks/BuildingBlock.Web/BuildingBlock.Web.csproj", "src/BuildingBlocks/BuildingBlock.Web/"]
+COPY ["src/BuildingBlocks/BuildingBlock.Criteria/BuildingBlock.Criteria.csproj", "src/BuildingBlocks/BuildingBlock.Criteria/"]
+COPY ["src/BuildingBlocks/BuildingBlock.Search/BuildingBlock.Search.csproj", "src/BuildingBlocks/BuildingBlock.Search/"]
 COPY ["src/Services/Promotion/Promotion.API/Promotion.API.csproj", "src/Services/Promotion/Promotion.API/"]
 COPY ["src/Services/Promotion/Promotion.Application/Promotion.Application.csproj", "src/Services/Promotion/Promotion.Application/"]
 COPY ["src/Services/Promotion/Promotion.Domain/Promotion.Domain.csproj", "src/Services/Promotion/Promotion.Domain/"]
