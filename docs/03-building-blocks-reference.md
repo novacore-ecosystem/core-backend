@@ -6,7 +6,8 @@
 Zero-dependency constants/POCOs/extensions. Root of the dependency graph — transport- and framework-agnostic, referenced by every layer including Infrastructure implementations that must not depend on `BuildingBlock.Web`.
 - `Constants/CacheKeyConstant.cs` — centralized Redis key builders
 - `Constants/AppRoleConstant.cs` — Root/Admin/User role strings, used for role-to-permission seeding and `IsInRole` checks
-- `Constants/Permissions.cs` — the permission key catalog, grouped by business module, each with a `Full` aggregate; see [reference/authorization.md](reference/authorization.md)
+- `Constants/Permissions/Permissions.*.cs` — the permission key catalog, one `public static partial class Permissions` split across `Permissions.Common.cs` plus one file per owning service, each business module a nested `[PermissionGroup]`-attributed class with a `Full` aggregate; see [reference/authorization.md](reference/authorization.md)
+- `Authorization/PermissionRegistry.cs`, `PermissionDefinitionAttribute.cs`, `PermissionGroupAttribute.cs`, `PermissionProviderName.cs` — the code-first discovery/index layer over the catalog above; see [reference/authorization.md](reference/authorization.md)
 - `Constants/AppClaimTypes.cs` — custom claim type key constants only (e.g. `Permission`) — no logic, no extension methods
 - `Extensions/ClaimsPrincipalExtension.cs` — reads raw claim values off `ClaimsPrincipal` (e.g. `GetPermissions()`) — no authorization decisions; those live in `BuildingBlock.Web.Authorization`
 - `Security/JwtSettings.cs` — shared JWT config POCO (SecretKey/Issuer/Audience/expirations)

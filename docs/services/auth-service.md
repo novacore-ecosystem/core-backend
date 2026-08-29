@@ -632,6 +632,44 @@ Position still does not receive direct permission grants (audited this phase - s
   authentication until corrected. Fixed as part of this phase's own empty-database verification
   requirement, not a deliberate scope addition.
 
+## Permission catalog file-splitting + registry groups (Phase 7)
+
+Introduced 2026-08-29, immediately after Phase 6. Splits `Permissions` (`BuildingBlock.SharedKernel/
+Constants/`) from one monolithic file into `Constants/Permissions/Permissions.*.cs` - one `public
+static partial class Permissions` per owning service, purely for Git ownership (see
+[reference/authorization.md](../reference/authorization.md#permission-keys-permissions-buildingblocksharedkernelconstants)
+for the full convention) - and adds group retrieval to `PermissionRegistry`. No runtime
+authorization behavior changes; `PermissionKey`/`PermissionGrant`/`PermissionDefinition` are
+untouched.
+
+- **New `[PermissionGroup("code")]`** (`BuildingBlock.SharedKernel/Authorization/`) - decorates a
+  nested class (e.g. `Product`), giving `PermissionRegistry` an explicit, code-owned group identity
+  instead of the previous DbMigrator-side key-prefix heuristic. Structural only, same rule as
+  `[PermissionDefinition]` - no display name/description/translation. A const not nested under any
+  `[PermissionGroup]`-attributed class is a valid, deliberately ungrouped permission (`Root`/`User`
+  - the only two).
+- **`PermissionRegistry`** gained a precomputed group index (built once during `Discover()`, not
+  per call): `GetGroups()`, `GetGroup(code)`, `GetPermissions(code)`. `PermissionDefinitionInfo`
+  gained `GroupCode` (`string?`). File organization and group organization are independent -
+  `Permissions.Inventory.cs` holds two separate groups (`inventory`, `warehouse`) in one file.
+- **`PermissionCatalogSeeder`** rewritten to read each definition's `GroupCode` directly from the
+  registry instead of deriving it from the key's `"module:"` prefix - the previous seeder's
+  hand-coded `Root`/`User` → `"platform"` group exception is now just "an ungrouped registry
+  definition falls back to the fixed `"platform"` DB group," with no other behavior change.
+  Group/definition sync is otherwise identical: idempotent, additive-only, DB-owned metadata
+  (translations/status) never touched.
+- **File → owning service mapping** (current state, expect this list to grow):
+  `Permissions.Common.cs` (`Root`/`User`, `Role.*`, `Permission.*`, `System.*` - none of these are
+  service-specific), `Permissions.Auth.cs` (`Tenant.*`), `Permissions.Product.cs` (`Product.*`),
+  `Permissions.Inventory.cs` (`Inventory.*` + `Warehouse.*` - two groups, one file, one owning
+  service), `Permissions.Order.cs` (`Order.*`), `Permissions.Audit.cs` (`Audit.*`),
+  `Permissions.Notification.cs` (`Notification.*`), `Permissions.User.cs` (`Users.*` - the User
+  service's business-domain permissions, distinct from the foundational `Permissions.User` platform
+  key in Common).
+- **Explicitly out of scope, per the task's own spec**: any cache (Redis, blacklist, effective-
+  permission, localized) layered on top of the registry - the registry remains the static,
+  DB-independent structural source those future layers would consume, not something they replace.
+
 ## Known state
 
 - Mapster is registered but unused — hand-mapping is the actual convention (see [04-coding-rules.md](../04-coding-rules.md#mapping)).

@@ -10,36 +10,41 @@ using Microsoft.EntityFrameworkCore;
 namespace NovaCore.Auth.Persistence.Storage.Seeders;
 
 /// <summary>
-/// Ensures one PermissionGroup per Permissions.cs module and one PermissionDefinition per
-/// PermissionRegistry.Instance entry - the DB-backed catalog PermissionGrant rows point at.
-/// Registry-driven, not a hardcoded catalog array: every permission key here is already a
-/// [PermissionDefinition]-attributed C# const (see Permissions.cs) - this only backs the existing
-/// platform-wide vocabulary with real rows, it does not define a second permission-definition
-/// system (see docs/services/auth-service.md). Runs on every startup (not just an empty DB) and is
-/// per-key idempotent, so a newly-added const gets its row created automatically on the next
-/// deploy without a manual seed edit - existing rows (and any DB-owned metadata already on them,
-/// e.g. translations/status) are never touched.
+/// Ensures one PermissionGroup per PermissionRegistry.Instance group and one PermissionDefinition
+/// per registry entry - the DB-backed catalog PermissionGrant rows point at. Registry-driven, not a
+/// hardcoded catalog array or a key-prefix heuristic: group identity comes directly from each
+/// permission's [PermissionGroup]-attributed enclosing class (see PermissionRegistry), and a
+/// permission the registry reports as ungrouped (Root/User - deliberately not nested under any
+/// [PermissionGroup], see Permissions.Common.cs) falls back to the fixed "platform" DB group. This
+/// only backs the existing platform-wide vocabulary with real rows, it does not define a second
+/// permission-definition system (see docs/services/auth-service.md). Runs on every startup (not
+/// just an empty DB) and is per-key idempotent, so a newly-added const in any
+/// Permissions.&lt;Owner&gt;.cs file gets its row created automatically on the next deploy without
+/// a manual seed edit - existing rows (and any DB-owned metadata already on them, e.g.
+/// translations/status) are never touched.
 /// </summary>
 public class PermissionCatalogSeeder(AuthDbContext context)
 {
+    private const string UngroupedFallbackGroupCode = "platform";
+
     public async Task SeedAsync()
     {
-        var registryKeys = PermissionRegistry.Instance.GetAll().Select(d => d.Key).ToHashSet(StringComparer.Ordinal);
+        var registryDefinitions = PermissionRegistry.Instance.GetAll();
 
         var existingKeys = await context.PermissionDefinitions
             .Select(p => p.Key.Value)
             .ToHashSetAsync(StringComparer.Ordinal);
 
-        var missingKeys = registryKeys.Except(existingKeys).ToList();
-        if (missingKeys.Count == 0)
+        var missingDefinitions = registryDefinitions.Where(d => !existingKeys.Contains(d.Key)).ToList();
+        if (missingDefinitions.Count == 0)
             return;
 
         var groupsByCode = await context.PermissionGroups
             .ToDictionaryAsync(g => g.Code.Value, StringComparer.Ordinal);
 
-        foreach (var key in missingKeys)
+        foreach (var definition in missingDefinitions)
         {
-            var groupCode = GroupCodeFor(key);
+            var groupCode = definition.GroupCode ?? UngroupedFallbackGroupCode;
 
             if (!groupsByCode.TryGetValue(groupCode, out var group))
             {
@@ -48,29 +53,14 @@ public class PermissionCatalogSeeder(AuthDbContext context)
                 await context.PermissionGroups.AddAsync(group);
             }
 
-            var definition = PermissionDefinition.Create(
-                PermissionKey.Create(key),
+            var permissionDefinition = PermissionDefinition.Create(
+                PermissionKey.Create(definition.Key),
                 group.Id,
-                isSystemPermission: key is Permissions.Root or Permissions.User);
+                isSystemPermission: definition.Key is Permissions.Root or Permissions.User);
 
-            await context.PermissionDefinitions.AddAsync(definition);
+            await context.PermissionDefinitions.AddAsync(permissionDefinition);
         }
 
         await context.SaveChangesAsync();
-    }
-
-    /// <summary>Mirrors the permission-key convention every const already follows
-    /// ("module:action") - the module segment before the first ':' is the group code. Root/User
-    /// are the one deliberate exception (grouped "platform", not "system", to keep the two
-    /// mandatory platform-wide identity permissions visually distinct from System.*'s
-    /// operational/messaging permissions despite sharing the "system:" key prefix) - preserved
-    /// exactly from the prior hardcoded catalog to avoid a grouping regression.</summary>
-    private static string GroupCodeFor(string permissionKey)
-    {
-        if (permissionKey is Permissions.Root or Permissions.User)
-            return "platform";
-
-        var separatorIndex = permissionKey.IndexOf(':');
-        return separatorIndex < 0 ? permissionKey : permissionKey[..separatorIndex];
     }
 }

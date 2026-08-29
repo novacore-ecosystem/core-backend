@@ -10,7 +10,8 @@ Each claim/permission component has exactly one job. When adding new functionali
 |---|---|---|
 | `AppClaimTypes` | `BuildingBlock.SharedKernel/Constants` | Claim type key constants only — no logic |
 | `ClaimsPrincipalExtension` | `BuildingBlock.SharedKernel/Extensions` | Read raw claim values off `ClaimsPrincipal` — no authorization decisions |
-| `Permissions` | `BuildingBlock.SharedKernel/Constants` | The permission key catalog (code-first, per business module) |
+| `Permissions` | `BuildingBlock.SharedKernel/Constants/Permissions/` | The permission key catalog (code-first, one file per owning service, per business module) |
+| `PermissionRegistry` | `BuildingBlock.SharedKernel/Authorization` | In-memory discovery/index over `Permissions` (flat + grouped) — no DB, Singleton |
 | `PermissionAuthorization` | `BuildingBlock.Web/Authorization` | Permission evaluation — Root bypass, `{module}:full` aggregation, any future strategy |
 | `PermissionEndpointExtensions` | `BuildingBlock.Web/Authorization` | `RequirePermissions(...)` — endpoint-level authorization declaration |
 | `AuthorizationExtensions` | `BuildingBlock.Web/Authorization` | `AddBuildingBlockAuthorization()` — the single DI registration entry point |
@@ -46,7 +47,16 @@ app.MapGroup("/products")
 
 ## Permission keys (`Permissions`, `BuildingBlock.SharedKernel.Constants`)
 
-Permission keys are code-first — declared in `Permissions`, seeded into Auth's permission catalog, referenced by `RequirePermissions()` — never free-form user input. Grouped by business module (`Permissions.Product`, `Permissions.Order`, ...), each module typically exposes a `Full` aggregate key that implicitly grants every other permission in that module.
+Permission keys are code-first — declared in `Permissions`, seeded into Auth's permission catalog, referenced by `RequirePermissions()` — never free-form user input. `Permissions` is one `public static partial class`, physically split across `Constants/Permissions/Permissions.*.cs` purely for Git ownership (unrelated services never touch the same file):
+
+- `Permissions.Common.cs` — genuinely common/system-level permissions only (`Root`, `User`, `Role.*`, `Permission.*`, `System.*`). Default here is one file; don't split further without a strong reason.
+- `Permissions.<Service>.cs` — one file per owning service (`Permissions.Product.cs`, `Permissions.Order.cs`, ...). Add a new service's permissions here, even for a single key — never into `Permissions.Common.cs`.
+
+Within a file, each business module is a nested class decorated `[PermissionGroup("code")]` (structural only — no display name/description/translation, that's DB-owned `PermissionGroup` metadata) and typically exposes a `Full` aggregate key that implicitly grants every other permission in that module. A permission group is a `PermissionRegistry` concept, not a file boundary — two groups can live in the same owner file (`Permissions.Inventory.cs` holds both `[PermissionGroup("inventory")]` and `[PermissionGroup("warehouse")]`), and a const doesn't need to sit inside any `[PermissionGroup]` at all (`Root`/`User` are deliberately ungrouped).
+
+Every const also carries `[PermissionDefinition(Providers = ...)]`, declaring which `PermissionProviderName` categories may hold a grant for it (see `PermissionGrant`/`PermissionGrantService` in the Auth service).
+
+`PermissionRegistry.Instance` (`BuildingBlock.SharedKernel/Authorization`) reflects the whole partial class once at startup into an immutable, in-memory index — `Get`/`Contains`/`GetAll`, `GetGroups`/`GetGroup`/`GetPermissions`, `GetAllowedProviders`/`IsProviderAllowed` — never PostgreSQL. It's a lazy static singleton (usable with no DI) and is also registered as a DI Singleton in `Auth.Persistence`. Auth's `DbMigrator` synchronizes `PermissionGroup`/`PermissionDefinition` DB rows from this registry idempotently — adding a permission only requires adding the const (with its attributes) to the owning service's file; no manual DB seed record.
 
 ## Reading claims
 
