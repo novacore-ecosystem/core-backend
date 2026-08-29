@@ -1,16 +1,17 @@
-using NovaCore.BuildingBlock.Application.Abstractions.Jobs;
+using NovaCore.BuildingBlock.Infrastructure.BackgroundJobs;
 using NovaCore.BuildingBlock.SharedKernel.Constants;
 
-namespace NovaCore.Notification.Infrastructure.Workers;
+namespace NovaCore.Notification.Infrastructure.Configurations.Settings;
 
-public sealed class NotificationDispatchWorkerOptions : IJobOptions
+/// <summary>Hangfire schedule, retry/backoff, and batching knobs for the NotificationDispatch queue drain worker.</summary>
+public sealed class NotificationSchedulerSetting : SchedulerSettingBase
 {
     public const string Section = "Jobs:DispatchWorker";
 
-    public string JobId { get; set; } = "notification-dispatch-worker";
-    public string CronExpression { get; set; } = "*/1 * * * *";
-    public string Queue { get; set; } = JobQueueConstant.DEFAULT;
-    public bool IsInit { get; set; }
+    public override string JobId { get; set; } = "notification-dispatch-worker";
+    public override string CronExpression { get; set; } = "*/1 * * * *";
+    public override string Queue { get; set; } = JobQueueConstant.DEFAULT;
+    public override bool IsInit { get; set; } = false;
 
     /// <summary>Whether the job actually polls anything when it runs. Off = no-op, cron stays registered.</summary>
     public bool Enabled { get; set; } = true;

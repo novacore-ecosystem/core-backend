@@ -1,15 +1,15 @@
-using NovaCore.BuildingBlock.Application.Abstractions.Jobs;
+using NovaCore.BuildingBlock.Infrastructure.BackgroundJobs;
 
-namespace NovaCore.Content.Infrastructure.BackgroundJobs.Jobs.HardDeleteContent;
+namespace NovaCore.Content.Infrastructure.Configurations.Settings;
 
-public sealed class HardDeleteContentJobOptions : IJobOptions
+/// <summary>Hangfire schedule and batching knobs for the soft-deleted Content hard-delete retention job.</summary>
+public sealed class ContentSchedulerSetting : SchedulerSettingBase
 {
     public const string Section = "Jobs:HardDeleteContent";
 
-    public string JobId { get; set; } = "content-hard-delete";
-    public string CronExpression { get; set; } = "0 * * * *";
-    public string Queue { get; set; } = "default";
-    public bool IsInit { get; set; }
+    public override string JobId { get; set; } = "content-hard-delete";
+    public override string CronExpression { get; set; } = "0 * * * *";
+    public override bool IsInit { get; set; } = false;
 
     /// <summary>Business default is 7 days (WCM spec section 12.3) - configurable per environment,
     /// never intended to ship lower in production.</summary>

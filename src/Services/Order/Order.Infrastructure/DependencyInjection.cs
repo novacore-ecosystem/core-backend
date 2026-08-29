@@ -16,6 +16,8 @@ using NovaCore.Order.Application.Abstractions.Services;
 using NovaCore.Order.Application.Features.Orders.Sagas.CreateOrderSaga.Steps;
 using NovaCore.Order.Infrastructure.BackgroundJobs;
 using NovaCore.Order.Infrastructure.Caching;
+using NovaCore.Order.Infrastructure.Configurations;
+using NovaCore.Order.Infrastructure.Configurations.Settings;
 using NovaCore.Order.Infrastructure.GrpcClients;
 using NovaCore.Order.Infrastructure.Messaging.Consumers;
 
@@ -27,6 +29,8 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.AddOrderConfigurations(configuration);
+
         services.AddAppLogger()
             .AddRedisCache(configuration)
             .AddIdempotency(configuration)
@@ -76,9 +80,9 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var inventoryServiceUrl = configuration["Grpc:InventoryService:Url"] ?? "http://inventory-api:5002";
+        var grpcSetting = configuration.GetSection(OrderGrpcSetting.Section).Get<OrderGrpcSetting>() ?? new OrderGrpcSetting();
 
-        services.AddGrpcClient<InventoryGrpcService.InventoryGrpcServiceClient>(new Uri(inventoryServiceUrl));
+        services.AddGrpcClient<InventoryGrpcService.InventoryGrpcServiceClient>(new Uri(grpcSetting.Url));
         services.AddScoped<IInventoryClientService, InventoryClientService>();
 
         return services;

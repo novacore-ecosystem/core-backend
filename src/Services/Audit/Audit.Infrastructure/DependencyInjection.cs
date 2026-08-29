@@ -1,5 +1,7 @@
 using NovaCore.Audit.Application.Abstractions.Services;
 using NovaCore.Audit.Infrastructure.BackgroundJobs;
+using NovaCore.Audit.Infrastructure.Configurations;
+using NovaCore.Audit.Infrastructure.Configurations.Settings;
 using NovaCore.Audit.Infrastructure.GrpcClients;
 using NovaCore.Audit.Infrastructure.Messaging.Consumers;
 
@@ -22,6 +24,8 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.AddAuditConfigurations(configuration);
+
         services.AddAppLogger()
             .AddBackgroundJobs(configuration)
             .AddInboxOutboxCleanupJobs(configuration);
@@ -53,9 +57,9 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var userServiceUrl = configuration["Grpc:UserService:Url"] ?? "http://user-api:5002";
+        var grpcSetting = configuration.GetSection(AuditGrpcSetting.Section).Get<AuditGrpcSetting>() ?? new AuditGrpcSetting();
 
-        services.AddGrpcClient<UserGrpcService.UserGrpcServiceClient>(new Uri(userServiceUrl));
+        services.AddGrpcClient<UserGrpcService.UserGrpcServiceClient>(new Uri(grpcSetting.Url));
         services.AddScoped<IUserClientService, UserClientService>();
 
         return services;

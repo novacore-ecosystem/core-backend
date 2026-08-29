@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 using NovaCore.Inventory.Infrastructure.BackgroundJobs;
+using NovaCore.Inventory.Infrastructure.Configurations;
 using NovaCore.Inventory.Infrastructure.Messaging.Consumers;
 
 namespace NovaCore.Inventory.Infrastructure;
@@ -19,7 +20,8 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddAppLogger()
+        services.AddInventoryConfigurations(configuration)
+            .AddAppLogger()
             .AddBackgroundJobs(configuration)
             // Inventory now has an Outbox (added for audit tracking - Inventory/Warehouse are
             // IAuditable), so it uses the shared dual cleanup-job pair like Order/User/Audit,

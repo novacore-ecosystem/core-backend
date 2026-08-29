@@ -13,6 +13,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 using NovaCore.Product.Application.Abstractions.Services;
 using NovaCore.Product.Infrastructure.BackgroundJobs;
+using NovaCore.Product.Infrastructure.Configurations;
+using NovaCore.Product.Infrastructure.Configurations.Settings;
 using NovaCore.Product.Infrastructure.GrpcClients;
 using NovaCore.Product.Infrastructure.Messaging.Consumers;
 
@@ -24,7 +26,8 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddAppLogger()
+        services.AddProductConfigurations(configuration)
+            .AddAppLogger()
             .AddRedisCache(configuration)
             .AddIdempotency(configuration)
             .AddBackgroundJobs(configuration)
@@ -49,9 +52,9 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var inventoryServiceUrl = configuration["Grpc:InventoryService:Url"] ?? "http://inventory-api:5002";
+        var grpcSetting = configuration.GetSection(ProductGrpcSetting.Section).Get<ProductGrpcSetting>() ?? new ProductGrpcSetting();
 
-        services.AddGrpcClient<InventoryGrpcService.InventoryGrpcServiceClient>(new Uri(inventoryServiceUrl));
+        services.AddGrpcClient<InventoryGrpcService.InventoryGrpcServiceClient>(new Uri(grpcSetting.Url));
         services.AddScoped<IInventoryClientService, InventoryClientService>();
 
         return services;

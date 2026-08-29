@@ -10,11 +10,11 @@ using Microsoft.Extensions.DependencyInjection;
 using NovaCore.Notification.Application.Abstractions.Services;
 using NovaCore.Notification.Infrastructure.BackgroundJobs;
 using NovaCore.Notification.Infrastructure.Caching;
+using NovaCore.Notification.Infrastructure.Configurations;
 using NovaCore.Notification.Infrastructure.Delivery;
 using NovaCore.Notification.Infrastructure.Messaging.Consumers;
 using NovaCore.Notification.Infrastructure.SignalR.Facade;
 using NovaCore.Notification.Infrastructure.SignalR.Hubs.Global;
-using NovaCore.Notification.Infrastructure.Workers;
 
 namespace NovaCore.Notification.Infrastructure;
 
@@ -24,10 +24,11 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddAppLogger()
+        services
+            .AddNotificationConfigurations(configuration)
+            .AddAppLogger()
             .AddBackgroundJobs(configuration)
-            .AddInboxOutboxCleanupJobs(configuration)
-            .AddDispatchWorker(configuration);
+            .AddInboxOutboxCleanupJobs(configuration);
 
         // Register application event dispatcher (MediatR - for internal events)
         services.AddApplicationEventDispatcher();
@@ -38,12 +39,6 @@ public static class DependencyInjection
         services.AddNotificationDelivery();
         services.AddNotificationChannelCache();
 
-        return services;
-    }
-
-    private static IServiceCollection AddDispatchWorker(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.Configure<NotificationDispatchWorkerOptions>(configuration.GetSection(NotificationDispatchWorkerOptions.Section));
         return services;
     }
 

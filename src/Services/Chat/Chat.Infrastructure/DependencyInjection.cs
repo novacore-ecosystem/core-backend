@@ -1,5 +1,7 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using NovaCore.Chat.Infrastructure.Configurations;
 using NovaCore.Chat.Infrastructure.Security.Jwt;
 using NovaCore.Chat.Infrastructure.SignalR;
 using NovaCore.Chat.Infrastructure.SignalR.Facade;
@@ -14,9 +16,14 @@ namespace NovaCore.Chat.Infrastructure;
 /// </summary>
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
-        services.AddScoped<IGuestTokenGenerator, GuestTokenGenerator>();
+        services
+            .AddChatConfigurations(configuration)
+            .AddScoped<IGuestTokenGenerator, GuestTokenGenerator>();
+
         services.AddScoped<ConversationHubFacade>();
         services.AddScoped<IChatRealtimeNotifier, SignalRChatRealtimeNotifier>();
 

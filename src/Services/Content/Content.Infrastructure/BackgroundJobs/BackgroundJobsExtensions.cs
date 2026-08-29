@@ -1,5 +1,3 @@
-using NovaCore.Content.Infrastructure.BackgroundJobs.Jobs.HardDeleteContent;
-
 using NovaCore.BuildingBlock.Infrastructure.BackgroundJobs;
 
 using Microsoft.AspNetCore.Builder;
@@ -14,9 +12,7 @@ public static class BackgroundJobsExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services
-            .Configure<HardDeleteContentJobOptions>(configuration.GetSection(HardDeleteContentJobOptions.Section))
-            .AddHangfireScheduling(configuration, typeof(BackgroundJobsExtensions));
+        services.AddHangfireScheduling(configuration, typeof(BackgroundJobsExtensions));
 
         return services;
     }

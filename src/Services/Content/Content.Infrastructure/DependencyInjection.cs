@@ -4,6 +4,7 @@ using NovaCore.BuildingBlock.Infrastructure.Messaging;
 using NovaCore.BuildingBlock.Messaging.Kafka.Extensions;
 
 using NovaCore.Content.Infrastructure.BackgroundJobs;
+using NovaCore.Content.Infrastructure.Configurations;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +25,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services
+            .AddContentConfigurations(configuration)
             .AddAppLogger()
             .AddHttpAuditMetadataProvider("Content");
 

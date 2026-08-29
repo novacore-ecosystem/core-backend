@@ -3,6 +3,7 @@ using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
 using NovaCore.BuildingBlock.Application.Abstractions.Services;
 
 using NovaCore.Content.Application.Abstractions.Persistence.Contents;
+using NovaCore.Content.Infrastructure.Configurations.Settings;
 
 using Microsoft.Extensions.Options;
 
@@ -20,7 +21,7 @@ public sealed class HardDeleteContentService(
     IContentWriteService contentWriteService,
     IUnitOfWork unitOfWork,
     IAppLogger<HardDeleteContentService> logger,
-    IOptions<HardDeleteContentJobOptions> options) : IRecurringJob
+    IOptions<ContentSchedulerSetting> options) : IRecurringJob
 {
     public string JobId => options.Value.JobId;
     public string CronExpression => options.Value.CronExpression;

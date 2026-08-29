@@ -30,7 +30,7 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services
     .AddPersistence(builder.Configuration)
     .AddApplication()
-    .AddInfrastructure()
+    .AddInfrastructure(builder.Configuration)
     .AddPresentation(builder.Configuration)
     .AddOpenTelemetryObservability(builder.Configuration, "chat-api", tracing => tracing
         .AddPersistenceTracing()

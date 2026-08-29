@@ -7,6 +7,7 @@ using NovaCore.Notification.Application.Abstractions.Persistence.NotificationDis
 using NovaCore.Notification.Application.Abstractions.Services;
 using NovaCore.Notification.Domain.Entities;
 using NovaCore.Notification.Domain.Enums;
+using NovaCore.Notification.Infrastructure.Configurations.Settings;
 
 namespace NovaCore.Notification.Infrastructure.Workers;
 
@@ -23,10 +24,10 @@ public sealed class NotificationDispatchWorker(
     INotificationDispatchWriteService dispatchWriteService,
     INotificationChannelCache channelCache,
     IChannelSenderResolver senderResolver,
-    IOptions<NotificationDispatchWorkerOptions> options,
+    IOptions<NotificationSchedulerSetting> options,
     IAppLogger<NotificationDispatchWorker> logger) : IRecurringJob
 {
-    private readonly NotificationDispatchWorkerOptions _options = options.Value;
+    private readonly NotificationSchedulerSetting _options = options.Value;
 
     public string JobId => _options.JobId;
     public string CronExpression => _options.CronExpression;

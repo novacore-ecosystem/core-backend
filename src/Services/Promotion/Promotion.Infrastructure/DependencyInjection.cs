@@ -7,13 +7,16 @@ using NovaCore.BuildingBlock.Messaging.Kafka.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using NovaCore.Promotion.Infrastructure.Configurations;
+
 namespace NovaCore.Promotion.Infrastructure;
 
 public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddAppLogger()
+        services.AddPromotionConfigurations(configuration)
+            .AddAppLogger()
             .AddRedisCache(configuration)
             .AddIdempotency(configuration)
             .AddInboxOutboxCleanupJobs(configuration)
