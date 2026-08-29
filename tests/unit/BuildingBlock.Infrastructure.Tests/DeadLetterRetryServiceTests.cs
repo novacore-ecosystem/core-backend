@@ -1,7 +1,8 @@
 using NovaCore.BuildingBlock.Application.Abstractions.Idempotency;
 using NovaCore.BuildingBlock.Application.Abstractions.Outbox;
 using NovaCore.BuildingBlock.Application.Abstractions.Services;
-using NovaCore.BuildingBlock.Infrastructure.DeadLetters;
+using NovaCore.BuildingBlock.Application.DeadLetters;
+using NovaCore.BuildingBlock.Application.DeadLetters.Enums;
 using NovaCore.BuildingBlock.Messaging.Abstractions;
 
 using Microsoft.Extensions.Logging;
