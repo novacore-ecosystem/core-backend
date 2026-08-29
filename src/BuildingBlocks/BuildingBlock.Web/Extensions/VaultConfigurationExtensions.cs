@@ -58,10 +58,14 @@ public static class VaultConfigurationExtensions
 
             // Later paths win on key collisions - preserves the "shared infra first,
             // service-specific last" override order VAULT_PATHS entries are listed in.
+            // Vault secrets are authored with the env-var-style "__" separator (see
+            // .env.template's ConnectionStrings__DefaultConnection blueprint), but
+            // AddInMemoryCollection - unlike AddEnvironmentVariables - doesn't translate
+            // "__" to IConfiguration's ":" hierarchy separator on its own.
             var merged = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
             foreach (var result in results)
             foreach (var (key, value) in result.Data.Data)
-                merged[key] = value?.ToString();
+                merged[key.Replace("__", ":")] = value?.ToString();
 
             Console.WriteLine($"[Vault] Loaded {merged.Count} key(s) from {entries.Length} path(s) at {vaultAddress}.");
             configurationBuilder.AddInMemoryCollection(merged);
