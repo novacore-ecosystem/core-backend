@@ -1,15 +1,15 @@
 using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
 using NovaCore.Auth.Infrastructure.Caching;
+using NovaCore.Auth.Infrastructure.Configurations.Settings;
 
 using NovaCore.BuildingBlock.Application.Abstractions.Services;
-using NovaCore.BuildingBlock.SharedKernel.Security;
 
 namespace NovaCore.Auth.Infrastructure.Security.RefreshTokens;
 
 public sealed class RefreshTokenService(
     IJwtTokenGenerator jwtTokenGenerator,
-    JwtSettings jwtSettings,
+    AuthJwtSetting jwtSettings,
     RefreshTokenCacheService cacheService) : IRefreshTokenService, IAppService
 {
     public async Task<string> GenerateRefreshTokenAsync(Guid userId, Guid jwtId, CancellationToken ct = default)

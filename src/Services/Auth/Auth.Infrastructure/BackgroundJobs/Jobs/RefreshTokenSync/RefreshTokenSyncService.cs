@@ -1,6 +1,7 @@
 using NovaCore.Auth.Application.Abstractions.Persistence.RefreshTokens;
 using NovaCore.Auth.Domain.Enums;
 using NovaCore.Auth.Infrastructure.Caching;
+using NovaCore.Auth.Infrastructure.Configurations.Settings;
 
 using NovaCore.BuildingBlock.Application.Abstractions.Jobs;
 using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
@@ -20,7 +21,7 @@ public sealed class RefreshTokenSyncService(
     RefreshTokenCacheService cacheService,
     IUnitOfWork unitOfWork,
     IAppLogger<RefreshTokenSyncService> logger,
-    IOptions<RefreshTokenJobOptions> options) : IRecurringJob
+    IOptions<AuthSchedulerSetting> options) : IRecurringJob
 {
     public string JobId => options.Value.JobId;
     public string CronExpression => options.Value.CronExpression;

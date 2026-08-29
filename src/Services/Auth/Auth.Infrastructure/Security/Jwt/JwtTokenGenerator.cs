@@ -4,17 +4,17 @@ using System.Security.Cryptography;
 using System.Text;
 
 using NovaCore.Auth.Application.Abstractions.Security.Jwt;
+using NovaCore.Auth.Infrastructure.Configurations.Settings;
 
 using NovaCore.BuildingBlock.SharedKernel.Constants;
-using NovaCore.BuildingBlock.SharedKernel.Security;
 
 using Microsoft.IdentityModel.Tokens;
 
 namespace NovaCore.Auth.Infrastructure.Security.Jwt;
 
-public sealed class JwtTokenGenerator(JwtSettings settings) : IJwtTokenGenerator
+public sealed class JwtTokenGenerator(AuthJwtSetting settings) : IJwtTokenGenerator
 {
-    private readonly JwtSettings _settings = settings;
+    private readonly AuthJwtSetting _settings = settings;
     private readonly SymmetricSecurityKey _key = new(Encoding.UTF8.GetBytes(settings.SecretKey));
 
     public string GenerateAccessToken(

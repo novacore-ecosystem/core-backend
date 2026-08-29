@@ -1,5 +1,3 @@
-using NovaCore.Auth.Infrastructure.BackgroundJobs.Jobs.RefreshTokenSync;
-
 using NovaCore.BuildingBlock.Infrastructure.BackgroundJobs;
 
 using Microsoft.AspNetCore.Builder;
@@ -14,9 +12,7 @@ public static class BackgroundJobsExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services
-            .Configure<RefreshTokenJobOptions>(configuration.GetSection("Jobs:RefreshTokenSync"))
-            .AddHangfireScheduling(configuration, typeof(BackgroundJobsExtensions));
+        services.AddHangfireScheduling(configuration, typeof(BackgroundJobsExtensions));
 
         return services;
     }

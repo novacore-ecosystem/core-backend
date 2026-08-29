@@ -2,6 +2,8 @@ using NovaCore.Auth.Application.Abstractions.Auth;
 using NovaCore.Auth.Application.Abstractions.Services;
 using NovaCore.Auth.Infrastructure.BackgroundJobs;
 using NovaCore.Auth.Infrastructure.Caching;
+using NovaCore.Auth.Infrastructure.Configurations;
+using NovaCore.Auth.Infrastructure.Configurations.Settings;
 using NovaCore.Auth.Infrastructure.GrpcClients;
 using NovaCore.Auth.Infrastructure.Messaging.Consumers;
 using NovaCore.Auth.Infrastructure.Security;
@@ -27,6 +29,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services
+            .AddAuthConfigurations(configuration)
             .AddAppLogger()
             .AddRedisCache(configuration)
             .AddRoleCaching(configuration)
@@ -82,9 +85,9 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var userServiceUrl = configuration["Grpc:UserService:Url"] ?? "http://user-api:5002";
+        var grpcSetting = configuration.GetSection(AuthGrpcSetting.Section).Get<AuthGrpcSetting>() ?? new AuthGrpcSetting();
 
-        services.AddGrpcClient<UserGrpcService.UserGrpcServiceClient>(new Uri(userServiceUrl));
+        services.AddGrpcClient<UserGrpcService.UserGrpcServiceClient>(new Uri(grpcSetting.Url));
         services.AddScoped<IUserProfileService, UserProfileServiceClient>();
 
         return services;
