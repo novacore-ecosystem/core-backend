@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "compose-up: product-api (wait)",
+      "type": "shell",
+      "command": "docker",
+      "args": [
+        "compose",
+        "-f",
+        "docker-compose.development.yml",
+        "up",
+        "-d",
+        "--wait",
+        "product-api"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/../../.."
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Docker: Notification API",
+      "type": "coreclr",
+      "request": "attach",
+      "processName": "dotnet",
+      "justMyCode": false,
+      "pipeTransport": {
+        "pipeCwd": "${workspaceFolder}/../../..",
+        "pipeProgram": "docker",
+        "pipeArgs": [
+          "compose",
+          "-f",
+          "docker-compose.development.yml",
+          "exec",
+          "-i",
+          "notification-api"
+        ],
+        "debuggerPath": "/vsdbg/vsdbg",
+        "quoteArgs": false
+      },
+      "sourceFileMap": {
+        "/app/src/Services/Notification": "${workspaceFolder}",
+        "/app/src/BuildingBlocks": "${workspaceFolder}/../../BuildingBlocks"
+      },
+      "preLaunchTask": "compose-up: notification-api (wait)"
+    }
+  ]
+}
