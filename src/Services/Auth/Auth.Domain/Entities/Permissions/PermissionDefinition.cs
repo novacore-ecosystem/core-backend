@@ -5,8 +5,10 @@ namespace NovaCore.Auth.Domain.Entities.Permissions;
 
 /// <summary>
 /// Catalog entry for a single permission key the platform recognizes (e.g. "product:create").
-/// Roles grant these via RolePermission; the Key is the literal string that ends up in JWT claims
-/// and is checked by every service's [Authorize(Policy = ...)].
+/// Grants reference this via PermissionGrant; the Key is the literal string that ends up in JWT
+/// claims and is checked by every service's [Authorize(Policy = ...)]. Status is a definition-
+/// lifecycle concern only (Active/Deprecated/Disabled) - it does not affect any existing
+/// PermissionGrant referencing this key, see Deprecate/Disable below.
 /// </summary>
 public sealed class PermissionDefinition : AggregateRoot<Guid>, IAuditable
 {
@@ -14,8 +16,9 @@ public sealed class PermissionDefinition : AggregateRoot<Guid>, IAuditable
     public Guid PermissionGroupId { get; private set; }
     public PermissionGroup PermissionGroup { get; private set; } = default!;
     public bool IsSystemPermission { get; private set; }
+    public PermissionDefinitionStatus Status { get; private set; } = PermissionDefinitionStatus.Active;
 
-    public ICollection<RolePermission> RolePermissions { get; private set; } = [];
+    public ICollection<PermissionGrant> Grants { get; private set; } = [];
     public ICollection<PermissionDefinitionTranslation> Translations { get; private set; } = [];
 
     private PermissionDefinition() { }
@@ -79,6 +82,32 @@ public sealed class PermissionDefinition : AggregateRoot<Guid>, IAuditable
     public void MoveToGroup(Guid permissionGroupId)
     {
         PermissionGroupId = permissionGroupId;
+    }
+
+    #endregion
+
+    // ============================================================================
+    // Lifecycle
+    // Definition status only - a maintenance/discoverability signal (e.g. hide from an
+    // admin picker, flag as scheduled for removal). Deliberately does not touch or cascade
+    // to any PermissionGrant referencing this key - grant state is a separate concern.
+    // ============================================================================
+
+    #region Lifecycle
+
+    public void Activate()
+    {
+        Status = PermissionDefinitionStatus.Active;
+    }
+
+    public void Deprecate()
+    {
+        Status = PermissionDefinitionStatus.Deprecated;
+    }
+
+    public void Disable()
+    {
+        Status = PermissionDefinitionStatus.Disabled;
     }
 
     #endregion

@@ -68,10 +68,10 @@ public class DatabaseSeeder(
 
     private async Task SeedRolePermissionsAsync()
     {
-        logger.LogInformation("Seeding role permissions...");
-        var rolePermissionSeeder = new RolePermissionSeeder(context);
-        await rolePermissionSeeder.SeedAsync();
-        logger.LogInformation("Role permissions seeded successfully");
+        logger.LogInformation("Seeding role permission grants...");
+        var roleGrantSeeder = new RoleGrantSeeder(context);
+        await roleGrantSeeder.SeedAsync();
+        logger.LogInformation("Role permission grants seeded successfully");
     }
 
     private async Task SeedAccountsAsync()

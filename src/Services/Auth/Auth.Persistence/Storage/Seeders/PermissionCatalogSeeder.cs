@@ -2,6 +2,7 @@ using NovaCore.Auth.Domain.Entities.Permissions;
 using NovaCore.Auth.Domain.ValueObjects;
 using NovaCore.Auth.Persistence.Engine;
 
+using NovaCore.BuildingBlock.SharedKernel.Authorization;
 using NovaCore.BuildingBlock.SharedKernel.Constants;
 
 using Microsoft.EntityFrameworkCore;
@@ -9,95 +10,67 @@ using Microsoft.EntityFrameworkCore;
 namespace NovaCore.Auth.Persistence.Storage.Seeders;
 
 /// <summary>
-/// Seeds one PermissionGroup per Permissions.cs module and one PermissionDefinition per
-/// Permissions.SupportedValues entry - the DB-backed catalog RolePermission grants point at.
-/// Mechanical: every key seeded here is already a declared C# constant (see Permissions.cs),
-/// never an invented one - this only backs the existing platform-wide vocabulary with real rows,
-/// it does not define a second permission-definition system (see docs/services/auth-service.md).
+/// Ensures one PermissionGroup per Permissions.cs module and one PermissionDefinition per
+/// PermissionRegistry.Instance entry - the DB-backed catalog PermissionGrant rows point at.
+/// Registry-driven, not a hardcoded catalog array: every permission key here is already a
+/// [PermissionDefinition]-attributed C# const (see Permissions.cs) - this only backs the existing
+/// platform-wide vocabulary with real rows, it does not define a second permission-definition
+/// system (see docs/services/auth-service.md). Runs on every startup (not just an empty DB) and is
+/// per-key idempotent, so a newly-added const gets its row created automatically on the next
+/// deploy without a manual seed edit - existing rows (and any DB-owned metadata already on them,
+/// e.g. translations/status) are never touched.
 /// </summary>
 public class PermissionCatalogSeeder(AuthDbContext context)
 {
-    private static readonly (string GroupCode, string Key)[] Catalog =
-    [
-        ("platform", Permissions.Root),
-        ("platform", Permissions.User),
-
-        ("role", Permissions.Role.View),
-        ("role", Permissions.Role.Manage),
-        ("role", Permissions.Role.Full),
-
-        ("permission", Permissions.Permission.View),
-        ("permission", Permissions.Permission.Manage),
-        ("permission", Permissions.Permission.Full),
-
-        ("product", Permissions.Product.Manage),
-        ("product", Permissions.Product.Reindex),
-        ("product", Permissions.Product.Full),
-
-        ("inventory", Permissions.Inventory.View),
-        ("inventory", Permissions.Inventory.StockMove),
-        ("inventory", Permissions.Inventory.Adjust),
-        ("inventory", Permissions.Inventory.Receive),
-        ("inventory", Permissions.Inventory.Transfer),
-        ("inventory", Permissions.Inventory.CycleCount),
-        ("inventory", Permissions.Inventory.Full),
-
-        ("warehouse", Permissions.Warehouse.View),
-        ("warehouse", Permissions.Warehouse.Manage),
-        ("warehouse", Permissions.Warehouse.Full),
-
-        ("order", Permissions.Order.View),
-        ("order", Permissions.Order.Manage),
-        ("order", Permissions.Order.Fulfill),
-        ("order", Permissions.Order.Delete),
-        ("order", Permissions.Order.CreateOnBehalf),
-        ("order", Permissions.Order.Full),
-
-        ("audit", Permissions.Audit.View),
-        ("audit", Permissions.Audit.Full),
-
-        ("notification", Permissions.Notification.View),
-        ("notification", Permissions.Notification.Manage),
-        ("notification", Permissions.Notification.ChannelToggle),
-        ("notification", Permissions.Notification.ChannelConfigure),
-        ("notification", Permissions.Notification.CampaignManage),
-        ("notification", Permissions.Notification.Send),
-        ("notification", Permissions.Notification.Full),
-
-        ("users", Permissions.Users.View),
-        ("users", Permissions.Users.Manage),
-        ("users", Permissions.Users.Reindex),
-        ("users", Permissions.Users.Full),
-
-        ("tenant", Permissions.Tenant.View),
-        ("tenant", Permissions.Tenant.Manage),
-        ("tenant", Permissions.Tenant.RotateClient),
-        ("tenant", Permissions.Tenant.Full),
-
-        ("system", Permissions.System.MessagingView),
-        ("system", Permissions.System.MessagingRequeue),
-        ("system", Permissions.System.Full),
-    ];
-
     public async Task SeedAsync()
     {
-        if (await context.PermissionDefinitions.AnyAsync())
+        var registryKeys = PermissionRegistry.Instance.GetAll().Select(d => d.Key).ToHashSet(StringComparer.Ordinal);
+
+        var existingKeys = await context.PermissionDefinitions
+            .Select(p => p.Key.Value)
+            .ToHashSetAsync(StringComparer.Ordinal);
+
+        var missingKeys = registryKeys.Except(existingKeys).ToList();
+        if (missingKeys.Count == 0)
             return;
 
-        var groups = Catalog
-            .Select(x => x.GroupCode)
-            .Distinct()
-            .ToDictionary(code => code, code => PermissionGroup.Create(PermissionGroupCode.Create(code)));
+        var groupsByCode = await context.PermissionGroups
+            .ToDictionaryAsync(g => g.Code.Value, StringComparer.Ordinal);
 
-        await context.PermissionGroups.AddRangeAsync(groups.Values);
+        foreach (var key in missingKeys)
+        {
+            var groupCode = GroupCodeFor(key);
 
-        var definitions = Catalog.Select(x => PermissionDefinition.Create(
-            PermissionKey.Create(x.Key),
-            groups[x.GroupCode].Id,
-            isSystemPermission: x.Key is Permissions.Root or Permissions.User));
+            if (!groupsByCode.TryGetValue(groupCode, out var group))
+            {
+                group = PermissionGroup.Create(PermissionGroupCode.Create(groupCode));
+                groupsByCode[groupCode] = group;
+                await context.PermissionGroups.AddAsync(group);
+            }
 
-        await context.PermissionDefinitions.AddRangeAsync(definitions);
+            var definition = PermissionDefinition.Create(
+                PermissionKey.Create(key),
+                group.Id,
+                isSystemPermission: key is Permissions.Root or Permissions.User);
+
+            await context.PermissionDefinitions.AddAsync(definition);
+        }
 
         await context.SaveChangesAsync();
+    }
+
+    /// <summary>Mirrors the permission-key convention every const already follows
+    /// ("module:action") - the module segment before the first ':' is the group code. Root/User
+    /// are the one deliberate exception (grouped "platform", not "system", to keep the two
+    /// mandatory platform-wide identity permissions visually distinct from System.*'s
+    /// operational/messaging permissions despite sharing the "system:" key prefix) - preserved
+    /// exactly from the prior hardcoded catalog to avoid a grouping regression.</summary>
+    private static string GroupCodeFor(string permissionKey)
+    {
+        if (permissionKey is Permissions.Root or Permissions.User)
+            return "platform";
+
+        var separatorIndex = permissionKey.IndexOf(':');
+        return separatorIndex < 0 ? permissionKey : permissionKey[..separatorIndex];
     }
 }

@@ -1,6 +1,8 @@
 using NovaCore.Auth.Domain.Entities.Roles;
 using NovaCore.Auth.Domain.ValueObjects;
 
+using NovaCore.BuildingBlock.SharedKernel.Authorization;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -36,16 +38,22 @@ public sealed class RoleConfig : IEntityTypeConfiguration<Role>
             .IsRequired()
             .HasDefaultValue(false);
 
+        // Classifies which principal-category role catalog this Role belongs to (e.g. every
+        // Role assignable to an Account is ProviderName == User) - not a per-instance owner,
+        // see Role's class doc comment.
+        builder.Property(r => r.ProviderName)
+            .HasConversion(x => x.ToName(), x => PermissionProviderNameExtensions.ParseName(x))
+            .HasMaxLength(50)
+            .IsRequired();
+
+        builder.Property(r => r.ProviderKey)
+            .HasMaxLength(100);
+
         // Relationships
         builder.HasMany(r => r.UserRoles)
             .WithOne(ar => ar.Role)
             .HasForeignKey(ar => ar.RoleId)
             .IsRequired()
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(r => r.Permissions)
-            .WithOne(p => p.Role)
-            .HasForeignKey(p => p.RoleId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(r => r.Translations)
@@ -56,6 +64,8 @@ public sealed class RoleConfig : IEntityTypeConfiguration<Role>
         // Indexes
         builder.HasIndex(r => r.Code)
             .IsUnique();
+
+        builder.HasIndex(r => new { r.ProviderName, r.ProviderKey });
 
         // Audit & Concurrency
         builder.ConfigureCommonFields();

@@ -51,13 +51,13 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
     public DbSet<PositionRole> PositionRoles { get; set; } = null!;
     public DbSet<PositionTranslation> PositionTranslations { get; set; } = null!;
 
-    public DbSet<RolePermission> RolePermissions { get; set; } = null!;
     public DbSet<RoleTranslation> RoleTranslations { get; set; } = null!;
 
     public DbSet<PermissionGroup> PermissionGroups { get; set; } = null!;
     public DbSet<PermissionGroupTranslation> PermissionGroupTranslations { get; set; } = null!;
     public DbSet<PermissionDefinition> PermissionDefinitions { get; set; } = null!;
     public DbSet<PermissionDefinitionTranslation> PermissionDefinitionTranslations { get; set; } = null!;
+    public DbSet<PermissionGrant> PermissionGrants { get; set; } = null!;
 
     public DbSet<Invitation> Invitations { get; set; } = null!;
     public DbSet<TokenBlacklist> TokenBlacklists { get; set; } = null!;

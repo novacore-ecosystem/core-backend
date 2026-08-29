@@ -2,8 +2,8 @@ namespace NovaCore.Auth.Application.Abstractions.Authorization;
 
 /// <summary>
 /// Resolves an Account's real, DB-backed effective permission set - the union of every permission
-/// granted directly (AccountRole -> Role -> RolePermission) or through an effective Position
-/// (AccountPosition -> Position -> PositionRole -> Role -> RolePermission), deduplicated. Replaces
+/// granted directly (AccountRole -> Role -> PermissionGrant) or through an effective Position
+/// (AccountPosition -> Position -> PositionRole -> Role -> PermissionGrant), deduplicated. Replaces
 /// RolePermissionMap's hard-coded switch (see docs/services/auth-service.md, Phase 3).
 ///
 /// tenantId is always explicit, never read from RequestContext.Current: the primary caller is
@@ -24,7 +24,7 @@ public interface IEffectivePermissionReadService
 
     /// <summary>Every Account, within tenantId, currently holding roleId - directly (AccountRole)
     /// or through an effective Position (AccountPosition -> Position -> PositionRole). Used to
-    /// find who needs their UserService permission projection recomputed after a RolePermission
+    /// find who needs their UserService permission projection recomputed after a PermissionGrant
     /// change (see docs/services/auth-service.md, Phase 3 - "Role-level change must propagate").</summary>
     Task<IReadOnlySet<Guid>> GetAccountIdsForRoleAsync(Guid roleId, Guid tenantId, CancellationToken ct = default);
 }

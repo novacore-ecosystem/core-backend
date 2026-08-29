@@ -9,12 +9,14 @@ public sealed class GetRoleHandler(IRoleReadService roleReadService) : IQueryHan
         var role = await roleReadService.GetByIdAsync(request.Id, ct)
             ?? throw new NotFoundException("Role", request.Id);
 
+        var permissionKeys = await roleReadService.GetPermissionKeysAsync(role.Id, ct);
+
         return new RoleDetailResponse(
             role.Id,
             role.Name!,
             role.Code.Value,
             role.Description,
             role.IsSystemRole,
-            [.. role.Permissions.Select(p => p.PermissionDefinition.Key.Value)]);
+            permissionKeys);
     }
 }

@@ -10,10 +10,12 @@ public interface IRoleWriteService
 
     Task UpdateAsync(Guid id, Action<Role> update, CancellationToken ct = default);
 
-    /// <summary>Replaces the Role's permission set wholesale with permissionKeys - loads current
-    /// grants, resolves the requested PermissionDefinitions, diffs, and applies Assign/RemovePermission
-    /// internally. Unknown keys are silently skipped (matches the prior handler-level behavior).</summary>
-    Task<RolePermissionUpdateResult> UpdatePermissionsAsync(Guid id, IReadOnlyCollection<string> permissionKeys, CancellationToken ct = default);
+    /// <summary>Replaces the Role's permission set wholesale with permissionKeys, via the
+    /// centralized PermissionGrant table (ProviderName = Role, ProviderKey = id) - loads current
+    /// grants, resolves the requested PermissionDefinitions, diffs, and applies grant/revoke
+    /// internally. Unknown keys are silently skipped (matches the prior handler-level behavior); a
+    /// known key not allowed for the Role provider throws.</summary>
+    Task<RolePermissionUpdateResult> UpdatePermissionsAsync(Guid id, IReadOnlyCollection<string> permissionKeys, Guid tenantId, CancellationToken ct = default);
 
     Task DeleteAsync(Guid id, CancellationToken ct = default);
 }

@@ -5,6 +5,7 @@ using NovaCore.Auth.Domain.Entities.Roles;
 using NovaCore.Auth.Persistence.Engine;
 
 using NovaCore.BuildingBlock.Persistence;
+using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
 namespace NovaCore.Auth.Persistence.Contexts.Roles.Read;
 
@@ -14,8 +15,6 @@ public sealed class RoleReadService(AuthDbContext dbContext) : IRoleReadService,
     {
         return await dbContext.Roles
             .AsNoTracking()
-            .Include(r => r.Permissions)
-                .ThenInclude(p => p.PermissionDefinition)
             .FirstOrDefaultAsync(r => r.Id == id, ct);
     }
 
@@ -24,6 +23,17 @@ public sealed class RoleReadService(AuthDbContext dbContext) : IRoleReadService,
         return await dbContext.Roles
             .AsNoTracking()
             .OrderBy(r => r.Name)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<string>> GetPermissionKeysAsync(Guid roleId, CancellationToken ct = default)
+    {
+        var providerKey = roleId.ToString();
+
+        return await dbContext.PermissionGrants
+            .AsNoTracking()
+            .Where(g => g.ProviderName == PermissionProviderName.Role && g.ProviderKey == providerKey)
+            .Select(g => g.PermissionDefinition.Key.Value)
             .ToListAsync(ct);
     }
 }

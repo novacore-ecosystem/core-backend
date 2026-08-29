@@ -37,6 +37,7 @@ using NovaCore.BuildingBlock.Persistence.Ef.DependencyInjection;
 using NovaCore.BuildingBlock.Persistence.Ef.Inbox;
 using NovaCore.BuildingBlock.Persistence.Ef.Outbox;
 using NovaCore.BuildingBlock.Persistence.Repository;
+using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
 using Npgsql;
 
@@ -61,10 +62,23 @@ public static class DependencyInjection
             .AddApplicationServices()
             .AddRepositories()
             .AddPersistenceServices()
+            .AddPermissionRegistry()
             .AddUnitOfWork()
             .AddOutboxAndInbox()
             .AddSeeding()
             .AddAuditHierarchy();
+
+        return services;
+    }
+
+    /// <summary>PermissionRegistry.Instance is a lazy static singleton (built once via reflection
+    /// over Permissions.cs, usable from Auth.Domain with no DI) - this exposes that same instance
+    /// for constructor injection (PermissionGrantService's provider validation). Registered here,
+    /// not in Auth.Application, because Auth.DbMigrator calls AddPersistence but not
+    /// AddApplication, and PermissionGrantService lives in this project.</summary>
+    private static IServiceCollection AddPermissionRegistry(this IServiceCollection services)
+    {
+        services.AddSingleton(PermissionRegistry.Instance);
 
         return services;
     }
@@ -76,7 +90,7 @@ public static class DependencyInjection
     // they're registered via BelongsTo despite being owned by Account rather than roots
     // themselves. Every *Translation entity is registered the same way - admin-facing display
     // copy is real content, not structural scaffolding. TenantLocale (bootstrap resource
-    // content) is registered the same way for the same reason. AccountRole/RolePermission/
+    // content) is registered the same way for the same reason. AccountRole/PermissionGrant/
     // PositionRole (pure mapping, no content beyond the relationship) and RefreshToken/Session/
     // LoginHistory/PasswordHistory/MfaBackupCode/Device/AccountPermission (generated artifacts,
     // high-churn tracking records, or a denormalized cache) are intentionally not IAuditable and

@@ -28,15 +28,20 @@ public sealed class PermissionDefinitionConfig : IEntityTypeConfiguration<Permis
             .IsRequired()
             .HasDefaultValue(false);
 
+        builder.Property(x => x.Status)
+            .HasConversion<short>()
+            .IsRequired()
+            .HasDefaultValue(PermissionDefinitionStatus.Active);
+
         // Relationships
         builder.HasOne(x => x.PermissionGroup)
             .WithMany(g => g.Definitions)
             .HasForeignKey(x => x.PermissionGroupId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasMany(x => x.RolePermissions)
-            .WithOne(rp => rp.PermissionDefinition)
-            .HasForeignKey(rp => rp.PermissionDefinitionId)
+        builder.HasMany(x => x.Grants)
+            .WithOne(g => g.PermissionDefinition)
+            .HasForeignKey(g => g.PermissionDefinitionId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(x => x.Translations)

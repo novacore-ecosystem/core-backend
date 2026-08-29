@@ -504,6 +504,134 @@ endpoints"). Two contract mismatches to resolve when wiring the real endpoints u
   the domain's actual `TenantCode` format (`^[a-z][a-z0-9]*(_[a-z0-9]+)*$`, snake_case) - the
   domain, not the frontend's pre-existing assumption, is the source of truth.
 
+## Provider-based Roles & PermissionGrant foundation (Phase 6)
+
+Introduced 2026-08-29. Replaces the Role-only `RolePermission` join with a centralized,
+provider-generic `PermissionGrant` model, and makes `Role` provider-aware - the foundation for a
+future Client/Guest/direct-User grant path to reuse the exact same tables instead of a new
+`*_permissions`/`*Role` table per principal type. `Position → PositionRole → Role` is unchanged;
+Position still does not receive direct permission grants (audited this phase - see below).
+
+- **`PermissionProviderName`** (new, `BuildingBlock.SharedKernel/Authorization/`) - `[Flags] enum
+  { Role, User, Client, Guest, ServiceAccount }`, with `ToName()`/`ParseName()` giving the stable
+  persisted string every DB column and `[PermissionDefinition]` attribute actually uses - enum
+  numeric values are never a database contract.
+- **`PermissionDefinitionAttribute`** (new, same folder) - decorates every `Permissions.cs` const
+  with `Providers = ...`, declaring which provider categories may hold a grant for that key. All
+  default to `Role` only this phase (the only wired grant path) - widening a single permission's
+  `Providers` later, when a direct User/Client/Guest grant is actually implemented, needs no schema
+  change.
+- **`PermissionRegistry`** (new, same folder) - reflects `Permissions.cs` once into an immutable
+  `FrozenDictionary`; `PermissionRegistry.Instance` is a lazy static singleton (usable from
+  `Auth.Domain` with no DI - `PermissionKey.Create` now validates against it instead of the
+  hand-maintained `Permissions.SupportedValues` `FrozenSet`, which is deleted) and is also
+  registered as a DI singleton in `Auth.Persistence/DependencyInjection.cs` (not
+  `Auth.Application`, because `Auth.DbMigrator` calls `AddPersistence` but not `AddApplication`,
+  and `PermissionGrantService` - the DI consumer - lives in `Auth.Persistence`). `Get`/`GetAll`/
+  `Contains`/`GetAllowedProviders`/`IsProviderAllowed` are all pure in-memory lookups, never SQL.
+- **`Role.ProviderName`/`Role.ProviderKey`** (new columns) - `ProviderName` classifies which
+  principal-category catalog a Role belongs to (every Role assignable to an Account today is
+  `ProviderName == User`) - it is **not** a per-instance owner; Role remains the single, global,
+  reusable catalog it always was (see "Global vs tenant-scoped" below), just now filterable by
+  provider (`Role.ProviderName == Client` is how a future Client-role catalog gets queried, with no
+  new `ClientRole` table). `Role.Create` rejects `ProviderName == Role`/`None`/combined flags -
+  a Role is a catalog entry, not itself a grantable principal category. `ProviderKey` is a reserved,
+  currently-unused narrower-scoping hook (nullable, always `null` today). `Role.Permissions`
+  (`ICollection<RolePermission>`) and `Role.AssignPermission`/`RemovePermission` are gone - Role no
+  longer owns a permission-grant collection, since a generic `PermissionGrant` can't carry a real FK
+  back to one specific provider type.
+- **`PermissionGrant`** (new, `Auth.Domain/Entities/Permissions/`, replaces `RolePermission`/
+  `role_permissions`) - `PermissionDefinitionId` + `ProviderName` + `ProviderKey` (string - has to
+  hold non-Guid keys too, e.g. a future Guest `"*"`) + `TenantId` (`ITenantEntity`, tenant-scoped
+  exactly like `RolePermission` was). Deliberately has no navigation to `Role` or any other
+  provider-specific type. Today the only wired path is `ProviderName = Role, ProviderKey =
+  <Role.Id>.ToString()`. Table `permission_grants`: unique index
+  `(tenant_id, permission_definition_id, provider_name, provider_key)`, secondary index
+  `(tenant_id, provider_name, provider_key)` for "every grant for this provider instance" lookups.
+- **`PermissionGrantService`** (new, `Auth.Persistence/Contexts/Permissions/Write/`,
+  `IPersistenceService`) - `GrantAsync`/`RevokeAsync`/`ReplaceForProviderAsync`, the generic
+  replacement for `Role.AssignPermission`/`RemovePermission`. **Every write validates the requested
+  key against `PermissionRegistry.Instance.IsProviderAllowed` before persisting, throwing
+  `InvalidArgumentException` otherwise** - the server-side security boundary: a client cannot bypass
+  UI/attribute-based filtering by posting an unsupported provider directly (e.g. a `Guest` grant on
+  a `Role`-only permission is rejected even if the permission key itself exists).
+  `RoleWriteService.UpdatePermissionsAsync` now calls `ReplaceForProviderAsync(Role, roleId, ...)`
+  instead of mutating `role.Permissions` - it also gained a required `tenantId` parameter (grants
+  are tenant-scoped, Role itself is not), threaded from `RequestContext.Current.TenantId` in
+  `UpdateRolePermissionsHandler` exactly like Login already does. `RoleReadService` gained
+  `GetPermissionKeysAsync(roleId)` (a normal, ambient-tenant-filtered `PermissionGrants` query) for
+  `GetRoleHandler`, which no longer has `role.Permissions` to read from directly.
+- **`EffectivePermissionReadService`** rewritten to join through `PermissionGrant` instead of
+  `RolePermission`. Since `PermissionGrant.ProviderKey` is a generic string (not a typed FK), the
+  Role→grant join happens against **materialized** `roleId.ToString()` keys, not SQL-side
+  `Guid`-to-text translation - each method now does two round trips (resolve role ids, then resolve
+  grants) instead of one combined query, trading a small amount of query-plan efficiency for
+  translation certainty.
+- **`PermissionDefinition.Status`** (new, `PermissionDefinitionStatus { Active, Deprecated,
+  Disabled }`, `smallint`, default `Active`) - definition lifecycle only, via new
+  `Activate()`/`Deprecate()`/`Disable()`. Deliberately does not cascade to or affect any existing
+  `PermissionGrant` - a deprecated/disabled definition's grants are untouched; this is a
+  maintenance/discoverability signal, not a revocation mechanism.
+- **`PermissionCatalogSeeder`** rewritten to be registry-driven: source of truth is
+  `PermissionRegistry.Instance.GetAll()`, not a hand-maintained `Catalog` tuple array. Runs on every
+  `DatabaseSeeder.SeedAsync()` call (not just an empty DB) and is per-key idempotent (diffs
+  registry keys against existing `PermissionDefinition.Key` rows, only inserting what's missing) -
+  a newly-added `[PermissionDefinition]` const gets its DB row created automatically on the next
+  deploy, no manual seed edit required, and existing rows' DB-owned metadata (translations, status)
+  is never touched. Group-code assignment mirrors the `"module:action"` key convention, with one
+  preserved exception: `Root`/`User` group as `"platform"` (not `"system"`) despite the `system:`
+  key prefix, matching the prior hardcoded catalog exactly (no grouping regression).
+- **`RolePermissionSeeder` → `RoleGrantSeeder`** (renamed, rewritten) - grants the seeded
+  Root/Admin/User system Roles their permissions as `PermissionGrant` rows
+  (`ProviderName = Role, ProviderKey = role.Id`) instead of `role.AssignPermission(...)`. Same
+  mapping, same idempotency check (now `PermissionGrants.AnyAsync()`), same
+  `TenantId == Guid.Empty` seeding scope.
+- **Global vs tenant-scoped - unchanged from Phase 3's decision.** `Role`/`PermissionDefinition`/
+  `PermissionGroup` still have no `TenantId` - one shared, platform-wide catalog.
+  `PermissionGrant`/`PositionRole`/`AccountPosition` are the tenant-scoped layer, exactly as
+  `RolePermission` was before it. Nothing about this phase changes that split.
+- **Position - audited, intentionally unchanged.** `Position → PositionRole → Role` is untouched;
+  Position still does not receive direct `PermissionGrant`s (`ProviderName` has no `Position`
+  value). **Position has no hierarchy today** - no `ParentPositionId`, no recursion, no CRUD API
+  (confirmed by re-reading `Position.cs`/`AccountPosition.cs` - flat, single-level - and this
+  doc's own Phase 3 note: "Position management API... audited, no gap found, no new endpoints
+  built"). A recursive Position hierarchy with a delegation-containment constraint ("a parent can
+  only delegate authorization it itself possesses") is a real future authorization milestone, not
+  something this phase preserved or built - noted here so it isn't rediscovered as a surprise.
+- **Migration**: full history reset (all 4 prior migrations + snapshot deleted, one fresh
+  `InitialCreate` regenerated from the new model) - same approach as the 2026-08-05 reset, since the
+  app is still pre-production. `role_permissions` is gone; `permission_grants` exists with its two
+  indexes; `roles` carries `provider_name`/`provider_key`; `permission_definitions` carries
+  `status`. Verified end-to-end against a real local Postgres: dropped the stale pre-refactor
+  `auth_db` (no migration-history table, so `dotnet ef database update` couldn't tell it wasn't
+  empty), ran `Auth.DbMigrator` against the now-truly-empty database (migration + full seed chain
+  succeeded), then ran it a second time to confirm every seeder's idempotency check holds
+  (`"No pending migrations"`, every seeder logged success with zero duplicate inserts).
+- **Tests**: new `tests/unit/Auth.Domain.Tests` project (`RoleTests`, `PermissionGrantTests` -
+  `Create` validation, provider-flag rejection). `BuildingBlock.SharedKernel.Tests` gained
+  `Authorization/PermissionProviderNameTests` and `Authorization/PermissionRegistryTests`
+  (`ToName`/`ParseName` round-trip, `Discover` attribute-reflection behavior including duplicate-key
+  detection via a private fixture catalog, and `PermissionRegistry.Instance` sanity checks against
+  the real `Permissions.cs`). `Auth.Application.Tests` gained
+  `UpdateRolePermissionsHandlerTests` (tenantId threading, outbox-enqueue-only-when-changed,
+  skip-when-no-accounts-affected). `PermissionGrantService`/`EffectivePermissionReadService`
+  themselves are not unit-tested in isolation - no existing pattern in this repo tests an
+  `AuthDbContext`-backed Persistence Service without a real database, and building one was judged
+  out of scope for this foundation milestone; their correctness is instead covered by the live
+  DbMigrator verification above (which exercises `RoleGrantSeeder` → `PermissionGrant` creation end
+  to end) plus the interface-level handler test.
+- **Deliberately deferred / out of scope**: Client/Guest/ServiceAccount provider workflows and UI,
+  any Position management API, Position hierarchy/delegation-containment (see above), `AccountRole`
+  merged into `PermissionGrant` (kept as-is - it's the existing direct User↔Role join, unrelated to
+  the grant-centralization problem this phase solves), and the still-unwired `AccountPermission`
+  cache (`Account.RefreshPermissionSnapshot` remains dead code, unchanged by this phase).
+- **Incidental fix, unrelated to this phase's scope**: `Auth.Persistence/Engine/
+  AuthDbContextFactory.cs`'s hardcoded design-time connection password (`postgres`) no longer
+  matched the actual local Postgres password (`local-dev-postgres-password`, per
+  `Auth.DbMigrator/appsettings.json`) - `dotnet ef database drop`/`migrations add` failed
+  authentication until corrected. Fixed as part of this phase's own empty-database verification
+  requirement, not a deliberate scope addition.
+
 ## Known state
 
 - Mapster is registered but unused — hand-mapping is the actual convention (see [04-coding-rules.md](../04-coding-rules.md#mapping)).

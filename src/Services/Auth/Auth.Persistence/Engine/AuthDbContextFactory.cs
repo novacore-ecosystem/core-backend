@@ -19,7 +19,7 @@ public sealed class AuthDbContextFactory : IDesignTimeDbContextFactory<AuthDbCon
     public AuthDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<AuthDbContext>();
-        optionsBuilder.UseNpgsql("Server=localhost;Port=5432;Database=auth_db;User Id=postgres;Password=postgres;");
+        optionsBuilder.UseNpgsql("Server=localhost;Port=5432;Database=auth_db;User Id=postgres;Password=local-dev-postgres-password;");
         optionsBuilder.UseSnakeCaseNamingConvention();
 
         return new AuthDbContext(optionsBuilder.Options);

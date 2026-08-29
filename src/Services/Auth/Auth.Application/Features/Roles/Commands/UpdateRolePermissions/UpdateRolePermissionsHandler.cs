@@ -33,7 +33,7 @@ public sealed class UpdateRolePermissionsHandler(
         // is safe to resolve before the mutation below.
         var affectedAccountIds = await effectivePermissionReadService.GetAccountIdsForRoleAsync(request.RoleId, tenantId, ct);
 
-        var result = await roleWriteService.UpdatePermissionsAsync(request.RoleId, request.PermissionKeys, ct);
+        var result = await roleWriteService.UpdatePermissionsAsync(request.RoleId, request.PermissionKeys, tenantId, ct);
 
         if (!result.HasChanges || affectedAccountIds.Count == 0)
             return;

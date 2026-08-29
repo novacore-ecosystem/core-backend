@@ -1125,6 +1125,12 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("permission_group_id");
 
+                    b.Property<short>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)0)
+                        .HasColumnName("status");
+
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -1194,6 +1200,70 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                         .HasName("pk_permission_definition_translations");
 
                     b.ToTable("permission_definition_translations", (string)null);
+                });
+
+            modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Permissions.PermissionGrant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("PermissionDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("permission_definition_id");
+
+                    b.Property<string>("ProviderKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("provider_key");
+
+                    b.Property<string>("ProviderName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("provider_name");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_permission_grants");
+
+                    b.HasIndex("PermissionDefinitionId")
+                        .HasDatabaseName("ix_permission_grants_permission_definition_id");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_permission_grants_tenant_id");
+
+                    b.HasIndex("TenantId", "ProviderName", "ProviderKey")
+                        .HasDatabaseName("ix_permission_grants_tenant_id_provider_name_provider_key");
+
+                    b.HasIndex("TenantId", "PermissionDefinitionId", "ProviderName", "ProviderKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_permission_grants_tenant_id_permission_definition_id_provid");
+
+                    b.ToTable("permission_grants", (string)null);
                 });
 
             modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Permissions.PermissionGroup", b =>
@@ -1501,6 +1571,17 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("normalized_name");
 
+                    b.Property<string>("ProviderKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("provider_key");
+
+                    b.Property<string>("ProviderName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("provider_name");
+
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -1524,51 +1605,10 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                         .IsUnique()
                         .HasDatabaseName("RoleNameIndex");
 
+                    b.HasIndex("ProviderName", "ProviderKey")
+                        .HasDatabaseName("ix_roles_provider_name_provider_key");
+
                     b.ToTable("roles", (string)null);
-                });
-
-            modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Roles.RolePermission", b =>
-                {
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("role_id");
-
-                    b.Property<Guid>("PermissionDefinitionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("permission_definition_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("RoleId", "PermissionDefinitionId")
-                        .HasName("pk_role_permissions");
-
-                    b.HasIndex("PermissionDefinitionId")
-                        .HasDatabaseName("ix_role_permissions_permission_definition_id");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("ix_role_permissions_tenant_id");
-
-                    b.ToTable("role_permissions", (string)null);
                 });
 
             modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Roles.RoleTranslation", b =>
@@ -2504,6 +2544,18 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                     b.Navigation("PermissionDefinition");
                 });
 
+            modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Permissions.PermissionGrant", b =>
+                {
+                    b.HasOne("NovaCore.Auth.Domain.Entities.Permissions.PermissionDefinition", "PermissionDefinition")
+                        .WithMany("Grants")
+                        .HasForeignKey("PermissionDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_permission_grants_permission_definitions_permission_definit");
+
+                    b.Navigation("PermissionDefinition");
+                });
+
             modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Permissions.PermissionGroupTranslation", b =>
                 {
                     b.HasOne("NovaCore.Auth.Domain.Entities.Permissions.PermissionGroup", "PermissionGroup")
@@ -2547,27 +2599,6 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                         .HasConstraintName("fk_position_translations_positions_id");
 
                     b.Navigation("Position");
-                });
-
-            modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Roles.RolePermission", b =>
-                {
-                    b.HasOne("NovaCore.Auth.Domain.Entities.Permissions.PermissionDefinition", "PermissionDefinition")
-                        .WithMany("RolePermissions")
-                        .HasForeignKey("PermissionDefinitionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_role_permissions_permission_definitions_permission_definiti");
-
-                    b.HasOne("NovaCore.Auth.Domain.Entities.Roles.Role", "Role")
-                        .WithMany("Permissions")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_role_permissions_roles_role_id");
-
-                    b.Navigation("PermissionDefinition");
-
-                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Roles.RoleTranslation", b =>
@@ -2663,7 +2694,7 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
 
             modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Permissions.PermissionDefinition", b =>
                 {
-                    b.Navigation("RolePermissions");
+                    b.Navigation("Grants");
 
                     b.Navigation("Translations");
                 });
@@ -2684,8 +2715,6 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
 
             modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Roles.Role", b =>
                 {
-                    b.Navigation("Permissions");
-
                     b.Navigation("Translations");
 
                     b.Navigation("UserRoles");
