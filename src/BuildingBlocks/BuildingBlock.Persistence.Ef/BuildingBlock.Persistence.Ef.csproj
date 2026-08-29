@@ -19,8 +19,12 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Npgsql" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="EFCore.NamingConventions" />
+    <!-- Overridden above the 10.0.0 central pin: EntityFrameworkCore 10.0.1 (already used here)
+         floors Microsoft.Extensions.Caching.Memory at 10.0.1, which floors this at 10.0.1 too. -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="10.0.1" />
     <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>
 

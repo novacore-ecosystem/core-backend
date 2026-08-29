@@ -1,66 +1,30 @@
-using System.Text.RegularExpressions;
-
 using NovaCore.Inventory.Persistence;
 using NovaCore.Inventory.Persistence.Engine;
 using NovaCore.Inventory.Persistence.Storage.Seeders;
+
+using NovaCore.BuildingBlock.Persistence.Ef.Provisioning;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using Npgsql;
-
 var environmentName = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
-
-// SetBasePath anchors resolution to the executable's own directory rather than the process's
-// current working directory, which Docker's WORKDIR/ENTRYPOINT combination doesn't guarantee.
-// AddEnvironmentVariables maps ConnectionStrings__DefaultConnection / ConnectionStrings__Hangfire
-// (Docker/Vault double underscore convention) onto the matching ConnectionStrings:* keys AddJsonFile
-// uses, and is added last so it wins over both JSON files.
-var configuration = new ConfigurationBuilder()
-    .SetBasePath(AppContext.BaseDirectory)
-    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-    .AddJsonFile($"appsettings.{environmentName}.json", optional: true, reloadOnChange: false)
-    .AddEnvironmentVariables()
-    .Build();
+var configuration = BuildConfiguration(environmentName);
 
 var services = new ServiceCollection();
-
-services.AddLogging(logging => logging
-    .AddConsole()
-    .SetMinimumLevel(LogLevel.Information));
-
-// AddPersistence registers InventoryDbContext (Npgsql + snake_case naming) plus outbox/inbox and
-// repositories - the same wiring Inventory.API used to do inline.
+services.AddLogging(logging => logging.AddConsole().SetMinimumLevel(LogLevel.Information));
 services.AddPersistence(configuration);
 
 await using var provider = services.BuildServiceProvider();
-
 var logger = provider.GetRequiredService<ILogger<Program>>();
 
 try
 {
     logger.LogInformation("[INFO] Inventory.DbMigrator starting (environment: {Environment})", environmentName);
 
-    logger.LogInformation("[INFO] Migrating Main DB...");
-    await using (var scope = provider.CreateAsyncScope())
-    {
-        var dbContext = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
-        await dbContext.Database.MigrateAsync();
-
-        // InventorySeeder isn't DI-registered elsewhere (Inventory.API never seeded); it only
-        // depends on InventoryDbContext, so it's constructed directly rather than adding a
-        // registration just for this.
-        await new InventorySeeder(dbContext).SeedAsync();
-    }
-    logger.LogInformation("[SUCCESS] Main DB migrated and seeded");
-
-    logger.LogInformation("[INFO] Checking Hangfire DB...");
-    var hangfireConnectionString = configuration.GetConnectionString("Hangfire")
-        ?? throw new InvalidOperationException("ConnectionStrings:Hangfire was not configured.");
-    await EnsureHangfireDatabaseExistsAsync(hangfireConnectionString, logger);
-    logger.LogInformation("[SUCCESS] Hangfire DB ready");
+    await MigrateAndSeedMainDatabaseAsync(provider, logger);
+    await ProvisionHangfireDatabaseAsync(configuration, logger);
 
     logger.LogInformation("[SUCCESS] Inventory.DbMigrator completed successfully");
     return 0;
@@ -71,53 +35,37 @@ catch (Exception ex)
     return 1;
 }
 
-// Hangfire.PostgreSql provisions its own tables/schema on first use but never creates the target
-// database itself - on a first-time deployment the API crashes at startup because
-// inventory_hangfire_db doesn't exist yet. CREATE DATABASE can't run against the database being
-// created, so this connects to the server's always-present 'postgres' maintenance database to
-// check/create the real target.
-static async Task EnsureHangfireDatabaseExistsAsync(string hangfireConnectionString, ILogger logger)
+// Builds configuration from appsettings.json, an environment-specific override, and environment
+// variables (Docker/Vault double-underscore convention), in that precedence order.
+static IConfiguration BuildConfiguration(string environmentName) =>
+    new ConfigurationBuilder()
+        .SetBasePath(AppContext.BaseDirectory)
+        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+        .AddJsonFile($"appsettings.{environmentName}.json", optional: true, reloadOnChange: false)
+        .AddEnvironmentVariables()
+        .Build();
+
+// Applies pending EF Core migrations, then runs InventorySeeder against the main application database.
+static async Task MigrateAndSeedMainDatabaseAsync(IServiceProvider provider, ILogger logger)
 {
-    var targetBuilder = new NpgsqlConnectionStringBuilder(hangfireConnectionString);
-    var databaseName = targetBuilder.Database;
+    logger.LogInformation("[INFO] Migrating Main DB...");
 
-    if (string.IsNullOrWhiteSpace(databaseName))
-    {
-        throw new InvalidOperationException("ConnectionStrings:Hangfire has no Database specified.");
-    }
+    await using var scope = provider.CreateAsyncScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
+    await dbContext.Database.MigrateAsync();
+    await new InventorySeeder(dbContext).SeedAsync();
 
-    // CREATE DATABASE can't be parameterized, so the identifier is validated here and quoted
-    // below to guard against injection from a malformed connection string.
-    if (!Regex.IsMatch(databaseName, "^[a-zA-Z_][a-zA-Z0-9_]*$"))
-    {
-        throw new InvalidOperationException(
-            $"Hangfire database name '{databaseName}' is not a safe identifier.");
-    }
+    logger.LogInformation("[SUCCESS] Main DB migrated and seeded");
+}
 
-    var maintenanceBuilder = new NpgsqlConnectionStringBuilder(hangfireConnectionString)
-    {
-        Database = "postgres"
-    };
+// Provisions the Hangfire storage database if it doesn't already exist.
+static async Task ProvisionHangfireDatabaseAsync(IConfiguration configuration, ILogger logger)
+{
+    logger.LogInformation("[INFO] Checking Hangfire DB...");
 
-    await using var connection = new NpgsqlConnection(maintenanceBuilder.ConnectionString);
-    await connection.OpenAsync();
+    var hangfireConnectionString = configuration.GetConnectionString("Hangfire")
+        ?? throw new InvalidOperationException("ConnectionStrings:Hangfire was not configured.");
+    await DatabaseProvisioner.EnsureDatabaseExistsAsync(hangfireConnectionString, logger);
 
-    await using (var existsCommand = new NpgsqlCommand(
-        "SELECT 1 FROM pg_database WHERE datname = @name", connection))
-    {
-        existsCommand.Parameters.AddWithValue("name", databaseName);
-
-        if (await existsCommand.ExecuteScalarAsync() is not null)
-        {
-            logger.LogInformation("[INFO] Hangfire database '{Database}' already exists", databaseName);
-            return;
-        }
-    }
-
-    logger.LogInformation("[INFO] Hangfire database '{Database}' not found, creating...", databaseName);
-
-    await using var createCommand = new NpgsqlCommand($"CREATE DATABASE \"{databaseName}\"", connection);
-    await createCommand.ExecuteNonQueryAsync();
-
-    logger.LogInformation("[INFO] Hangfire database '{Database}' created", databaseName);
+    logger.LogInformation("[SUCCESS] Hangfire DB ready");
 }
