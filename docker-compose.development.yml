@@ -1,4 +1,8 @@
 x-dotnet-defaults: &dotnet-defaults
+  # host-gateway lets containers reach Vault (and anything else) running natively on the
+  # Ubuntu host - host.docker.internal only auto-resolves on Docker Desktop, not native Engine.
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
   deploy:
     resources:
       limits:

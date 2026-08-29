@@ -9,10 +9,6 @@
       "path": "../../docs"
     },
     {
-      "name": "gateways",
-      "path": "../../src/ApiGateways"
-    },
-    {
       "name": "shared",
       "path": "../../src/BuildingBlocks"
     },
@@ -21,8 +17,16 @@
       "path": "../../src/Services/Content"
     },
     {
-      "name": "tests",
-      "path": "../../tests"
+      "name": "tests: Content.Application",
+      "path": "../../tests/unit/Content.Application.Tests"
+    },
+    {
+      "name": "tests: Content.Domain",
+      "path": "../../tests/unit/Content.Domain.Tests"
+    },
+    {
+      "name": "tests: TestKit",
+      "path": "../../tests/unit/Common/NovaCore.TestKit"
     }
   ],
   "settings": {
@@ -54,5 +58,63 @@
       "**/.next": true,
       "**/coverage": true
     }
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Docker: Content API",
+        "type": "coreclr",
+        "request": "attach",
+        "processName": "dotnet",
+        "justMyCode": false,
+        "pipeTransport": {
+          "pipeCwd": "${workspaceFolder:scripts}/../..",
+          "pipeProgram": "docker",
+          "pipeArgs": [
+            "compose",
+            "-f",
+            "docker-compose.development.yml",
+            "exec",
+            "-i",
+            "content-api"
+          ],
+          "debuggerPath": "/vsdbg/vsdbg",
+          "quoteArgs": false
+        },
+        "sourceFileMap": {
+          "/app/src/Services/Content": "${workspaceFolder:service}",
+          "/app/src/BuildingBlocks": "${workspaceFolder:shared}"
+        },
+        "preLaunchTask": "compose-up: content-api (wait)"
+      }
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "compose-up: content-api (wait)",
+        "type": "shell",
+        "command": "docker",
+        "args": [
+          "compose",
+          "-f",
+          "docker-compose.development.yml",
+          "up",
+          "-d",
+          "--wait",
+          "content-api"
+        ],
+        "options": {
+          "cwd": "${workspaceFolder:scripts}/../.."
+        },
+        "problemMatcher": [],
+        "presentation": {
+          "reveal": "silent",
+          "panel": "shared"
+        }
+      }
+    ]
   }
 }

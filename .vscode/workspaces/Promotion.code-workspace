@@ -9,20 +9,12 @@
       "path": "../../docs"
     },
     {
-      "name": "gateways",
-      "path": "../../src/ApiGateways"
-    },
-    {
       "name": "shared",
       "path": "../../src/BuildingBlocks"
     },
     {
       "name": "service",
       "path": "../../src/Services/Promotion"
-    },
-    {
-      "name": "tests",
-      "path": "../../tests"
     }
   ],
   "settings": {
@@ -54,5 +46,63 @@
       "**/.next": true,
       "**/coverage": true
     }
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Docker: Promotion API",
+        "type": "coreclr",
+        "request": "attach",
+        "processName": "dotnet",
+        "justMyCode": false,
+        "pipeTransport": {
+          "pipeCwd": "${workspaceFolder:scripts}/../..",
+          "pipeProgram": "docker",
+          "pipeArgs": [
+            "compose",
+            "-f",
+            "docker-compose.development.yml",
+            "exec",
+            "-i",
+            "promotion-api"
+          ],
+          "debuggerPath": "/vsdbg/vsdbg",
+          "quoteArgs": false
+        },
+        "sourceFileMap": {
+          "/app/src/Services/Promotion": "${workspaceFolder:service}",
+          "/app/src/BuildingBlocks": "${workspaceFolder:shared}"
+        },
+        "preLaunchTask": "compose-up: promotion-api (wait)"
+      }
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "compose-up: promotion-api (wait)",
+        "type": "shell",
+        "command": "docker",
+        "args": [
+          "compose",
+          "-f",
+          "docker-compose.development.yml",
+          "up",
+          "-d",
+          "--wait",
+          "promotion-api"
+        ],
+        "options": {
+          "cwd": "${workspaceFolder:scripts}/../.."
+        },
+        "problemMatcher": [],
+        "presentation": {
+          "reveal": "silent",
+          "panel": "shared"
+        }
+      }
+    ]
   }
 }

@@ -9,10 +9,6 @@
       "path": "../../docs"
     },
     {
-      "name": "gateways",
-      "path": "../../src/ApiGateways"
-    },
-    {
       "name": "shared",
       "path": "../../src/BuildingBlocks"
     },
@@ -21,8 +17,12 @@
       "path": "../../src/Services/Product"
     },
     {
-      "name": "tests",
-      "path": "../../tests"
+      "name": "tests: Product.Domain",
+      "path": "../../tests/unit/Product.Domain.Tests"
+    },
+    {
+      "name": "tests: TestKit",
+      "path": "../../tests/unit/Common/NovaCore.TestKit"
     }
   ],
   "settings": {
@@ -54,5 +54,63 @@
       "**/.next": true,
       "**/coverage": true
     }
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Docker: Product API",
+        "type": "coreclr",
+        "request": "attach",
+        "processName": "dotnet",
+        "justMyCode": false,
+        "pipeTransport": {
+          "pipeCwd": "${workspaceFolder:scripts}/../..",
+          "pipeProgram": "docker",
+          "pipeArgs": [
+            "compose",
+            "-f",
+            "docker-compose.development.yml",
+            "exec",
+            "-i",
+            "product-api"
+          ],
+          "debuggerPath": "/vsdbg/vsdbg",
+          "quoteArgs": false
+        },
+        "sourceFileMap": {
+          "/app/src/Services/Product": "${workspaceFolder:service}",
+          "/app/src/BuildingBlocks": "${workspaceFolder:shared}"
+        },
+        "preLaunchTask": "compose-up: product-api (wait)"
+      }
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "compose-up: product-api (wait)",
+        "type": "shell",
+        "command": "docker",
+        "args": [
+          "compose",
+          "-f",
+          "docker-compose.development.yml",
+          "up",
+          "-d",
+          "--wait",
+          "product-api"
+        ],
+        "options": {
+          "cwd": "${workspaceFolder:scripts}/../.."
+        },
+        "problemMatcher": [],
+        "presentation": {
+          "reveal": "silent",
+          "panel": "shared"
+        }
+      }
+    ]
   }
 }
