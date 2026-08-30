@@ -1,4 +1,5 @@
 using NovaCore.Auth.Domain.Entities.Tenants;
+using NovaCore.Auth.Domain.ValueObjects;
 
 namespace NovaCore.Auth.Application.Abstractions.Persistence.Tenants;
 
@@ -9,9 +10,9 @@ public interface ITenantReadService
     /// ExistsByCodeAsync instead.</summary>
     Task<Tenant?> GetByIdAsync(Guid id, CancellationToken ct = default);
 
-    Task<Tenant?> GetByCodeAsync(string code, CancellationToken ct = default);
+    Task<Tenant?> GetByCodeAsync(TenantCode code, CancellationToken ct = default);
 
-    Task<bool> ExistsByCodeAsync(string code, CancellationToken ct = default);
+    Task<bool> ExistsByCodeAsync(TenantCode code, CancellationToken ct = default);
 
     /// <summary>Lean projection (no Locales include) for the version-cache read-through and the
     /// GetTenantVersion gRPC call - both only ever need Version/IsActive, not the full aggregate.</summary>

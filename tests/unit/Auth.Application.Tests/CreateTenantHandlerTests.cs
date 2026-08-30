@@ -5,6 +5,7 @@ using NovaCore.Auth.Application.Features.Tenants.Commands.CreateTenant;
 using NovaCore.Auth.Domain.Entities.Tenants;
 
 using Shouldly;
+using NovaCore.Auth.Domain.ValueObjects;
 
 namespace NovaCore.Auth.Application.Tests;
 
@@ -14,7 +15,8 @@ public sealed class CreateTenantHandlerTests
     public async Task Handle_CreatesTenant_WhenCodeIsUnique()
     {
         var readService = Substitute.For<ITenantReadService>();
-        readService.ExistsByCodeAsync("acme", Arg.Any<CancellationToken>()).Returns(false);
+        var code = TenantCode.Create("acme");
+        readService.ExistsByCodeAsync(code, Arg.Any<CancellationToken>()).Returns(false);
         var writeService = Substitute.For<ITenantWriteService>();
         Tenant? created = null;
         writeService.CreateAsync(Arg.Do<Tenant>(t => created = t), Arg.Any<CancellationToken>())
@@ -36,7 +38,8 @@ public sealed class CreateTenantHandlerTests
     public async Task Handle_ThrowsConflict_WhenCodeAlreadyExists()
     {
         var readService = Substitute.For<ITenantReadService>();
-        readService.ExistsByCodeAsync("acme", Arg.Any<CancellationToken>()).Returns(true);
+        var code = TenantCode.Create("acme");
+        readService.ExistsByCodeAsync(code, Arg.Any<CancellationToken>()).Returns(true);
         var writeService = Substitute.For<ITenantWriteService>();
         var handler = new CreateTenantHandler(readService, writeService);
 

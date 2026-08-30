@@ -1,10 +1,8 @@
 using NovaCore.Auth.Application.Abstractions.Persistence.Tenants;
 using NovaCore.Auth.Domain.Entities.Tenants;
 using NovaCore.Auth.Persistence.Engine;
-
-using Microsoft.EntityFrameworkCore;
-
 using NovaCore.BuildingBlock.Persistence;
+using NovaCore.Auth.Domain.ValueObjects;
 
 namespace NovaCore.Auth.Persistence.Contexts.Tenants.Read;
 
@@ -29,18 +27,18 @@ public sealed class TenantReadService(AuthDbContext dbContext) : ITenantReadServ
         return result is null ? null : (result.Version, result.IsActive);
     }
 
-    public async Task<Tenant?> GetByCodeAsync(string code, CancellationToken ct = default)
+    public async Task<Tenant?> GetByCodeAsync(TenantCode code, CancellationToken ct = default)
     {
         return await dbContext.Tenants
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Code.Value == code, ct);
+            .FirstOrDefaultAsync(t => t.Code.Equals(code), ct);
     }
 
-    public async Task<bool> ExistsByCodeAsync(string code, CancellationToken ct = default)
+    public async Task<bool> ExistsByCodeAsync(TenantCode code, CancellationToken ct = default)
     {
         return await dbContext.Tenants
             .AsNoTracking()
-            .AnyAsync(t => t.Code.Value == code, ct);
+            .AnyAsync(t => t.Code.Equals(code), ct);
     }
 
     public async Task<(IReadOnlyList<Tenant> Items, int TotalCount)> SearchAsync(

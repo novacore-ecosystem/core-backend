@@ -14,7 +14,7 @@ public sealed class CreateTenantHandler(
     {
         var code = TenantCode.Create(request.Code);
 
-        if (await tenantReadService.ExistsByCodeAsync(code.Value, ct))
+        if (await tenantReadService.ExistsByCodeAsync(code, ct))
             throw new ConflictException($"Tenant with code ({code.Value}) already exists.");
 
         var tenant = Tenant.Create(code, request.Name, request.LogoUrl, request.FaviconUrl);
