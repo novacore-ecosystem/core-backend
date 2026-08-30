@@ -2,11 +2,10 @@ using NovaCore.Auth.Application.Abstractions.Persistence.Tenants;
 using NovaCore.Auth.Domain.Entities.Tenants;
 using NovaCore.Auth.Domain.ValueObjects;
 
-using NovaCore.BuildingBlock.Application.Exceptions;
-
 namespace NovaCore.Auth.Application.Features.Tenants.Commands.CreateTenant;
 
 public sealed class CreateTenantHandler(
+    IUnitOfWork unitOfWork,
     ITenantReadService tenantReadService,
     ITenantWriteService tenantWriteService) : ICommandHandler<CreateTenantCommand, Guid>
 {
@@ -17,9 +16,17 @@ public sealed class CreateTenantHandler(
         if (await tenantReadService.ExistsByCodeAsync(code, ct))
             throw new ConflictException($"Tenant with code ({code.Value}) already exists.");
 
-        var tenant = Tenant.Create(code, request.Name, request.LogoUrl, request.FaviconUrl);
-        await tenantWriteService.CreateAsync(tenant, ct);
+        Tenant newTenant = null!;
+        await unitOfWork.ExecuteTransactionAsync(async () =>
+        {
+            newTenant = Tenant.Create(
+                code,
+                request.Name,
+                request.LogoUrl,
+                request.FaviconUrl);
+            await tenantWriteService.CreateAsync(newTenant, ct);
+        }, ct: ct);
 
-        return tenant.Id;
+        return newTenant.Id;
     }
 }

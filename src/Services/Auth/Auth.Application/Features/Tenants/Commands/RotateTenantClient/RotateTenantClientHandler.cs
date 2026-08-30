@@ -5,10 +5,6 @@ using NovaCore.Auth.Domain.Enums;
 
 namespace NovaCore.Auth.Application.Features.Tenants.Commands.RotateTenantClient;
 
-/// <summary>Does not bump Tenant.Version - rotation changes which client key resolves to this
-/// tenant, not the bootstrap content served once resolved (see docs/services/auth-service.md,
-/// "Versioning"). A client still holding the revoked key simply fails to resolve a tenant on its
-/// next request; that is a distinct problem from "reload, the content changed".</summary>
 public sealed class RotateTenantClientHandler(
     ITenantReadService tenantReadService,
     ITenantClientReadService tenantClientReadService,
@@ -32,10 +28,15 @@ public sealed class RotateTenantClientHandler(
         await unitOfWork.ExecuteTransactionAsync(async () =>
         {
             foreach (var client in activeClients)
-                await tenantClientWriteService.UpdateAsync(client.Id, c => c.Revoke(RevocationReason.Superseded), ct);
+                await tenantClientWriteService.UpdateAsync(
+                    client.Id,
+                    c => c.Revoke(RevocationReason.Superseded),
+                    ct);
 
-            newClient = TenantClient.Create(request.TenantId, name);
-            await tenantClientWriteService.CreateAsync(newClient, ct);
+            newClient = await tenantClientWriteService.CreateAsync(
+                request.TenantId,
+                name,
+                ct);
         }, ct: ct);
 
         return new TenantClientRotationResponse(newClient.Id, newClient.PublicKey.Value, newClient.ExpiresAt);

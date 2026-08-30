@@ -14,6 +14,7 @@ public sealed class CreateTenantHandlerTests
     [Fact]
     public async Task Handle_CreatesTenant_WhenCodeIsUnique()
     {
+        var unitOfWork = Substitute.For<IUnitOfWork>();
         var readService = Substitute.For<ITenantReadService>();
         var code = TenantCode.Create("acme");
         readService.ExistsByCodeAsync(code, Arg.Any<CancellationToken>()).Returns(false);
@@ -22,7 +23,7 @@ public sealed class CreateTenantHandlerTests
         writeService.CreateAsync(Arg.Do<Tenant>(t => created = t), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        var handler = new CreateTenantHandler(readService, writeService);
+        var handler = new CreateTenantHandler(unitOfWork, readService, writeService);
 
         var id = await handler.Handle(new CreateTenantCommand("acme", "Acme Corp", null, null));
 
@@ -37,11 +38,12 @@ public sealed class CreateTenantHandlerTests
     [Fact]
     public async Task Handle_ThrowsConflict_WhenCodeAlreadyExists()
     {
+        var unitOfWork = Substitute.For<IUnitOfWork>();
         var readService = Substitute.For<ITenantReadService>();
         var code = TenantCode.Create("acme");
         readService.ExistsByCodeAsync(code, Arg.Any<CancellationToken>()).Returns(true);
         var writeService = Substitute.For<ITenantWriteService>();
-        var handler = new CreateTenantHandler(readService, writeService);
+        var handler = new CreateTenantHandler(unitOfWork, readService, writeService);
 
         await Should.ThrowAsync<ConflictException>(
             () => handler.Handle(new CreateTenantCommand("acme", "Acme Corp", null, null)));

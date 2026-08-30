@@ -11,10 +11,14 @@ public sealed class TenantClientWriteService(
     ITenantClientRepository repo,
     IUnitOfWork unitOfWork) : ITenantClientWriteService, IPersistenceService
 {
-    public async Task CreateAsync(TenantClient tenantClient, CancellationToken ct = default)
+    public async Task<TenantClient> CreateAsync(
+        Guid tenantId,
+        string name,
+        CancellationToken ct = default)
     {
-        await repo.AddAsync(tenantClient, ct);
-        await unitOfWork.SaveChangesAsync(ct);
+        var client = TenantClient.Create(tenantId, name);
+        await repo.AddAsync(client, ct);
+        return client;
     }
 
     public async Task UpdateAsync(Guid id, Action<TenantClient> update, CancellationToken ct = default)
