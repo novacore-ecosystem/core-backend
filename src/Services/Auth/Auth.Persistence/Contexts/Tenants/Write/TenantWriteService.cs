@@ -31,4 +31,12 @@ public sealed class TenantWriteService(
         await repo.UpdateAsync(t => t.Id == id, q => q.Include(t => t.Locales), update, ct);
         await unitOfWork.SaveChangesAsync(ct);
     }
+
+    public async Task SoftDeleteAsync(Guid id, CancellationToken ct = default)
+    {
+        await repo.UpdateAsync(
+            t => t.Id == id,
+            t => t.Delete(),
+            ct);
+    }
 }
