@@ -16,5 +16,7 @@ public interface ITenantWriteService
     /// collection to decide insert-vs-update and an unloaded collection would look empty.</summary>
     Task UpdateWithLocalesAsync(Guid id, Action<Tenant> update, CancellationToken ct = default);
 
+    Task DisableAsync(Guid id, CancellationToken ct = default);
+
     Task SoftDeleteAsync(Guid id, CancellationToken ct = default);
 }

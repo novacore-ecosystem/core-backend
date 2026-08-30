@@ -32,6 +32,14 @@ public sealed class TenantWriteService(
         await unitOfWork.SaveChangesAsync(ct);
     }
 
+    public async Task DisableAsync(Guid id, CancellationToken ct = default)
+    {
+        await repo.UpdateAsync(
+            t => t.Id == id,
+            t => t.Deactivate(),
+            ct);
+    }
+
     public async Task SoftDeleteAsync(Guid id, CancellationToken ct = default)
     {
         await repo.UpdateAsync(
