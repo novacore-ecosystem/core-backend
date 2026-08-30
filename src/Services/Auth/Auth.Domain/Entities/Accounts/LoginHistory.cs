@@ -1,10 +1,5 @@
 namespace NovaCore.Auth.Domain.Entities.Accounts;
 
-/// <summary>
-/// Owned child of Account - an append-only record of a single login attempt. No mutation
-/// methods; each attempt is recorded once and never changes afterward. Retention-ready via
-/// AttemptedAt for a future cleanup job.
-/// </summary>
 public sealed class LoginHistory : BaseEntity<Guid>, ITenantEntity
 {
     public Guid AccountId { get; private set; }

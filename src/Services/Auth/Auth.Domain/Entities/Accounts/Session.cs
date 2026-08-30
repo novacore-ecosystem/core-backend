@@ -1,10 +1,5 @@
 namespace NovaCore.Auth.Domain.Entities.Accounts;
 
-/// <summary>
-/// Owned child of Account - a logged-in session spanning one or more RefreshToken rotations.
-/// Retention-ready: ExpiresAt/Status are queryable by a future cleanup job without any
-/// implementation here.
-/// </summary>
 public sealed class Session : BaseEntity<Guid>, ITenantEntity
 {
     public Guid AccountId { get; private set; }

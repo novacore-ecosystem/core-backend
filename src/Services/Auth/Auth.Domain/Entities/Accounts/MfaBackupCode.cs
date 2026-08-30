@@ -1,9 +1,5 @@
 namespace NovaCore.Auth.Domain.Entities.Accounts;
 
-/// <summary>
-/// Owned child of MfaMethod - a single one-time backup code.
-/// Consumed exactly once.
-/// </summary>
 public sealed class MfaBackupCode : BaseEntity<Guid>, ITenantEntity
 {
     public Guid MfaMethodId { get; private set; }
@@ -22,7 +18,9 @@ public sealed class MfaBackupCode : BaseEntity<Guid>, ITenantEntity
 
     private MfaBackupCode() { }
 
-    public static MfaBackupCode Create(Guid mfaMethodId, string codeHash)
+    public static MfaBackupCode Create(
+        Guid mfaMethodId,
+        string codeHash)
     {
         return new MfaBackupCode
         {

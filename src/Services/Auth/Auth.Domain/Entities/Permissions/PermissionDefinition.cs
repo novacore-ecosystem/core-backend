@@ -1,15 +1,7 @@
-using NovaCore.Auth.Domain.Entities.Roles;
 using NovaCore.BuildingBlock.Domain.ValueObjects;
 
 namespace NovaCore.Auth.Domain.Entities.Permissions;
 
-/// <summary>
-/// Catalog entry for a single permission key the platform recognizes (e.g. "product:create").
-/// Grants reference this via PermissionGrant; the Key is the literal string that ends up in JWT
-/// claims and is checked by every service's [Authorize(Policy = ...)]. Status is a definition-
-/// lifecycle concern only (Active/Deprecated/Disabled) - it does not affect any existing
-/// PermissionGrant referencing this key, see Deprecate/Disable below.
-/// </summary>
 public sealed class PermissionDefinition : AggregateRoot<Guid>, IAuditable
 {
     public PermissionKey Key { get; private set; } = null!;

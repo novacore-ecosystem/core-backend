@@ -2,11 +2,6 @@ using NovaCore.BuildingBlock.SharedKernel.Extensions;
 
 namespace NovaCore.Auth.Domain.Entities.Accounts;
 
-/// <summary>
-/// Owned child of Account - a recognized physical/browser device. Sessions optionally link
-/// back to the Device they were opened from, and trust status feeds MFA-skip / suspicious-login
-/// decisions at the Application layer.
-/// </summary>
 public sealed class Device : BaseEntity<Guid>, ITenantEntity
 {
     public Guid AccountId { get; private set; }

@@ -2,10 +2,6 @@ using NovaCore.BuildingBlock.SharedKernel.Extensions;
 
 namespace NovaCore.Auth.Domain.Entities.Accounts;
 
-/// <summary>
-/// Owned child of Account - one enrolled second factor (TOTP app, SMS, email, or a backup-code
-/// set). An Account may hold several; IsPrimary marks the one offered first at login.
-/// </summary>
 public sealed class MfaMethod : BaseEntity<Guid>, IAuditable, ITenantEntity
 {
     public Guid AccountId { get; private set; }
@@ -66,7 +62,8 @@ public sealed class MfaMethod : BaseEntity<Guid>, IAuditable, ITenantEntity
 
     #endregion
 
-    public static bool IsValidSecret(string? secret) => secret.IsNotNullOrWhiteSpace();
+    public static bool IsValidSecret(string? secret)
+        => secret.IsNotNullOrWhiteSpace();
 
     private static void ValidateSecret(string secret)
     {

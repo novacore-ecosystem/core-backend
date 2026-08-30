@@ -3,11 +3,6 @@ using NovaCore.BuildingBlock.SharedKernel.Extensions;
 
 namespace NovaCore.Auth.Domain.Entities.Roles;
 
-/// <summary>
-/// Owned child of Role - a locale-specific override of the role's admin-facing display copy.
-/// Id doubles as the owning Role's Id (one row per language, see RoleTranslationConfig for the
-/// composite (Id, LanguageCode) key).
-/// </summary>
 public sealed class RoleTranslation : BaseEntity<Guid>, IAuditable, ITenantEntity
 {
     public Role Role { get; private set; } = default!;
@@ -50,7 +45,8 @@ public sealed class RoleTranslation : BaseEntity<Guid>, IAuditable, ITenantEntit
         Description = description;
     }
 
-    public static bool IsValidDisplayName(string? displayName) => displayName.IsNotNullOrWhiteSpace();
+    public static bool IsValidDisplayName(string? displayName)
+        => displayName.IsNotNullOrWhiteSpace();
 
     private static void ValidateDisplayName(string displayName)
     {

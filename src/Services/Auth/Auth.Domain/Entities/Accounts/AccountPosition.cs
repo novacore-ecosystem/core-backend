@@ -2,14 +2,6 @@ using NovaCore.Auth.Domain.Entities.Positions;
 
 namespace NovaCore.Auth.Domain.Entities.Accounts;
 
-/// <summary>
-/// Owned child of Account recording one grant of an organizational Position - the primary
-/// authorization-assignment path (see Account.AssignPosition). Kept as history: revoking or
-/// expiring a grant transitions Status rather than deleting the row, so a personnel change
-/// (Employee A replaced by Employee B) never loses "who held what, and when." Unlike PositionRole/
-/// RolePermission, this mapping has its own lifecycle (AssignedAt/RevokedAt/Status) and therefore
-/// keeps a surrogate Id, per the many-to-many exception in domain-coding-conventions.md Rule 4.
-/// </summary>
 public sealed class AccountPosition : BaseEntity<Guid>, IAuditable, ITenantEntity
 {
     public Guid AccountId { get; private set; }

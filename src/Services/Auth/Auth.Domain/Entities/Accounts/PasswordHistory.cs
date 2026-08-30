@@ -1,9 +1,5 @@
 namespace NovaCore.Auth.Domain.Entities.Accounts;
 
-/// <summary>
-/// Owned child of Account - an append-only record of a previously used password hash,
-/// consulted to enforce password-reuse policy. No mutation methods.
-/// </summary>
 public sealed class PasswordHistory : BaseEntity<Guid>, ITenantEntity
 {
     public Guid AccountId { get; private set; }
@@ -20,7 +16,9 @@ public sealed class PasswordHistory : BaseEntity<Guid>, ITenantEntity
 
     private PasswordHistory() { }
 
-    internal static PasswordHistory Record(Guid accountId, string passwordHash)
+    internal static PasswordHistory Record(
+        Guid accountId,
+        string passwordHash)
     {
         return new PasswordHistory
         {

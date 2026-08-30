@@ -1,11 +1,5 @@
 namespace NovaCore.Auth.Domain.Entities.TokenBlacklists;
 
-/// <summary>
-/// Access-token jti denylist entry, for revoking a short-lived access token before its natural
-/// expiry (e.g. forced logout, compromised token) - distinct from RefreshToken.IsRevoked, which only
-/// stops future refreshes. ExpiresAt mirrors the token's original expiry; retention-ready since an
-/// entry is irrelevant once the token would have expired anyway.
-/// </summary>
 public sealed class TokenBlacklist : BaseEntity<Guid>, ITenantEntity
 {
     public Guid Jti { get; private set; }

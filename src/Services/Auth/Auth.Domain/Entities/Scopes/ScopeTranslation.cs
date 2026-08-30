@@ -1,13 +1,8 @@
 using NovaCore.BuildingBlock.Domain.ValueObjects;
+using NovaCore.BuildingBlock.SharedKernel.Extensions;
 
 namespace NovaCore.Auth.Domain.Entities.Scopes;
 
-/// <summary>
-/// Owned child of Scope - a locale-specific override of the scope's display copy. Standard
-/// business translation (unlike TenantLocale's bootstrap data) - follows ProductTranslation's
-/// shape exactly: Id doubles as the owning Scope's Id, one row per language, composite
-/// (Id, LanguageCode) primary key (see ScopeTranslationConfig).
-/// </summary>
 public sealed class ScopeTranslation : BaseEntity<Guid>, IAuditable
 {
     public Scope Scope { get; private set; } = default!;
@@ -42,7 +37,8 @@ public sealed class ScopeTranslation : BaseEntity<Guid>, IAuditable
         Description = description;
     }
 
-    public static bool IsValidName(string? name) => !string.IsNullOrWhiteSpace(name);
+    public static bool IsValidName(string? name)
+        => name.IsNotNullOrWhiteSpace();
 
     private static void ValidateName(string name)
     {

@@ -2,11 +2,6 @@ using NovaCore.BuildingBlock.SharedKernel.Extensions;
 
 namespace NovaCore.Auth.Domain.Entities.Accounts;
 
-/// <summary>
-/// Owned child of Account - one linked external/OAuth provider login. An Account can link
-/// several providers, each with its own lifecycle (link/unlink), so this is a full entity rather
-/// than a value object.
-/// </summary>
 public sealed class ExternalIdentity : BaseEntity<Guid>, IAuditable, ITenantEntity
 {
     public Guid AccountId { get; private set; }
@@ -52,7 +47,8 @@ public sealed class ExternalIdentity : BaseEntity<Guid>, IAuditable, ITenantEnti
 
     #endregion
 
-    public static bool IsValidProviderUserId(string? providerUserId) => providerUserId.IsNotNullOrWhiteSpace();
+    public static bool IsValidProviderUserId(string? providerUserId)
+        => providerUserId.IsNotNullOrWhiteSpace();
 
     private static void ValidateProviderUserId(string providerUserId)
     {

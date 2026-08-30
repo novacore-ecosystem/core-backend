@@ -3,11 +3,6 @@ using NovaCore.BuildingBlock.SharedKernel.Extensions;
 
 namespace NovaCore.Auth.Domain.Entities.Positions;
 
-/// <summary>
-/// Owned child of Position - a locale-specific override of the position's admin-facing
-/// display copy. Id doubles as the owning Position's Id (one row per language, see
-/// PositionTranslationConfig for the composite (Id, LanguageCode) key).
-/// </summary>
 public sealed class PositionTranslation : BaseEntity<Guid>, IAuditable, ITenantEntity
 {
     public Position Position { get; private set; } = default!;
@@ -50,7 +45,8 @@ public sealed class PositionTranslation : BaseEntity<Guid>, IAuditable, ITenantE
         Description = description;
     }
 
-    public static bool IsValidDisplayName(string? displayName) => displayName.IsNotNullOrWhiteSpace();
+    public static bool IsValidDisplayName(string? displayName)
+        => displayName.IsNotNullOrWhiteSpace();
 
     private static void ValidateDisplayName(string displayName)
     {

@@ -2,10 +2,6 @@ using NovaCore.BuildingBlock.Domain.ValueObjects;
 
 namespace NovaCore.Auth.Domain.Entities.Permissions;
 
-/// <summary>
-/// Admin-UI grouping for PermissionDefinitions (e.g. "Product Management", "Order Management").
-/// Purely organizational - carries no authorization weight itself.
-/// </summary>
 public sealed class PermissionGroup : AggregateRoot<Guid>, IAuditable
 {
     public PermissionGroupCode Code { get; private set; } = null!;

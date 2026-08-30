@@ -3,32 +3,6 @@ using NovaCore.BuildingBlock.SharedKernel.Extensions;
 
 namespace NovaCore.Auth.Domain.Entities.TenantClients;
 
-/// <summary>
-/// Independent aggregate root - a public client identity for one Tenant (Web/Mobile/Admin client,
-/// ...), letting an unauthenticated caller resolve which Tenant it belongs to before login:
-/// PublicKey -> TenantClient -> TenantId -> username/password -> access token. Mirrors Scope's
-/// shape (own aggregate, plain TenantId FK, no back-collection on Tenant) rather than being an
-/// owned child of Tenant - client credentials are independently created/rotated/revoked, not
-/// bootstrap data that lives and dies with the tenant record itself.
-///
-/// TenantId is nullable: a null TenantId is the Root client - a global identity not tied to any
-/// Tenant (see docs/services/auth-service.md, Phase 2). Root must use the same PublicKey login
-/// mechanism as tenant clients without being conflated with a real Tenant, so this reuses the one
-/// TenantClient aggregate rather than a sentinel Tenant row or a parallel RootClient type.
-/// IsRootClient below is the readable name for that condition wherever it matters (Login context
-/// resolution, seeding).
-///
-/// Deliberately does NOT implement ITenantEntity. The Entity Convention's query filter compares
-/// TenantId against RequestContext.Current.TenantId, which is Guid.Empty for exactly the
-/// anonymous, pre-authentication requests this aggregate exists to serve (see
-/// docs/reference/tenant-convention.md) - opting in would make every PublicKey lookup return zero
-/// rows, since no real tenant-scoped TenantClient row ever has TenantId == Guid.Empty. TenantId is
-/// still a plain FK, assigned once in Create and never touched by TenantAssignmentInterceptor.
-///
-/// PublicKey is not a secret or an authorization credential - it only answers "which Tenant (or
-/// Root) is this client associated with," never "is this client allowed to do X." Business
-/// authorization stays entirely on the access token issued after username/password authentication.
-/// </summary>
 public sealed class TenantClient : AggregateRoot<Guid>, IAuditable
 {
     public Guid? TenantId { get; private set; }
@@ -44,8 +18,10 @@ public sealed class TenantClient : AggregateRoot<Guid>, IAuditable
 
     private TenantClient() { }
 
-    /// <summary>tenantId null creates the Root client; a non-empty value creates a tenant client.
-    /// Guid.Empty is rejected outright - it is not a valid "no tenant" sentinel here, null is.</summary>
+    /// <summary>
+    /// tenantId null creates the Root client; a non-empty value creates a tenant client.
+    /// Guid.Empty is rejected outright - it is not a valid "no tenant" sentinel here, null is.
+    /// </summary>
     public static TenantClient Create(
         Guid? tenantId,
         string name,
@@ -67,16 +43,20 @@ public sealed class TenantClient : AggregateRoot<Guid>, IAuditable
 
     #region Lifecycle
 
-    /// <summary>Domain-level truth for "can this client still be used to resolve a Tenant" - not
+    /// <summary>
+    /// Domain-level truth for "can this client still be used to resolve a Tenant" - not
     /// enforcement (no Redis/Gateway/cache check here, see docs/services/auth-service.md), just the
     /// invariant a later phase's resolution query relies on. Treats a past ExpiresAt as unusable
     /// even before a cleanup job has flipped Status to Expired, same as Invitation.Accept() checks
-    /// ExpiresAt directly rather than trusting only the stored Status.</summary>
+    /// ExpiresAt directly rather than trusting only the stored Status.
+    /// </summary>
     public bool IsUsable() =>
         Status == TenantClientStatus.Active && (ExpiresAt is null || ExpiresAt > DateTime.UtcNow);
 
-    /// <summary>Idempotent no-op once already Revoked/Expired - key rotation and an admin-forced
-    /// revoke can race harmlessly, same shape as Session.Revoke.</summary>
+    /// <summary>
+    /// Idempotent no-op once already Revoked/Expired - key rotation and an admin-forced
+    /// revoke can race harmlessly, same shape as Session.Revoke.
+    /// </summary>
     public void Revoke(RevocationReason reason)
     {
         if (Status != TenantClientStatus.Active)
@@ -97,7 +77,8 @@ public sealed class TenantClient : AggregateRoot<Guid>, IAuditable
 
     #endregion
 
-    public static bool IsValidName(string? name) => name.IsNotNullOrWhiteSpace();
+    public static bool IsValidName(string? name)
+        => name.IsNotNullOrWhiteSpace();
 
     private static void ValidateName(string name)
     {

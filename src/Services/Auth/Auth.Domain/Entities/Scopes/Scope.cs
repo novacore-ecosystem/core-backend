@@ -5,15 +5,6 @@ using NovaCore.BuildingBlock.SharedKernel.Extensions;
 
 namespace NovaCore.Auth.Domain.Entities.Scopes;
 
-/// <summary>
-/// Business scope inside a Tenant (Branch, Agency, Dealer, Region, ...), organized as a
-/// self-referencing hierarchy via ParentScopeId. Path/Level exist only to simplify hierarchy
-/// management (rendering breadcrumbs, computing depth) - they are not query-filtering
-/// mechanisms, and this aggregate never performs scope/tenant filtering itself (that is a
-/// later phase's concern). Mirrors ProductCategory's shadow-navigation hierarchy shape - no
-/// Domain-level Parent/Children navigation, since detecting a deeper ancestor cycle requires
-/// querying the full scope tree, an Application-layer concern.
-/// </summary>
 public sealed class Scope : AggregateRoot<Guid>, IAuditable, ITenantEntity
 {
     public Guid? ParentScopeId { get; private set; }
@@ -130,10 +121,12 @@ public sealed class Scope : AggregateRoot<Guid>, IAuditable, ITenantEntity
         Metadata = metadata;
     }
 
-    /// <summary>Moves this scope under a new parent (or to root when null), with the
+    /// <summary>
+    /// Moves this scope under a new parent (or to root when null), with the
     /// caller-computed Path/Level for the new position. Only guards against direct
     /// self-parenting - see the class doc comment for why deeper cycle detection is
-    /// out of scope here.</summary>
+    /// out of scope here.
+    /// </summary>
     public void ChangeParent(Guid? parentScopeId, string path, int level)
     {
         if (parentScopeId == Id)

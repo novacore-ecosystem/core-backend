@@ -1,10 +1,5 @@
 namespace NovaCore.Auth.Domain.Entities.Accounts;
 
-/// <summary>
-/// Owned child of Account - a denormalized cache of one effective permission, rebuilt whenever
-/// role assignment changes via Account.RefreshPermissionSnapshot().
-/// Exists so JWT issuance never has to join across Role/PermissionDefinition at login time.
-/// </summary>
 public sealed class AccountPermission : BaseEntity<Guid>, ITenantEntity
 {
     public Guid AccountId { get; private set; }
@@ -23,7 +18,10 @@ public sealed class AccountPermission : BaseEntity<Guid>, ITenantEntity
 
     private AccountPermission() { }
 
-    internal static AccountPermission Create(Guid accountId, PermissionKey permissionKey, Guid sourceRoleId)
+    internal static AccountPermission Create(
+        Guid accountId,
+        PermissionKey permissionKey,
+        Guid sourceRoleId)
     {
         return new AccountPermission
         {

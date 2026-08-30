@@ -3,10 +3,6 @@ using NovaCore.BuildingBlock.SharedKernel.Extensions;
 
 namespace NovaCore.Auth.Domain.Entities.Invitations;
 
-/// <summary>
-/// Aggregate root - an admin-issued invitation for a new Account, pre-assigning the Role it
-/// will receive on acceptance. Not owned by Account since the invitee has no Account yet.
-/// </summary>
 public sealed class Invitation : AggregateRoot<Guid>, IAuditable, ITenantEntity
 {
     public Email Email { get; private set; } = null!;
@@ -80,7 +76,8 @@ public sealed class Invitation : AggregateRoot<Guid>, IAuditable, ITenantEntity
 
     #endregion
 
-    public static bool IsValidToken(string? token) => token.IsNotNullOrWhiteSpace();
+    public static bool IsValidToken(string? token)
+        => token.IsNotNullOrWhiteSpace();
 
     private static void ValidateToken(string token)
     {

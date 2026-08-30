@@ -39,6 +39,9 @@ public sealed class RotateTenantClientHandler(
                 ct);
         }, ct: ct);
 
-        return new TenantClientRotationResponse(newClient.Id, newClient.PublicKey.Value, newClient.ExpiresAt);
+        return new TenantClientRotationResponse(
+            newClient.Id,
+            newClient.PublicKey.Value,
+            newClient.ExpiresAt);
     }
 }

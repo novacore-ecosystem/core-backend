@@ -1,8 +1,5 @@
 namespace NovaCore.Auth.Domain.Entities.Accounts;
 
-/// <summary>
-/// Owned child of Account - a refresh token used to obtain new access tokens.
-/// </summary>
 public sealed class RefreshToken : BaseEntity<Guid>, ITenantEntity
 {
     public Guid AccountId { get; private set; }

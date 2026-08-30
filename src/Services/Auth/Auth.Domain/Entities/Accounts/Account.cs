@@ -7,33 +7,6 @@ using NovaCore.BuildingBlock.Domain.ValueObjects;
 
 namespace NovaCore.Auth.Domain.Entities.Accounts;
 
-/// <summary>
-/// Aggregate root of the Auth service - the JWT-claim authority for the platform. Holds identity
-/// (via ASP.NET Core Identity), authentication state, and ownership of every account-scoped
-/// security concern (positions, roles, permission cache, sessions, devices, MFA, external logins,
-/// password history). Business-domain role/permission management is out of scope - that is
-/// User.Domain's concern; Account only cares about what ends up in the token.
-///
-/// Position is the primary authorization-assignment unit (AssignPosition/RevokePosition) -
-/// administrators grant an organizational responsibility, not a flat list of Roles, so a
-/// personnel change only requires re-pointing the Position. Direct Role assignment
-/// (AssignRole/RemoveRole) still exists for exceptional cases that don't map to any Position
-/// (e.g. a one-off elevated grant), but is not the normal management path.
-///
-/// TenantId (added Phase 2) uses the same Guid.Empty-means-"no tenant" sentinel every other
-/// tenant-owned entity in this codebase uses (Session, RefreshToken, Device, ...) - the seeded
-/// Root account is TenantId == Guid.Empty, not a distinct global/nullable representation.
-/// Deliberately does NOT implement ITenantEntity, unlike those sibling entities: Account is
-/// wrapped end-to-end by ASP.NET Core Identity's UserManager (FindByIdAsync, FindByEmailAsync,
-/// CheckPasswordAsync, ...), which issues its own queries against the Users DbSet with no
-/// awareness of RequestContext. If Account opted into the Entity Convention's automatic query
-/// filter, every one of those UserManager calls would silently start filtering by
-/// RequestContext.Current.TenantId - Guid.Empty for every request today, since no code path emits
-/// the tenant_id claim except Login/Refresh (see JwtTokenGenerator) - which would make every
-/// existing UserManager-based lookup for a real tenant user return nothing. TenantId is instead a
-/// plain, hand-mapped column (see AccountConfig), set once at Create and read explicitly wherever
-/// tenant-scoped lookup is required (see IAccountReadService.GetByEmailAsync).
-/// </summary>
 public sealed class Account : IdentityUser<Guid>, IEntity, IAuditable
 {
     public AccountStatus Status { get; private set; }
@@ -58,8 +31,10 @@ public sealed class Account : IdentityUser<Guid>, IEntity, IAuditable
 
     private Account() { }
 
-    /// <summary>tenantId defaults to Guid.Empty (no tenant - Root/global account), same default
-    /// every existing caller gets unless it deliberately opts into a tenant.</summary>
+    /// <summary>
+    /// tenantId defaults to Guid.Empty (no tenant - Root/global account), same default
+    /// every existing caller gets unless it deliberately opts into a tenant.
+    /// </summary>
     public static Account Create(
         string username,
         Email email,

@@ -4,14 +4,6 @@ using NovaCore.BuildingBlock.SharedKernel.Extensions;
 
 namespace NovaCore.Auth.Domain.Entities.Positions;
 
-/// <summary>
-/// Organizational responsibility (e.g. "Office Manager", "Accounting Staff") - the primary unit
-/// administrators assign to Accounts. A Position bundles the Roles that responsibility carries
-/// (PositionRole), so a personnel change (Employee A replaced by Employee B) is "assign the same
-/// Position" instead of recreating dozens of individual Role/permission assignments. A Position
-/// never grants PermissionDefinitions directly - only through the Roles it aggregates, keeping
-/// Role as the single reusable permission-bundle concept shared across many Positions.
-/// </summary>
 public sealed class Position : AggregateRoot<Guid>, IAuditable, ITenantEntity
 {
     public PositionCode Code { get; private set; } = null!;
@@ -131,7 +123,8 @@ public sealed class Position : AggregateRoot<Guid>, IAuditable, ITenantEntity
         Description = description;
     }
 
-    public static bool IsValidName(string? name) => name.IsNotNullOrWhiteSpace();
+    public static bool IsValidName(string? name)
+        => name.IsNotNullOrWhiteSpace();
 
     private static void ValidateName(string name)
     {

@@ -4,14 +4,6 @@ using NovaCore.BuildingBlock.Domain.ValueObjects;
 
 namespace NovaCore.Auth.Domain.Entities.Tenants;
 
-/// <summary>
-/// Owned child of Tenant - the entire bootstrap resource set (runtime configuration +
-/// translation dictionary) for one locale. A null LanguageCode identifies the fallback
-/// resource, served when no locale-specific row matches. Both payloads are intentionally
-/// schema-less opaque JSON - bootstrap resources are denormalized per-locale blobs, not
-/// structured/queryable columns, so they are stored and validated as raw JSON text rather
-/// than mapped through a strongly-typed metadata bag (see docs/services/auth-service.md).
-/// </summary>
 public sealed class TenantLocale : BaseEntity<Guid>, IAuditable
 {
     public Guid TenantId { get; private set; }

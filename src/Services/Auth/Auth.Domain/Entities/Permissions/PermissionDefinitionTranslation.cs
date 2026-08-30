@@ -3,11 +3,6 @@ using NovaCore.BuildingBlock.SharedKernel.Extensions;
 
 namespace NovaCore.Auth.Domain.Entities.Permissions;
 
-/// <summary>
-/// Owned child of PermissionDefinition - a locale-specific override of the permission's
-/// admin-facing display copy. Id doubles as the owning PermissionDefinition's Id (one row per
-/// language, see PermissionDefinitionTranslationConfig for the composite (Id, LanguageCode) key).
-/// </summary>
 public sealed class PermissionDefinitionTranslation : BaseEntity<Guid>, IAuditable
 {
     public PermissionDefinition PermissionDefinition { get; private set; } = default!;
@@ -42,7 +37,8 @@ public sealed class PermissionDefinitionTranslation : BaseEntity<Guid>, IAuditab
         Description = description;
     }
 
-    public static bool IsValidDisplayName(string? displayName) => displayName.IsNotNullOrWhiteSpace();
+    public static bool IsValidDisplayName(string? displayName)
+        => displayName.IsNotNullOrWhiteSpace();
 
     private static void ValidateDisplayName(string displayName)
     {
