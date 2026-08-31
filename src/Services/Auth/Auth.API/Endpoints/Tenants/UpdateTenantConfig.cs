@@ -1,15 +1,13 @@
 using System.Text.Json;
 
 using NovaCore.Auth.Application.Features.Tenants.Commands.UpdateTenantConfig;
+using NovaCore.BuildingBlock.Domain.ValueObjects;
 
 using NovaCore.BuildingBlock.SharedKernel.Constants;
 using NovaCore.BuildingBlock.Web.Authorization;
 
 namespace NovaCore.Auth.API.Endpoints.Tenants;
 
-/// <summary>Merge-updates one locale's configuration - omit the `language` query parameter to
-/// target the tenant-wide fallback/default configuration (see UpdateTenantConfigCommand).
-/// Unspecified keys are preserved, never a wholesale replace.</summary>
 public sealed class UpdateTenantConfigEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
@@ -21,7 +19,11 @@ public sealed class UpdateTenantConfigEndpoint : ICarterModule
             [FromServices] ISender sender,
             CancellationToken ct = default) =>
         {
-            await sender.Send(new UpdateTenantConfigCommand(id, language, config), ct);
+            var languageCode = language.IsNotNullOrWhiteSpace()
+                ? LanguageCode.Create(language!)
+                : null;
+            var command = new UpdateTenantConfigCommand(id, languageCode, config);
+            await sender.Send(command, ct);
             return ApiResponse<object>.Ok();
         })
         .WithTags("Tenants")

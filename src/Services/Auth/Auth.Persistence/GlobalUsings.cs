@@ -8,6 +8,5 @@ global using Microsoft.EntityFrameworkCore;
 
 global using NovaCore.BuildingBlock.Persistence.Ef.Configurations;
 global using NovaCore.BuildingBlock.SharedKernel.Constants;
-global using NovaCore.BuildingBlock.SharedKernel.Utilities;
 
 global using NovaCore.Auth.Domain.Enums;

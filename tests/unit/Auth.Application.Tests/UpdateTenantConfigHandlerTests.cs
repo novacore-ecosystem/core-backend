@@ -7,8 +7,6 @@ using NovaCore.Auth.Application.Features.Tenants.Commands.UpdateTenantConfig;
 using NovaCore.Auth.Domain.Entities.Tenants;
 using NovaCore.Auth.Domain.ValueObjects;
 
-using NovaCore.TestKit.Fakes;
-
 using Shouldly;
 
 namespace NovaCore.Auth.Application.Tests;
@@ -36,7 +34,7 @@ public sealed class UpdateTenantConfigHandlerTests
                 return true;
             });
 
-        var handler = new UpdateTenantConfigHandler(writeService, uow, Substitute.For<IOutboxStore>(), new FakeCurrentUserService());
+        var handler = new UpdateTenantConfigHandler(uow, writeService, Substitute.For<IOutboxStore>());
         return (tenant, handler);
     }
 

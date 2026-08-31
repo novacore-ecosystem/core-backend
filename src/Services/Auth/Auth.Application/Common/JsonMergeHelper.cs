@@ -8,7 +8,7 @@ namespace NovaCore.Auth.Application.Common;
 /// compute an effective (fallback + language override) view for reads, and to apply a partial
 /// update onto stored JSON without wiping out unrelated keys.
 /// </summary>
-internal static class JsonMergeHelper
+public static class JsonMergeHelper
 {
     public static JsonObject Merge(string baseJson, string? overrideJson)
     {

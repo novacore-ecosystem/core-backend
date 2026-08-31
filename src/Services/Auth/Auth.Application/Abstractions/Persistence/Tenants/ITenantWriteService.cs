@@ -1,4 +1,5 @@
 using NovaCore.Auth.Domain.Entities.Tenants;
+using NovaCore.BuildingBlock.Domain.ValueObjects;
 
 namespace NovaCore.Auth.Application.Abstractions.Persistence.Tenants;
 
@@ -15,6 +16,13 @@ public interface ITenantWriteService
     /// touches SetLocale/RemoveLocale, since Tenant.SetLocale reads the in-memory Locales
     /// collection to decide insert-vs-update and an unloaded collection would look empty.</summary>
     Task UpdateWithLocalesAsync(Guid id, Action<Tenant> update, CancellationToken ct = default);
+
+    Task<Tenant> UpsertLocaleAsync(
+        Guid id,
+        LanguageCode? language,
+        string? configurationJson = null,
+        string? dictionaryJson = null,
+        CancellationToken ct = default);
 
     Task DisableAsync(Guid id, CancellationToken ct = default);
 
