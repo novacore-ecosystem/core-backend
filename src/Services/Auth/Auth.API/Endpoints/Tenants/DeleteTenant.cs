@@ -5,8 +5,6 @@ using NovaCore.BuildingBlock.Web.Authorization;
 
 namespace NovaCore.Auth.API.Endpoints.Tenants;
 
-/// <summary>Soft delete only - see Tenant.Delete()/ISoftDeleteEntity. Never physically removes
-/// tenant data.</summary>
 public sealed class DeleteTenantEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)

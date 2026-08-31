@@ -7,8 +7,6 @@ using NovaCore.BuildingBlock.Web.Authorization;
 
 namespace NovaCore.Auth.API.Endpoints.Tenants;
 
-/// <summary>Bulk merge-update of one language's dictionary - unspecified keys are preserved (see
-/// UpdateTenantDictionaryCommand), other languages are untouched.</summary>
 public sealed class UpdateTenantDictionaryEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)

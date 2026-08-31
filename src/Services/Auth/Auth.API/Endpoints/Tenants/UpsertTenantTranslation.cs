@@ -7,9 +7,6 @@ namespace NovaCore.Auth.API.Endpoints.Tenants;
 
 public record UpsertTenantTranslationRequest(string Language, string Key, string Value);
 
-/// <summary>Key-level upsert into one language's translation dictionary - see
-/// UpsertTenantTranslationCommand for merge semantics. For a bulk update of an entire language's
-/// dictionary, see UpdateTenantDictionaryEndpoint.</summary>
 public sealed class UpsertTenantTranslationEndpoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)

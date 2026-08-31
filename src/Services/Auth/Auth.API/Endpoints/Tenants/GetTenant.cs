@@ -5,12 +5,6 @@ using NovaCore.BuildingBlock.Web.Authorization;
 
 namespace NovaCore.Auth.API.Endpoints.Tenants;
 
-/// <summary>
-/// Tenant Management editing screen - the comprehensive counterpart to ListTenants' lightweight
-/// summary. Includes merged effective translations, raw per-locale config/dictionary content, and
-/// non-secret client identity. Never exposes a TenantClient secret (there is none - PublicKey is
-/// not a secret, see TenantClient's class doc comment).
-/// </summary>
 public sealed class GetTenantEndpoint : ICarterModule
 {
     private readonly string[] API_DESC = [

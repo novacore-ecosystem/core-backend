@@ -5,7 +5,10 @@ using NovaCore.BuildingBlock.Web.Authorization;
 
 namespace NovaCore.Auth.API.Endpoints.Tenants;
 
-public record UpdateTenantRequest(string Name, string? LogoUrl, string? FaviconUrl);
+public record UpdateTenantRequest(
+    string Name,
+    string? LogoUrl,
+    string? FaviconUrl);
 
 public sealed class UpdateTenantEndpoint : ICarterModule
 {
@@ -17,7 +20,12 @@ public sealed class UpdateTenantEndpoint : ICarterModule
             [FromServices] ISender sender,
             CancellationToken ct = default) =>
         {
-            await sender.Send(new UpdateTenantCommand(id, request.Name, request.LogoUrl, request.FaviconUrl), ct);
+            var command = new UpdateTenantCommand(
+                id,
+                request.Name,
+                request.LogoUrl,
+                request.FaviconUrl);
+            await sender.Send(command, ct);
             return ApiResponse<object>.Ok();
         })
         .WithTags("Tenants")

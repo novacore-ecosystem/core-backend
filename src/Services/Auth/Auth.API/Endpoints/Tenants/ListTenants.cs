@@ -1,18 +1,10 @@
 using NovaCore.Auth.Application.Features.Tenants.Queries.ListTenants;
 
-using NovaCore.BuildingBlock.Application.Abstractions.Common;
 using NovaCore.BuildingBlock.SharedKernel.Constants;
 using NovaCore.BuildingBlock.Web.Authorization;
 
 namespace NovaCore.Auth.API.Endpoints.Tenants;
 
-/// <summary>
-/// Tenant discovery/search for the Root Portal's Tenant Management list screen - never a
-/// general-purpose tenant API. Deliberately excludes any per-tenant business data
-/// (users/orders/payments/...) and any TenantClient/PublicKey field (see
-/// docs/services/auth-service.md, Phase 2 "Tenant List API"). Search + pagination happen at the
-/// database level (see TenantReadService.SearchAsync) - never load-all-then-filter in memory.
-/// </summary>
 public sealed class ListTenantsEndpoint : ICarterModule
 {
     private readonly string[] API_DESC = [

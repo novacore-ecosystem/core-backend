@@ -7,10 +7,6 @@ namespace NovaCore.Auth.API.Endpoints.Tenants;
 
 public record RotateTenantClientRequest(string? Name);
 
-/// <summary>Revokes every currently-Active TenantClient for the tenant and issues a new one.
-/// Returns the new PublicKey only - never any previously stored key. Gated by its own permission
-/// (Tenant.RotateClient), distinct from Tenant.Manage, since this is a credential-affecting
-/// operation.</summary>
 public sealed class RotateTenantClientEndpoint : ICarterModule
 {
     private readonly string[] API_DESC = [
