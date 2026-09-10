@@ -2,7 +2,11 @@ using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
 namespace NovaCore.Auth.Domain.Entities.Permissions;
 
-public sealed class PermissionGrant : BaseEntity<Guid>, ITenantEntity
+/// <summary>IAuditable - unlike PositionRole, a PermissionGrant row insert/delete IS the
+/// business event this feature needs a trail for ("granted"/"revoked"), not incidental mapping
+/// noise. Registered as its own audit root (see Auth.Persistence's ConfigureAuditHierarchy) since
+/// ProviderKey is polymorphic (a Role id or an Account id) - no single static parent type applies.</summary>
+public sealed class PermissionGrant : BaseEntity<Guid>, ITenantEntity, IAuditable
 {
     public Guid PermissionDefinitionId { get; init; }
     public PermissionDefinition PermissionDefinition { get; init; } = default!;

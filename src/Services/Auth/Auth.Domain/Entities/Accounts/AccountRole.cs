@@ -4,7 +4,11 @@ using NovaCore.Auth.Domain.Entities.Roles;
 
 namespace NovaCore.Auth.Domain.Entities.Accounts;
 
-public class AccountRole : IdentityUserRole<Guid>, IEntity
+/// <summary>IAuditable - unlike PositionRole, assigning/removing a Role on an Account IS the
+/// business event this feature needs a trail for, not incidental mapping noise. Registered as
+/// BelongsTo(Account) in Auth.Persistence's ConfigureAuditHierarchy, same shape as
+/// AccountPosition.</summary>
+public class AccountRole : IdentityUserRole<Guid>, IEntity, IAuditable
 {
     public virtual Account? Account { get; set; }
     public virtual Role? Role { get; set; }

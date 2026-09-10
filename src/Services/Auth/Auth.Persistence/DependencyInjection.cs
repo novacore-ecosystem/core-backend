@@ -90,8 +90,12 @@ public static class DependencyInjection
     // they're registered via BelongsTo despite being owned by Account rather than roots
     // themselves. Every *Translation entity is registered the same way - admin-facing display
     // copy is real content, not structural scaffolding. TenantLocale (bootstrap resource
-    // content) is registered the same way for the same reason. AccountRole/PermissionGrant/
-    // PositionRole (pure mapping, no content beyond the relationship) and RefreshToken/Session/
+    // content) is registered the same way for the same reason. AccountRole and PermissionGrant
+    // are also registered (AccountRole: BelongsTo(Account), same shape as AccountPosition;
+    // PermissionGrant: its own root, since ProviderKey is polymorphic across providers and no
+    // single static parent type applies) - granting/revoking a Role or Permission IS the
+    // business event the authorization feature needs a trail for, unlike PositionRole (pure
+    // mapping, no content beyond the relationship, stays unregistered). RefreshToken/Session/
     // LoginHistory/PasswordHistory/MfaBackupCode/Device/AccountPermission (generated artifacts,
     // high-churn tracking records, or a denormalized cache) are intentionally not IAuditable and
     // stay unregistered.
@@ -102,6 +106,8 @@ public static class DependencyInjection
             builder.Entity<Account>().IsRoot(x => x.Id);
             builder.Entity<AccountPosition>()
                 .BelongsTo<Account>(x => x.AccountId);
+            builder.Entity<AccountRole>()
+                .BelongsTo<Account>(x => x.UserId);
             builder.Entity<ExternalIdentity>()
                 .BelongsTo<Account>(x => x.AccountId);
             builder.Entity<MfaMethod>()
@@ -122,6 +128,8 @@ public static class DependencyInjection
             builder.Entity<PermissionDefinition>().IsRoot(x => x.Id);
             builder.Entity<PermissionDefinitionTranslation>()
                 .BelongsTo<PermissionDefinition>(x => x.Id);
+
+            builder.Entity<PermissionGrant>().IsRoot(x => x.Id);
 
             builder.Entity<Invitation>().IsRoot(x => x.Id);
 

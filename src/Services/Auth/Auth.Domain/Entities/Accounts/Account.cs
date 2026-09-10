@@ -13,6 +13,7 @@ public sealed class Account : IdentityUser<Guid>, IEntity, IAuditable
     public bool IsMfaEnabled { get; private set; }
     public int FailedLoginCount { get; private set; }
     public Guid TenantId { get; private set; }
+    public int Level { get; private set; }
 
     public ICollection<AccountPosition> AccountPositions { get; private set; } = [];
     public ICollection<AccountRole> AccountRoles { get; private set; } = [];
@@ -234,6 +235,28 @@ public sealed class Account : IdentityUser<Guid>, IEntity, IAuditable
         Permissions.Clear();
         foreach (var (key, sourceRoleId) in effectivePermissions)
             Permissions.Add(AccountPermission.Create(Id, key, sourceRoleId));
+    }
+
+    #endregion
+
+    // ============================================================================
+    // Authorization level
+    // Administrative authority ranking used to bound who may manage this Account's
+    // roles/permissions/level (enforced in the Application layer - see
+    // IAccountAuthorizationGuard - since it requires comparing against another
+    // Account, not something this aggregate can check on its own). Higher outranks
+    // lower; self-assignment and the exact comparison rule are an Application-layer
+    // concern, not enforced here.
+    // ============================================================================
+
+    #region Authorization level
+
+    public void SetLevel(int level)
+    {
+        if (level < 0)
+            throw ExceptionFactory.InvalidRange("Account.Level cannot be negative.");
+
+        Level = level;
     }
 
     #endregion

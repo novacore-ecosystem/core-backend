@@ -36,6 +36,10 @@ public sealed class AccountConfig : IEntityTypeConfiguration<Account>
             .IsRequired()
             .HasDefaultValue(0);
 
+        builder.Property(a => a.Level)
+            .IsRequired()
+            .HasDefaultValue(0);
+
         // Account deliberately does not implement ITenantEntity (see class doc comment) -
         // TenantId is mapped/indexed by hand here instead of by the Entity Convention.
         builder.Property(a => a.TenantId)

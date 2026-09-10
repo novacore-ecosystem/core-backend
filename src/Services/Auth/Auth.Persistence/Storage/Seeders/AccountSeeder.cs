@@ -23,6 +23,12 @@ public class AccountSeeder(AuthDbContext context, UserManager<Account> userManag
             account.Id = id;
             account.ConfirmEmail();
 
+            // Root's Level is set for display/ordering consistency only - target-scope enforcement
+            // (IAccountAuthorizationGuard) never keys off Level for Root, it keys off the
+            // Permissions.Root claim, so this value is never itself a bypass mechanism.
+            if (roles.Contains(SeedAuthData.Roles.Root))
+                account.SetLevel(int.MaxValue);
+
             var result = await userManager.CreateAsync(account, password);
             if (!result.Succeeded)
             {
