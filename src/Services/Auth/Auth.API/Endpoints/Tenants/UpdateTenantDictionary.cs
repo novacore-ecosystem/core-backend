@@ -1,6 +1,7 @@
 using System.Text.Json;
 
 using NovaCore.Auth.Application.Features.Tenants.Commands.UpdateTenantDictionary;
+using NovaCore.BuildingBlock.Domain.ValueObjects;
 
 using NovaCore.BuildingBlock.SharedKernel.Constants;
 using NovaCore.BuildingBlock.Web.Authorization;
@@ -18,7 +19,10 @@ public sealed class UpdateTenantDictionaryEndpoint : ICarterModule
             [FromServices] ISender sender,
             CancellationToken ct = default) =>
         {
-            await sender.Send(new UpdateTenantDictionaryCommand(id, language, dictionary), ct);
+            var languageCode = language.IsNotNullOrWhiteSpace()
+                ? LanguageCode.Create(language!)
+                : null;
+            await sender.Send(new UpdateTenantDictionaryCommand(id, languageCode, dictionary), ct);
             return ApiResponse<object>.Ok();
         })
         .WithTags("Tenants")
