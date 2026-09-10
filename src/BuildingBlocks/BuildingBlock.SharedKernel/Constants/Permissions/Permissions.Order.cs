@@ -11,22 +11,22 @@ public static partial class Permissions
     [PermissionGroup("order")]
     public static class Order
     {
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string View = "order:view";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string Manage = "order:manage";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string Fulfill = "order:fulfill";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string Delete = "order:delete";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string CreateOnBehalf = "order:create-on-behalf";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string Full = "order:full";
     }
 }

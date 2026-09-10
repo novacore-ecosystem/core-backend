@@ -17,14 +17,18 @@ namespace NovaCore.BuildingBlock.SharedKernel.Constants;
 /// instead, even for a single permission.
 ///
 /// Every const carries a [PermissionDefinition(Providers = ...)] declaring which authorization
-/// provider categories may hold a grant for it (see PermissionRegistry/PermissionGrant). All
-/// default to Role-only - Role is the only provider this milestone wires a grant path for; a
-/// future direct User/Client/Guest grant just needs its Providers flags widened here, not a new
-/// table.
+/// provider categories may hold a grant for it (see PermissionRegistry/PermissionGrant). Every
+/// permission except Root allows both Role and direct User grants (the Auth service's
+/// Account-authorization endpoints let an actor grant/revoke any of these directly on an
+/// Account, in addition to via a Role) - Client/Guest/ServiceAccount grant paths remain
+/// unwired, so those flags stay unused for now.
 ///
-/// Root bypasses every check. Each module's "Full" key is an aggregate that implicitly grants
-/// every other permission in that module - this is resolved centrally by
-/// PermissionAuthorization.HasAnyPermission (BB.Web), endpoints never need to declare it explicitly.
+/// Root bypasses every check and can never itself be granted through the normal grant flow -
+/// Providers stays Role-only, the same restriction the Application-layer grant validation
+/// enforces (see IAccountAuthorizationGuard) - it is a provisioning/DB-seed-only concern. Each
+/// module's "Full" key is an aggregate that implicitly grants every other permission in that
+/// module - this is resolved centrally by PermissionAuthorization.HasAnyPermission (BB.Web),
+/// endpoints never need to declare it explicitly.
 /// </summary>
 public static partial class Permissions
 {
@@ -34,32 +38,32 @@ public static partial class Permissions
     /// <summary>The foundational Tenant/Client user capability - every authenticated non-Root
     /// account carries this. Distinct from Users.* (User service, managing OTHER users'
     /// accounts).</summary>
-    [PermissionDefinition(Providers = PermissionProviderName.Role)]
+    [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
     public const string User = "system:user";
 
     [PermissionGroup("role")]
     public static class Role
     {
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string View = "role:view";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string Manage = "role:manage";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string Full = "role:full";
     }
 
     [PermissionGroup("permission")]
     public static class Permission
     {
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string View = "permission:view";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string Manage = "permission:manage";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string Full = "permission:full";
     }
 
@@ -67,13 +71,13 @@ public static partial class Permissions
     [PermissionGroup("system")]
     public static class System
     {
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string MessagingView = "system:messaging-view";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string MessagingRequeue = "system:messaging-requeue";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string Full = "system:full";
     }
 }

@@ -40,19 +40,22 @@ public sealed class EffectivePermissionReadService(AuthDbContext dbContext) : IE
                 (ap, pr) => pr.RoleId);
 
         var roleIds = await directRoleIds.Union(positionRoleIds).ToListAsync(ct);
-        if (roleIds.Count == 0)
-            return new HashSet<string>(StringComparer.Ordinal);
 
         // PermissionGrant.ProviderKey is a generic string (it also has to hold non-Guid provider
         // keys like a future Guest "*"), so the Role -> grant join happens against materialized
         // string keys rather than relying on SQL-side Guid-to-text translation.
         var roleProviderKeys = roleIds.Select(id => id.ToString()).ToArray();
+        var accountProviderKey = accountId.ToString();
 
+        // Direct grants (ProviderName = User, ProviderKey = this Account's own id) union with
+        // every effective Role's grants - an Account's permissions come from both paths, exactly
+        // like AssignRole/AssignPosition's grants do, so "effective" has to mean the union of
+        // both, not just Role-derived ones.
         var permissionKeys = await dbContext.PermissionGrants
             .IgnoreQueryFilters()
             .Where(g => g.TenantId == tenantId
-                && g.ProviderName == PermissionProviderName.Role
-                && roleProviderKeys.Contains(g.ProviderKey))
+                && ((g.ProviderName == PermissionProviderName.Role && roleProviderKeys.Contains(g.ProviderKey))
+                    || (g.ProviderName == PermissionProviderName.User && g.ProviderKey == accountProviderKey)))
             .Select(g => g.PermissionDefinition.Key.Value)
             .Distinct()
             .ToListAsync(ct);
@@ -87,32 +90,52 @@ public sealed class EffectivePermissionReadService(AuthDbContext dbContext) : IE
         // not one bound parameter per id, so this stays two queries total regardless of how many
         // affected accounts a Role update touches - not one query per account.
         var accountRoleGrants = await directGrants.Union(positionGrants).ToListAsync(ct);
-        if (accountRoleGrants.Count == 0)
-            return new Dictionary<Guid, IReadOnlySet<string>>();
 
         // See GetEffectivePermissionsAsync - ProviderKey is a generic string, so the join happens
         // against materialized string keys, not SQL-side Guid-to-text translation.
         var roleProviderKeys = accountRoleGrants.Select(g => g.RoleId.ToString()).Distinct().ToArray();
 
-        var grants = await dbContext.PermissionGrants
-            .IgnoreQueryFilters()
-            .Where(g => g.TenantId == tenantId
-                && g.ProviderName == PermissionProviderName.Role
-                && roleProviderKeys.Contains(g.ProviderKey))
-            .Select(g => new { g.ProviderKey, PermissionKey = g.PermissionDefinition.Key.Value })
-            .ToListAsync(ct);
+        var roleGrants = roleProviderKeys.Length == 0
+            ? []
+            : await dbContext.PermissionGrants
+                .IgnoreQueryFilters()
+                .Where(g => g.TenantId == tenantId
+                    && g.ProviderName == PermissionProviderName.Role
+                    && roleProviderKeys.Contains(g.ProviderKey))
+                .Select(g => new { g.ProviderKey, PermissionKey = g.PermissionDefinition.Key.Value })
+                .ToListAsync(ct);
 
-        var permissionKeysByRoleId = grants
+        var permissionKeysByRoleId = roleGrants
             .GroupBy(g => g.ProviderKey, StringComparer.Ordinal)
             .ToDictionary(g => g.Key, g => g.Select(x => x.PermissionKey).ToArray(), StringComparer.Ordinal);
 
-        return accountRoleGrants
+        var roleBasedKeysByAccountId = accountRoleGrants
             .GroupBy(g => g.AccountId)
             .ToDictionary(
                 g => g.Key,
-                g => (IReadOnlySet<string>)g
-                    .SelectMany(x => permissionKeysByRoleId.TryGetValue(x.RoleId.ToString(), out var keys) ? keys : [])
-                    .ToHashSet(StringComparer.Ordinal));
+                g => g.SelectMany(x => permissionKeysByRoleId.TryGetValue(x.RoleId.ToString(), out var keys) ? keys : []));
+
+        // Direct grants (ProviderName = User) union with the Role-derived set above - see
+        // GetEffectivePermissionsAsync for why an Account's effective permissions always cover
+        // both paths, including an Account with no Role/Position at all.
+        var accountProviderKeys = accountIds.Select(id => id.ToString()).ToArray();
+        var directGrantsByAccountId = await dbContext.PermissionGrants
+            .IgnoreQueryFilters()
+            .Where(g => g.TenantId == tenantId
+                && g.ProviderName == PermissionProviderName.User
+                && accountProviderKeys.Contains(g.ProviderKey))
+            .Select(g => new { g.ProviderKey, PermissionKey = g.PermissionDefinition.Key.Value })
+            .ToListAsync(ct);
+
+        var directKeysByAccountId = directGrantsByAccountId
+            .GroupBy(g => g.ProviderKey, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.PermissionKey), StringComparer.Ordinal);
+
+        return accountIds.ToDictionary(
+            accountId => accountId,
+            accountId => (IReadOnlySet<string>)(roleBasedKeysByAccountId.TryGetValue(accountId, out var roleKeys) ? roleKeys : [])
+                .Concat(directKeysByAccountId.TryGetValue(accountId.ToString(), out var directKeys) ? directKeys : [])
+                .ToHashSet(StringComparer.Ordinal));
     }
 
     public async Task<IReadOnlySet<Guid>> GetAccountIdsForRoleAsync(Guid roleId, Guid tenantId, CancellationToken ct = default)

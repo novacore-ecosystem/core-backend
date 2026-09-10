@@ -11,25 +11,25 @@ public static partial class Permissions
     [PermissionGroup("notification")]
     public static class Notification
     {
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string View = "notification:view";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string Manage = "notification:manage";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string ChannelToggle = "notification:channel-toggle";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string ChannelConfigure = "notification:channel-configure";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string CampaignManage = "notification:campaign-manage";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string Send = "notification:send";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string Full = "notification:full";
     }
 }

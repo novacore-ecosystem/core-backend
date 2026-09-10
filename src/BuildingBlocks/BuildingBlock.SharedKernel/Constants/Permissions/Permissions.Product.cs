@@ -11,13 +11,13 @@ public static partial class Permissions
     [PermissionGroup("product")]
     public static class Product
     {
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string Manage = "product:manage";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string Reindex = "product:reindex";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string Full = "product:full";
     }
 }
