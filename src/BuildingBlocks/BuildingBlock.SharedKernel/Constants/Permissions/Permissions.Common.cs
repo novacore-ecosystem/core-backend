@@ -54,6 +54,23 @@ public static partial class Permissions
         public const string Full = "role:full";
     }
 
+    /// <summary>Managing an Account's own authorization state (assigned Roles, direct Permission
+    /// grants, management Level) - distinct from Role/Permission above (which manage the shared
+    /// catalog definitions) and from the User service's business-profile Users.* (which manages a
+    /// user's profile data, not their authorization).</summary>
+    [PermissionGroup("account")]
+    public static class Account
+    {
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        public const string View = "account:view";
+
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        public const string Manage = "account:manage";
+
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        public const string Full = "account:full";
+    }
+
     [PermissionGroup("permission")]
     public static class Permission
     {
