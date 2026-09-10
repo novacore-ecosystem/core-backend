@@ -7,25 +7,17 @@ using NovaCore.Auth.Application.Features.Tenants.Commands.UpdateTenantConfig;
 using NovaCore.Auth.Domain.Entities.Tenants;
 using NovaCore.Auth.Domain.ValueObjects;
 
+using NovaCore.BuildingBlock.Contract.Events.Tenant;
+using NovaCore.BuildingBlock.Domain.ValueObjects;
+
 using Shouldly;
 
 namespace NovaCore.Auth.Application.Tests;
 
 public sealed class UpdateTenantConfigHandlerTests
 {
-    private static (Tenant Tenant, UpdateTenantConfigHandler Handler) BuildHandlerWithTenant()
+    private static IUnitOfWork BuildUnitOfWork()
     {
-        var tenant = Tenant.Create(TenantCode.Create("acme"), "Acme Corp");
-        tenant.SetLocale(null, """{"theme":"light","brand":"Acme"}""", "{}");
-
-        var writeService = Substitute.For<ITenantWriteService>();
-        writeService.UpdateWithLocalesAsync(tenant.Id, Arg.Any<Action<Tenant>>(), Arg.Any<CancellationToken>())
-            .Returns(ci =>
-            {
-                ci.ArgAt<Action<Tenant>>(1)(tenant);
-                return Task.CompletedTask;
-            });
-
         var uow = Substitute.For<IUnitOfWork>();
         uow.ExecuteTransactionAsync(Arg.Any<Func<Task>>(), Arg.Any<Func<Task>>(), Arg.Any<CancellationToken>())
             .Returns(async ci =>
@@ -33,22 +25,40 @@ public sealed class UpdateTenantConfigHandlerTests
                 await ci.ArgAt<Func<Task>>(0)();
                 return true;
             });
-
-        var handler = new UpdateTenantConfigHandler(uow, writeService, Substitute.For<IOutboxStore>());
-        return (tenant, handler);
+        return uow;
     }
 
     [Fact]
-    public async Task Handle_WithNoLanguage_TargetsTheFallbackLocale_AndPreservesUnrelatedKeys()
+    public async Task Handle_WithNoLanguage_TargetsTheFallbackLocale_AndEnqueuesVersionChangedEvent()
     {
-        var (tenant, handler) = BuildHandlerWithTenant();
+        var tenant = Tenant.Create(TenantCode.Create("acme"), "Acme Corp");
+
+        var writeService = Substitute.For<ITenantWriteService>();
+        writeService.UpsertLocaleAsync(
+                Arg.Any<Guid>(), Arg.Any<LanguageCode?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(tenant);
+
+        var outbox = Substitute.For<IOutboxStore>();
+        var handler = new UpdateTenantConfigHandler(BuildUnitOfWork(), writeService, outbox);
 
         var payload = JsonDocument.Parse("""{"theme":"dark"}""").RootElement;
         await handler.Handle(new UpdateTenantConfigCommand(tenant.Id, null, payload));
 
-        var fallback = tenant.Locales.Single(l => l.LanguageCode is null);
-        var merged = JsonDocument.Parse(fallback.ConfigurationJson).RootElement;
-        merged.GetProperty("theme").GetString().ShouldBe("dark");  // updated
-        merged.GetProperty("brand").GetString().ShouldBe("Acme");  // preserved
+        await writeService.Received(1).UpsertLocaleAsync(
+            tenant.Id, null, Arg.Is<string>(json => json.Contains("dark")), null, Arg.Any<CancellationToken>());
+        await outbox.Received(1).EnqueueAsync(
+            Arg.Is<TenantVersionChangedIntegrationEvent>(e => e.TenantId == tenant.Id && e.Version == tenant.Version),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_RejectsNonObjectPayload()
+    {
+        var handler = new UpdateTenantConfigHandler(BuildUnitOfWork(), Substitute.For<ITenantWriteService>(), Substitute.For<IOutboxStore>());
+
+        var payload = JsonDocument.Parse("[1,2,3]").RootElement;
+
+        await Should.ThrowAsync<BadRequestException>(
+            () => handler.Handle(new UpdateTenantConfigCommand(Guid.NewGuid(), null, payload)));
     }
 }

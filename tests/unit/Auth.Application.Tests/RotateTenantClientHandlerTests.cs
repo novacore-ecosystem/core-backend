@@ -27,6 +27,8 @@ public sealed class RotateTenantClientHandlerTests
         var tenantClientReadService = Substitute.For<ITenantClientReadService>();
         tenantClientReadService.ListByTenantAsync(tenant.Id, Arg.Any<CancellationToken>()).Returns([oldClient]);
 
+        var newClient = TenantClient.Create(tenant.Id, "Web Client");
+
         var tenantClientWriteService = Substitute.For<ITenantClientWriteService>();
         tenantClientWriteService.UpdateAsync(oldClient.Id, Arg.Any<Action<TenantClient>>(), Arg.Any<CancellationToken>())
             .Returns(ci =>
@@ -34,9 +36,8 @@ public sealed class RotateTenantClientHandlerTests
                 ci.ArgAt<Action<TenantClient>>(1)(oldClient);
                 return Task.CompletedTask;
             });
-        TenantClient? newClient = null;
-        tenantClientWriteService.CreateAsync(Arg.Do<TenantClient>(c => newClient = c), Arg.Any<CancellationToken>())
-            .Returns(Task.CompletedTask);
+        tenantClientWriteService.CreateAsync(tenant.Id, Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(newClient);
 
         var uow = Substitute.For<IUnitOfWork>();
         uow.ExecuteTransactionAsync(Arg.Any<Func<Task>>(), Arg.Any<Func<Task>>(), Arg.Any<CancellationToken>())

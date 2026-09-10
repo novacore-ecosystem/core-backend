@@ -11,10 +11,22 @@ namespace NovaCore.Auth.Application.Tests;
 
 public sealed class CreateTenantHandlerTests
 {
+    private static IUnitOfWork BuildUnitOfWork()
+    {
+        var uow = Substitute.For<IUnitOfWork>();
+        uow.ExecuteTransactionAsync(Arg.Any<Func<Task>>(), Arg.Any<Func<Task>>(), Arg.Any<CancellationToken>())
+            .Returns(async ci =>
+            {
+                await ci.ArgAt<Func<Task>>(0)();
+                return true;
+            });
+        return uow;
+    }
+
     [Fact]
     public async Task Handle_CreatesTenant_WhenCodeIsUnique()
     {
-        var unitOfWork = Substitute.For<IUnitOfWork>();
+        var unitOfWork = BuildUnitOfWork();
         var readService = Substitute.For<ITenantReadService>();
         var code = TenantCode.Create("acme");
         readService.ExistsByCodeAsync(code, Arg.Any<CancellationToken>()).Returns(false);
