@@ -38,6 +38,16 @@ public interface IPermissionGrantService
         IReadOnlyCollection<string> permissionKeys,
         Guid tenantId,
         CancellationToken ct = default);
+
+    /// <summary>The permission keys currently granted to one (providerName, providerKey) - used to
+    /// diff against a requested set before validating/applying a change (see
+    /// IAccountAuthorizationGuard, which only needs to validate newly-added keys, not ones already
+    /// granted by someone else).</summary>
+    Task<IReadOnlySet<string>> GetGrantedKeysAsync(
+        PermissionProviderName providerName,
+        string providerKey,
+        Guid tenantId,
+        CancellationToken ct = default);
 }
 
 public sealed record PermissionGrantReplaceResult(bool HasChanges, IReadOnlySet<string> ResultingKeys);

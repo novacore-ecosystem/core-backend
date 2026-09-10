@@ -129,6 +129,21 @@ public sealed class PermissionGrantService(
         return new PermissionGrantReplaceResult(hasChanges, resultingKeys);
     }
 
+    public async Task<IReadOnlySet<string>> GetGrantedKeysAsync(
+        PermissionProviderName providerName,
+        string providerKey,
+        Guid tenantId,
+        CancellationToken ct = default)
+    {
+        var keys = await dbContext.PermissionGrants
+            .IgnoreQueryFilters()
+            .Where(g => g.TenantId == tenantId && g.ProviderName == providerName && g.ProviderKey == providerKey)
+            .Select(g => g.PermissionDefinition.Key.Value)
+            .ToListAsync(ct);
+
+        return keys.ToHashSet(StringComparer.Ordinal);
+    }
+
     private void EnsureProviderAllowed(string permissionKey, PermissionProviderName providerName)
     {
         if (!permissionRegistry.IsProviderAllowed(permissionKey, providerName))

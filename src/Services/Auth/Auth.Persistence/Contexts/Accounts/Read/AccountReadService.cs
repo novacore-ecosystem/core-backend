@@ -25,4 +25,21 @@ public sealed class AccountReadService(AuthDbContext dbContext) : IAccountReadSe
             .Include(u => u.AccountRoles)
             .FirstOrDefaultAsync(u => u.Email == email && u.TenantId == tenantId, ct);
     }
+
+    public async Task<Account?> GetByIdAsync(Guid id, CancellationToken ct = default)
+    {
+        return await dbContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == id, ct);
+    }
+
+    public async Task<IReadOnlySet<Guid>> GetRoleIdsAsync(Guid accountId, CancellationToken ct = default)
+    {
+        var roleIds = await dbContext.UserRoles
+            .Where(ar => ar.UserId == accountId)
+            .Select(ar => ar.RoleId)
+            .ToListAsync(ct);
+
+        return roleIds.ToHashSet();
+    }
 }
