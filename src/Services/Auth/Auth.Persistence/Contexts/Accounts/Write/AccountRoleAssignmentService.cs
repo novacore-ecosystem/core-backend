@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
 using NovaCore.Auth.Application.Features.Accounts.DTOs;
+using NovaCore.Auth.Domain.Entities.Accounts;
 using NovaCore.Auth.Persistence.Engine;
 
 using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
@@ -22,7 +23,7 @@ public sealed class AccountRoleAssignmentService(
         var account = await dbContext.Users
             .Include(a => a.AccountRoles)
             .FirstOrDefaultAsync(a => a.Id == accountId, ct)
-            ?? throw ExceptionFactory.EntityNotFound<Domain.Entities.Accounts.Account>(accountId);
+            ?? throw ExceptionFactory.EntityNotFound<Account>(accountId);
 
         var requestedIds = roleIds.ToHashSet();
         var requestedRoles = requestedIds.Count == 0

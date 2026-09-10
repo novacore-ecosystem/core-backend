@@ -1,5 +1,7 @@
+using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Auth;
 using NovaCore.Auth.Application.Abstractions.Services;
+using NovaCore.Auth.Infrastructure.Authorization;
 using NovaCore.Auth.Infrastructure.BackgroundJobs;
 using NovaCore.Auth.Infrastructure.Caching;
 using NovaCore.Auth.Infrastructure.Configurations;
@@ -34,6 +36,7 @@ public static class DependencyInjection
             .AddRedisCache(configuration)
             .AddRoleCaching(configuration)
             .AddTenantCaching()
+            .AddAccountAuthorization()
             .AddBackgroundJobs(configuration)
             .AddInboxOutboxCleanupJobs(configuration)
             .AddHttpAuditMetadataProvider("Auth")
@@ -77,6 +80,14 @@ public static class DependencyInjection
     private static IServiceCollection AddTenantCaching(this IServiceCollection services)
     {
         services.AddScoped<ITenantVersionCache, TenantVersionCache>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddAccountAuthorization(this IServiceCollection services)
+    {
+        services.AddScoped<IEffectiveAuthorizationCache, EffectiveAuthorizationCache>();
+        services.AddScoped<IAccountAuthorizationService, AccountAuthorizationService>();
 
         return services;
     }

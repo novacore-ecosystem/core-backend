@@ -25,7 +25,7 @@ namespace NovaCore.BuildingBlock.SharedKernel.Constants;
 ///
 /// Root bypasses every check and can never itself be granted through the normal grant flow -
 /// Providers stays Role-only, the same restriction the Application-layer grant validation
-/// enforces (see IAccountAuthorizationGuard) - it is a provisioning/DB-seed-only concern. Each
+/// enforces (see AccountAuthorizationGuard) - it is a provisioning/DB-seed-only concern. Each
 /// module's "Full" key is an aggregate that implicitly grants every other permission in that
 /// module - this is resolved centrally by PermissionAuthorization.HasAnyPermission (BB.Web),
 /// endpoints never need to declare it explicitly.

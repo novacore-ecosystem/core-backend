@@ -2,10 +2,15 @@ using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
 namespace NovaCore.Auth.Domain.Entities.Permissions;
 
-/// <summary>IAuditable - unlike PositionRole, a PermissionGrant row insert/delete IS the
-/// business event this feature needs a trail for ("granted"/"revoked"), not incidental mapping
-/// noise. Registered as its own audit root (see Auth.Persistence's ConfigureAuditHierarchy) since
-/// ProviderKey is polymorphic (a Role id or an Account id) - no single static parent type applies.</summary>
+/// <summary>
+/// A permission granted to a provider (Role, Account, ...).
+/// </summary>
+/// <remarks>
+/// IAuditable and registered as its own audit root (see Auth.Persistence's
+/// ConfigureAuditHierarchy) - a row insert/delete is itself the "granted"/"revoked" business event,
+/// not incidental mapping noise. Its own root, not BelongsTo, since ProviderKey is polymorphic
+/// (a Role id or an Account id) - no single static parent type applies.
+/// </remarks>
 public sealed class PermissionGrant : BaseEntity<Guid>, ITenantEntity, IAuditable
 {
     public Guid PermissionDefinitionId { get; init; }

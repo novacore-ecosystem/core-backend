@@ -4,10 +4,14 @@ using NovaCore.Auth.Domain.Entities.Roles;
 
 namespace NovaCore.Auth.Domain.Entities.Accounts;
 
-/// <summary>IAuditable - unlike PositionRole, assigning/removing a Role on an Account IS the
-/// business event this feature needs a trail for, not incidental mapping noise. Registered as
-/// BelongsTo(Account) in Auth.Persistence's ConfigureAuditHierarchy, same shape as
-/// AccountPosition.</summary>
+/// <summary>
+/// A Role directly assigned to an Account.
+/// </summary>
+/// <remarks>
+/// IAuditable and registered BelongsTo(Account) in Auth.Persistence's ConfigureAuditHierarchy,
+/// same shape as AccountPosition - assigning/removing a Role is itself the business event, not
+/// incidental mapping noise.
+/// </remarks>
 public class AccountRole : IdentityUserRole<Guid>, IEntity, IAuditable
 {
     public virtual Account? Account { get; set; }

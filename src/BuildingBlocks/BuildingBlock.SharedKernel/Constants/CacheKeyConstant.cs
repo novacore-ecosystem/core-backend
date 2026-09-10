@@ -25,6 +25,21 @@ public static class CacheKeyConstant
     }
 
     /// <summary>
+    /// Effective authorization snapshot cache (management Level + effective permission keys) for
+    /// one Account, tenant-scoped. Backs Auth.Infrastructure's IEffectiveAuthorizationCache.
+    /// </summary>
+    public static class AccountAuthorization
+    {
+        private const string Prefix = "auth:accounts:authorization";
+
+        /// <summary>Get the authorization snapshot cache key. Pattern: auth:accounts:authorization:{tenantId}:{accountId}</summary>
+        public static string Snapshot(Guid tenantId, Guid accountId) => $"{Prefix}:{tenantId}:{accountId}";
+
+        /// <summary>Default TTL for the authorization snapshot cache in minutes - short-lived, since a role/permission/level change should take effect quickly.</summary>
+        public const int DefaultTtlMinutes = 5;
+    }
+
+    /// <summary>
     /// Dead scaffold - never wired to any code (kept, not deleted, to avoid churn unrelated to
     /// this change). The "auth:users" prefix was seeded for Auth's own account concept, NOT
     /// User service's UserProfile aggregate - see <see cref="UserProfiles"/> for the real,

@@ -242,11 +242,11 @@ public sealed class Account : IdentityUser<Guid>, IEntity, IAuditable
     // ============================================================================
     // Authorization level
     // Administrative authority ranking used to bound who may manage this Account's
-    // roles/permissions/level (enforced in the Application layer - see
-    // IAccountAuthorizationGuard - since it requires comparing against another
-    // Account, not something this aggregate can check on its own). Higher outranks
-    // lower; self-assignment and the exact comparison rule are an Application-layer
-    // concern, not enforced here.
+    // roles/permissions/level - enforced in Auth.Application/Auth.Infrastructure
+    // (AccountAuthorizationGuard/AccountAuthorizationService), since it requires
+    // comparing against another Account, not something this aggregate can check on
+    // its own. Higher outranks lower; self-assignment and the exact comparison rule
+    // are that layer's concern, not enforced here.
     // ============================================================================
 
     #region Authorization level
