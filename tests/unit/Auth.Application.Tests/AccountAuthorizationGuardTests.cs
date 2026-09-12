@@ -95,4 +95,69 @@ public sealed class AccountAuthorizationGuardTests
 
         Should.NotThrow(() => AccountAuthorizationGuard.EnsureCanGrantRole(actor, actorHoldsRole: false));
     }
+
+    [Fact]
+    public void EnsureTargetDoesNotGrantRoot_TargetGrantsRoot_NonRootActorThrows()
+    {
+        var actor = Snapshot(int.MaxValue);
+        var targetKeys = new HashSet<string> { Permissions.Root };
+
+        Should.Throw<ForbiddenException>(() => AccountAuthorizationGuard.EnsureTargetDoesNotGrantRoot(actor, targetKeys));
+    }
+
+    [Fact]
+    public void EnsureTargetDoesNotGrantRoot_ActorHoldsRoot_Bypasses()
+    {
+        var actor = Snapshot(0, Permissions.Root);
+        var targetKeys = new HashSet<string> { Permissions.Root };
+
+        Should.NotThrow(() => AccountAuthorizationGuard.EnsureTargetDoesNotGrantRoot(actor, targetKeys));
+    }
+
+    [Fact]
+    public void EnsureTargetDoesNotGrantRoot_TargetDoesNotGrantRoot_DoesNotThrow()
+    {
+        var actor = Snapshot(0);
+        var targetKeys = new HashSet<string> { "order:view" };
+
+        Should.NotThrow(() => AccountAuthorizationGuard.EnsureTargetDoesNotGrantRoot(actor, targetKeys));
+    }
+
+    [Fact]
+    public void EnsureWithinTenantBoundary_BoundaryDisabled_UnrestrictedRegardlessOfAllowedKeys()
+    {
+        var actor = Snapshot(0);
+
+        Should.NotThrow(() => AccountAuthorizationGuard.EnsureWithinTenantBoundary(
+            actor, boundaryEnabled: false, tenantAllowedKeys: new HashSet<string>(), newlyAddedKeys: ["order:manage"]));
+    }
+
+    [Fact]
+    public void EnsureWithinTenantBoundary_BoundaryEnabled_KeyOutsideAllowedSet_Throws()
+    {
+        var actor = Snapshot(0);
+        var allowed = new HashSet<string> { "order:view" };
+
+        Should.Throw<ForbiddenException>(() => AccountAuthorizationGuard.EnsureWithinTenantBoundary(
+            actor, boundaryEnabled: true, tenantAllowedKeys: allowed, newlyAddedKeys: ["order:manage"]));
+    }
+
+    [Fact]
+    public void EnsureWithinTenantBoundary_BoundaryEnabled_EveryKeyAllowed_DoesNotThrow()
+    {
+        var actor = Snapshot(0);
+        var allowed = new HashSet<string> { "order:view", "order:manage" };
+
+        Should.NotThrow(() => AccountAuthorizationGuard.EnsureWithinTenantBoundary(
+            actor, boundaryEnabled: true, tenantAllowedKeys: allowed, newlyAddedKeys: ["order:manage"]));
+    }
+
+    [Fact]
+    public void EnsureWithinTenantBoundary_ActorHoldsRoot_BypassesBoundary()
+    {
+        var actor = Snapshot(0, Permissions.Root);
+
+        Should.NotThrow(() => AccountAuthorizationGuard.EnsureWithinTenantBoundary(
+            actor, boundaryEnabled: true, tenantAllowedKeys: new HashSet<string>(), newlyAddedKeys: ["order:manage"]));
+    }
 }
