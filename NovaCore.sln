@@ -223,6 +223,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Content", "Content", "{18BD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Auth.Domain.Tests", "tests\unit\Auth.Domain.Tests\Auth.Domain.Tests.csproj", "{CD510A88-8276-4348-B0EC-391504AEF481}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildingBlock.Application.Tests", "tests\unit\BuildingBlock.Application.Tests\BuildingBlock.Application.Tests.csproj", "{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1289,6 +1291,18 @@ Global
 		{CD510A88-8276-4348-B0EC-391504AEF481}.Release|x64.Build.0 = Release|Any CPU
 		{CD510A88-8276-4348-B0EC-391504AEF481}.Release|x86.ActiveCfg = Release|Any CPU
 		{CD510A88-8276-4348-B0EC-391504AEF481}.Release|x86.Build.0 = Release|Any CPU
+		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}.Debug|x64.Build.0 = Debug|Any CPU
+		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}.Debug|x86.Build.0 = Debug|Any CPU
+		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}.Release|x64.ActiveCfg = Release|Any CPU
+		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}.Release|x64.Build.0 = Release|Any CPU
+		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}.Release|x86.ActiveCfg = Release|Any CPU
+		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1398,5 +1412,6 @@ Global
 		{DB1BA7E0-E5F7-4AF5-B985-2501F03107BB} = {9D556B49-86D1-93A7-9596-FFAAB74EC556}
 		{18BDE052-BBE9-F129-1075-478486D295B6} = {3A69DF5F-2BB9-492E-BDB6-D5F4195AE211}
 		{CD510A88-8276-4348-B0EC-391504AEF481} = {9D556B49-86D1-93A7-9596-FFAAB74EC556}
+		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A} = {9D556B49-86D1-93A7-9596-FFAAB74EC556}
 	EndGlobalSection
 EndGlobal
