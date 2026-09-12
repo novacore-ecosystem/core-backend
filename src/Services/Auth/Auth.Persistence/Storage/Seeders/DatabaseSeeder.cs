@@ -23,6 +23,7 @@ public class DatabaseSeeder(
             await SeedPermissionCatalogAsync();
             await SeedRolePermissionsAsync();
             await SeedAccountsAsync();
+            await SeedRootPermissionGrantsAsync();
             await SeedTenantClientsAsync();
 
             logger.LogInformation("Database initialization completed successfully");
@@ -80,6 +81,14 @@ public class DatabaseSeeder(
         var accountSeeder = new AccountSeeder(context, userManager);
         await accountSeeder.SeedAsync();
         logger.LogInformation("Accounts seeded successfully");
+    }
+
+    private async Task SeedRootPermissionGrantsAsync()
+    {
+        logger.LogInformation("Seeding Root account permission grants...");
+        var rootPermissionGrantSeeder = new RootPermissionGrantSeeder(context);
+        await rootPermissionGrantSeeder.SeedAsync();
+        logger.LogInformation("Root account permission grants seeded successfully");
     }
 
     private async Task SeedTenantClientsAsync()
