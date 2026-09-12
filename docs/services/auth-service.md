@@ -670,6 +670,65 @@ untouched.
   permission, localized) layered on top of the registry - the registry remains the static,
   DB-independent structural source those future layers would consume, not something they replace.
 
+## Tenant permission boundary + Role-path authorization parity (Phase 8)
+
+Introduced 2026-09-13. Adds a Tenant-scoped permission boundary (ROOT constrains which permission
+keys a tenant's own Role/User grants may draw from) and closes a real gap where the Role-permission
+grant path ran none of the checks the Account-permission path already enforced.
+
+- **`PermissionProviderName.Tenant`** (new flag, `1 << 5`) - reuses the existing
+  `PermissionGrant`/`PermissionGrantService` machinery exactly like `Role`/`User` do; a tenant's
+  boundary is just `PermissionGrant` rows with `ProviderName = Tenant, ProviderKey =
+  tenantId.ToString()`. No schema migration - `ProviderName` persists as `ToName()`'s string, so a
+  new enum member needs only the `ToName`/`ParseName`/`IsSingleValue` switch arms extended. Every
+  non-Root permission's `[PermissionDefinition(Providers = ...)]` now includes `| Tenant` alongside
+  `Role | User` (mechanical, applied uniformly across every `Permissions.*.cs` file) - `Root` stays
+  `Role`-only, unchanged.
+- **`TenantMetadata.PermissionBoundaryEnabled`** (new `[Metadata]` bool, default `false`) - opt-in
+  per tenant, no migration needed (JSONB-backed metadata bag). Every tenant that predates this phase
+  stays fully unrestricted until ROOT explicitly enables enforcement - this was a deliberate default
+  given the alternative (enforcing against an empty allowed-set immediately) would silently lock
+  every existing tenant out of granting anything on deploy day.
+- **`AccountAuthorizationGuard`** gained two pure rules, same style as the existing ones:
+  `EnsureTargetDoesNotGrantRoot` (mirrors `EnsureCanManageAccount`'s Root-target protection for a
+  non-Account target - a Role today) and `EnsureWithinTenantBoundary` (Root-actor bypass, no-op
+  while `boundaryEnabled` is false, otherwise every newly-added key must be in the tenant's granted
+  `Tenant`-provider set).
+- **Role-path gap closed**: `UpdateRolePermissionsHandler` previously ran zero authorization checks
+  at all - unlike `AccountAuthorizationService.ReplacePermissionsAsync` (the Account/User path), an
+  actor could grant a Role permissions they did not themselves hold, or resurrect a Root-granting
+  Role, purely by going through Roles instead of Accounts. The handler now resolves the actor's
+  snapshot and the Role's current keys before mutating, and runs the same three checks
+  (`EnsureCanGrantPermissions`, `EnsureTargetDoesNotGrantRoot`, `EnsureWithinTenantBoundary`) the
+  Account path runs, via the same guard - not a parallel reimplementation. Position still has no
+  grant path (no HTTP endpoint exists for it at all - unchanged from Phase 6's audit), so it isn't
+  wired in; the guard is provider-agnostic and ready for it once one exists.
+- **New ROOT-only endpoints** (`Auth.API/Endpoints/Tenants/`, gated `tenant:view`/`tenant:manage`
+  like every other Tenant Management operation): `GET/PUT /tenants/{id}/permissions` (the boundary
+  itself, `{grant, revoke}` delta - matching the frontend's `AssignmentMutation`/
+  `PermissionAssignmentService` contract exactly, so nova-console's existing Access Control UI needed
+  no shape changes) and `PUT /tenants/{id}/permission-boundary` (the enforcement toggle).
+- **Tenant-boundary scope, explicitly not addressed this phase**: the spec's "effective boundary =
+  tenant permission ∩ scope permission" refers to the pre-existing `Scope` entity (org-hierarchy),
+  which has no connection to permission evaluation at all today (`PermissionGrant` has no `ScopeId`,
+  `PermissionExpression` never reads `RequestContext.Current.ScopeIds` for a grant decision - only
+  the generic EF query filter does, for row-level tenant/scope isolation, which is unrelated).
+  Wiring real Scope-based permission restriction is a materially larger feature (a scope-to-
+  permission grant model, plus intersecting it with the tenant boundary above) and was judged out of
+  scope for this pass; `EnsureWithinTenantBoundary` is written so a future scope-intersection check
+  composes alongside it rather than replacing it.
+- **Also not addressed**: curating which permissions make sense inside a Tenant boundary at all -
+  the mechanical `Providers` extension above makes ROOT-administration permissions (`Tenant.*`,
+  `System.*`, `Audit.*`) technically includable in a tenant's own allowed set, which is conceptually
+  loose (a tenant boundary should probably only ever cover business-module permissions) though not
+  an actual escalation path - nothing grants those keys automatically, and `EnsureCanGrantPermissions`
+  still requires holding a key before handing it out, same as everywhere else. Flagged for product
+  review rather than silently curated.
+- **Tests**: `AccountAuthorizationGuardTests` gained direct coverage for both new rules.
+  `UpdateRolePermissionsHandlerTests` (previously written against a handler with no authorization at
+  all) rewritten for the new constructor and behavior, plus new cases for the can't-grant-what-you-
+  don't-hold, can't-modify-a-Root-granting-Role, and outside-tenant-boundary rejections.
+
 ## Known state
 
 - Mapster is registered but unused — hand-mapping is the actual convention (see [04-coding-rules.md](../04-coding-rules.md#mapping)).
