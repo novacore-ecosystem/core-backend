@@ -13,16 +13,16 @@ public static partial class Permissions
     [PermissionGroup("users")]
     public static class Users
     {
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string View = "users:view";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string Manage = "users:manage";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string Reindex = "users:reindex";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string Full = "users:full";
     }
 }

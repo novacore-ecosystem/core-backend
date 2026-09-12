@@ -16,4 +16,9 @@ public enum PermissionProviderName
     Client = 1 << 2,
     Guest = 1 << 3,
     ServiceAccount = 1 << 4,
+
+    /// <summary>A Tenant's own permission boundary - the subset of the catalog ROOT has allowed
+    /// that tenant's Role/User grants to draw from. See AccountAuthorizationGuard.
+    /// EnsureWithinTenantBoundary.</summary>
+    Tenant = 1 << 5,
 }

@@ -1,11 +1,13 @@
 using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
 using NovaCore.Auth.Application.Abstractions.Persistence.Permissions;
+using NovaCore.Auth.Application.Abstractions.Persistence.Tenants;
 
 using NovaCore.BuildingBlock.Application.Abstractions.Outbox;
 using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
 using NovaCore.BuildingBlock.Application.Exceptions;
 using NovaCore.BuildingBlock.Contract.Events.User;
+using NovaCore.BuildingBlock.Domain.Exceptions;
 using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
 namespace NovaCore.Auth.Infrastructure.Authorization;
@@ -24,6 +26,7 @@ public sealed class AccountAuthorizationService(
     IAccountRoleAssignmentService accountRoleAssignmentService,
     IPermissionGrantService permissionGrantService,
     IAccountWriteService accountWriteService,
+    ITenantReadService tenantReadService,
     IEffectiveAuthorizationCache authorizationCache,
     IOutboxStore outboxStore,
     IUnitOfWork unitOfWork) : IAccountAuthorizationService
@@ -64,6 +67,7 @@ public sealed class AccountAuthorizationService(
             PermissionProviderName.User, providerKey, tenantId, ct);
         var newlyAddedKeys = permissionKeys.Where(key => !currentKeys.Contains(key)).ToArray();
         AccountAuthorizationGuard.EnsureCanGrantPermissions(actor, newlyAddedKeys);
+        await EnsureWithinTenantBoundaryAsync(actor, tenantId, newlyAddedKeys, ct);
 
         var result = await permissionGrantService.ReplaceForProviderAsync(
             PermissionProviderName.User, providerKey, permissionKeys, tenantId, ct);
@@ -87,6 +91,31 @@ public sealed class AccountAuthorizationService(
 
         await accountWriteService.SetLevelAsync(accountId, level, ct);
         await authorizationCache.InvalidateAsync(accountId, tenantId, ct);
+    }
+
+    /// <summary>
+    /// Shared by the Account permission path here and by UpdateRolePermissionsHandler (the Role
+    /// permission path, Auth.Application) - both resolve the same tenant boundary before applying
+    /// a permission diff, so the rule lives once in AccountAuthorizationGuard and each caller only
+    /// wires up its own tenant/allowed-keys lookup.
+    /// </summary>
+    private async Task EnsureWithinTenantBoundaryAsync(
+        AccountAuthorizationSnapshot actor,
+        Guid tenantId,
+        IReadOnlyCollection<string> newlyAddedKeys,
+        CancellationToken ct)
+    {
+        if (actor.HasRoot || newlyAddedKeys.Count == 0)
+            return;
+
+        var tenant = await tenantReadService.GetByIdAsync(tenantId, ct)
+            ?? throw ExceptionFactory.EntityNotFound($"Tenant \"{tenantId}\" does not exist.");
+
+        var allowedKeys = await permissionGrantService.GetGrantedKeysAsync(
+            PermissionProviderName.Tenant, tenantId.ToString(), tenantId, ct);
+
+        AccountAuthorizationGuard.EnsureWithinTenantBoundary(
+            actor, tenant.Metadata.PermissionBoundaryEnabled, allowedKeys, newlyAddedKeys);
     }
 
     private async Task EnsureCanGrantNewRolesAsync(

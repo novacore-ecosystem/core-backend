@@ -14,16 +14,16 @@ public static partial class Permissions
     [PermissionGroup("tenant")]
     public static class Tenant
     {
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string View = "tenant:view";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string Manage = "tenant:manage";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string RotateClient = "tenant:rotate-client";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string Full = "tenant:full";
     }
 }

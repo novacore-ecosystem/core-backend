@@ -14,6 +14,7 @@ public static class PermissionProviderNameExtensions
         PermissionProviderName.Client => "Client",
         PermissionProviderName.Guest => "Guest",
         PermissionProviderName.ServiceAccount => "ServiceAccount",
+        PermissionProviderName.Tenant => "Tenant",
         _ => throw new ArgumentOutOfRangeException(
             nameof(provider),
             provider,
@@ -27,6 +28,7 @@ public static class PermissionProviderNameExtensions
         "Client" => PermissionProviderName.Client,
         "Guest" => PermissionProviderName.Guest,
         "ServiceAccount" => PermissionProviderName.ServiceAccount,
+        "Tenant" => PermissionProviderName.Tenant,
         _ => throw new ArgumentOutOfRangeException(nameof(name), name, "Unrecognized permission provider name."),
     };
 
@@ -38,5 +40,6 @@ public static class PermissionProviderNameExtensions
             or PermissionProviderName.User
             or PermissionProviderName.Client
             or PermissionProviderName.Guest
-            or PermissionProviderName.ServiceAccount;
+            or PermissionProviderName.ServiceAccount
+            or PermissionProviderName.Tenant;
 }

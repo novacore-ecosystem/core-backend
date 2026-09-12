@@ -11,10 +11,10 @@ public static partial class Permissions
     [PermissionGroup("audit")]
     public static class Audit
     {
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string View = "audit:view";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string Full = "audit:full";
     }
 }

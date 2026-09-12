@@ -12,38 +12,38 @@ public static partial class Permissions
     [PermissionGroup("inventory")]
     public static class Inventory
     {
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string View = "inventory:view";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string StockMove = "inventory:stock-move";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string Adjust = "inventory:adjust";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string Receive = "inventory:receive";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string Transfer = "inventory:transfer";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string CycleCount = "inventory:cycle-count";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string Full = "inventory:full";
     }
 
     [PermissionGroup("warehouse")]
     public static class Warehouse
     {
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string View = "warehouse:view";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string Manage = "warehouse:manage";
 
-        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User | PermissionProviderName.Tenant)]
         public const string Full = "warehouse:full";
     }
 }
