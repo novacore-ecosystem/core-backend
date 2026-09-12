@@ -10,6 +10,9 @@ public interface ICurrentUserService
 
     List<string> GetRoles();
 
+    /// <summary>The actor's effective permission keys, used by <c>IAuthorizationGuard</c>.</summary>
+    IReadOnlySet<string> GetPermissions();
+
     bool IsAuthenticated();
 
     bool IsInRole(string role);

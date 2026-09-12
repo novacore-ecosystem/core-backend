@@ -12,11 +12,13 @@ Each claim/permission component has exactly one job. When adding new functionali
 | `ClaimsPrincipalExtension` | `BuildingBlock.SharedKernel/Extensions` | Read raw claim values off `ClaimsPrincipal` — no authorization decisions |
 | `Permissions` | `BuildingBlock.SharedKernel/Constants/Permissions/` | The permission key catalog (code-first, one file per owning service, per business module) |
 | `PermissionRegistry` | `BuildingBlock.SharedKernel/Authorization` | In-memory discovery/index over `Permissions` (flat + grouped) — no DB, Singleton |
-| `PermissionAuthorization` | `BuildingBlock.Web/Authorization` | Permission evaluation — Root bypass, `{module}:full` aggregation, any future strategy |
+| `PermissionExpression` | `BuildingBlock.Application/Abstractions/Authorization` | The composable permission requirement (single key, `All`/`Or`, nested) and its leaf-matching rule — Root bypass, `{module}:full` aggregation. The one place this logic is defined; both `IAuthorizationGuard` and `PermissionAuthorization` evaluate through it |
+| `IAuthorizationGuard` / `AuthorizationGuard` | `BuildingBlock.Application/Abstractions/Authorization`, `BuildingBlock.Application/Authorization` | Application-layer (use-case-level) authorization: `RequirePermissionsAsync(...)` evaluates a `PermissionExpression` against `ICurrentUserService` and throws `ForbiddenException` itself |
+| `PermissionAuthorization` | `BuildingBlock.Web/Authorization` | Endpoint-level OR-matching over raw permission strings, delegating leaf matching to `PermissionExpression.IsGranted` |
 | `PermissionEndpointExtensions` | `BuildingBlock.Web/Authorization` | `RequirePermissions(...)` — endpoint-level authorization declaration |
-| `AuthorizationExtensions` | `BuildingBlock.Web/Authorization` | `AddBuildingBlockAuthorization()` — the single DI registration entry point |
+| `AuthorizationExtensions` | `BuildingBlock.Web/Authorization` | `AddBuildingBlockAuthorization()` — the single DI registration entry point (endpoint policies + `IAuthorizationGuard`) |
 
-`BuildingBlock.SharedKernel` stays transport- and framework-agnostic: it may hold claim-key constants and plain `ClaimsPrincipal` reads (BCL-only, no ASP.NET types), but never authorization *decisions* or ASP.NET authorization infrastructure. All permission evaluation and endpoint wiring is centralized in `BuildingBlock.Web`.
+`BuildingBlock.SharedKernel` stays transport- and framework-agnostic: it may hold claim-key constants and plain `ClaimsPrincipal` reads (BCL-only, no ASP.NET types), but never authorization *decisions*. Permission *evaluation* itself (the AND/OR expression tree and its leaf-matching rule) lives in `BuildingBlock.Application` — framework-agnostic, and the only layer both Application-layer callers and `BuildingBlock.Web` (which already depends on Application) can share without inverting the dependency direction. ASP.NET-specific authorization infrastructure (policies, endpoint wiring) stays centralized in `BuildingBlock.Web`.
 
 ## Flow
 
@@ -43,7 +45,42 @@ app.MapGroup("/products")
    .RequirePermissions(Permissions.Product.Manage);
 ```
 
-`RequirePermissions` is OR-matched: the caller succeeds if they own *any* of the listed permissions — exactly, via `Permissions.Root` (superuser bypass), or via that permission's module aggregate (`"{module}:full"`). This resolution logic lives in `PermissionAuthorization.HasAnyPermission` and nowhere else.
+`RequirePermissions` is OR-matched: the caller succeeds if they own *any* of the listed permissions — exactly, via `Permissions.Root` (superuser bypass), or via that permission's module aggregate (`"{module}:full"`). The leaf-matching rule lives in `PermissionExpression.IsGranted` and nowhere else; `PermissionAuthorization.HasAnyPermission` just OR-aggregates over it.
+
+## Requiring permissions inside a handler/service (`IAuthorizationGuard`)
+
+Endpoint-level `RequirePermissions(...)` only covers OR-matched, HTTP-route-shaped checks. When a Command/Query handler or any other Application-layer code needs to enforce a permission — including AND/OR combinations no single endpoint policy can express — inject `IAuthorizationGuard` (`BuildingBlock.Application.Abstractions.Authorization`) instead of checking `ICurrentUserService` and throwing by hand:
+
+```csharp
+public sealed class UpdateProductHandler(IAuthorizationGuard authorizationGuard, ...) : ICommandHandler<UpdateProductCommand>
+{
+    public async Task Handle(UpdateProductCommand command, CancellationToken ct)
+    {
+        await authorizationGuard.RequirePermissionsAsync(Permissions.Product.Manage, ct);
+        // ...
+    }
+}
+```
+
+A bare permission key converts implicitly to a `PermissionExpression`, so the common single- and multi-permission cases need no ceremony:
+
+```csharp
+await authorizationGuard.RequirePermissionsAsync(Permissions.Product.Manage);               // single
+await authorizationGuard.RequirePermissionsAsync(Permissions.Product.View, Permissions.Product.Manage); // AND (multiple args)
+```
+
+`All`/`Or` compose and nest arbitrarily for the uncommon cross-permission cases — import them with `using static NovaCore.BuildingBlock.Application.Abstractions.Authorization.PermissionExpression;` to drop the qualification:
+
+```csharp
+await authorizationGuard.RequirePermissionsAsync(
+    PermA,
+    Or(PermB, PermC, PermD));                 // PermA AND (PermB OR PermC OR PermD)
+
+await authorizationGuard.RequirePermissionsAsync(
+    Or(All(PermA, PermB), All(PermA, PermC))); // (PermA AND PermB) OR (PermA AND PermC)
+```
+
+`RequirePermissionsAsync` throws `ForbiddenException` itself on failure - callers never write `if (!await guard.HasPermissionsAsync(...)) throw ...`. A non-throwing `HasPermissions(...)` exists for the rare case a caller genuinely needs a boolean instead. Both resolve the current actor's permission set exactly once (via `ICurrentUserService.GetPermissions()`) and evaluate the whole expression tree in memory - no repeated claim/cache lookups per node, regardless of how deeply the expression nests.
 
 ## Permission keys (`Permissions`, `BuildingBlock.SharedKernel.Constants`)
 
@@ -71,4 +108,5 @@ Inside a Command/Query handler (not an endpoint), prefer injecting `ICurrentUser
 
 - Don't re-authenticate credentials at the service level — trust the JWT's claims once signature/expiry validation passes.
 - Don't call an external auth service to check permissions — they're in the token.
-- New claim type keys go in `AppClaimTypes` (SharedKernel); new permission keys go in `Permissions` (SharedKernel); new evaluation strategies go in `BuildingBlock.Web/Authorization` — never split a single concern across layers for convenience.
+- New claim type keys go in `AppClaimTypes` (SharedKernel); new permission keys go in `Permissions` (SharedKernel); new leaf-matching/evaluation rules go in `PermissionExpression` (BuildingBlock.Application) so both the endpoint and Application-layer paths stay in sync — never split a single concern across layers for convenience.
+- Prefer `IAuthorizationGuard` over endpoint-only checks whenever the rule doesn't map cleanly to "OR of permissions on this route" - AND requirements, cross-permission composition, or checks that belong to a use-case rather than a route.

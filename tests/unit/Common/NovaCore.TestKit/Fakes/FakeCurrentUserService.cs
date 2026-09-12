@@ -13,6 +13,7 @@ public sealed class FakeCurrentUserService : ICurrentUserService
     public string UserEmail { get; set; } = "test-user@novacore.local";
     public string UserName { get; set; } = "test-user";
     public List<string> Roles { get; set; } = [];
+    public List<string> Permissions { get; set; } = [];
     public bool Authenticated { get; set; } = true;
     public string? CorrelationId { get; set; } = Guid.CreateVersion7().ToString();
     public string? IdempotencyKey { get; set; } = Guid.CreateVersion7().ToString();
@@ -25,6 +26,7 @@ public sealed class FakeCurrentUserService : ICurrentUserService
     public string GetUserEmail() => UserEmail;
     public string GetUserName() => UserName;
     public List<string> GetRoles() => Roles;
+    public IReadOnlySet<string> GetPermissions() => Permissions.ToHashSet(StringComparer.Ordinal);
     public bool IsAuthenticated() => Authenticated;
     public bool IsInRole(string role) => Roles.Contains(role);
     public void SetAccessToken(string token) => _accessToken = token;

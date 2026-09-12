@@ -2,6 +2,7 @@ using System.Security.Claims;
 
 using NovaCore.BuildingBlock.Application.Abstractions.Services;
 using NovaCore.BuildingBlock.SharedKernel.Constants;
+using NovaCore.BuildingBlock.SharedKernel.Extensions;
 
 using Microsoft.AspNetCore.Http;
 
@@ -31,6 +32,12 @@ public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor)
     public List<string> GetRoles()
     {
         return _httpContext?.User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList() ?? [];
+    }
+
+    public IReadOnlySet<string> GetPermissions()
+    {
+        return _httpContext?.User.GetPermissions().ToHashSet(StringComparer.Ordinal)
+            ?? new HashSet<string>(StringComparer.Ordinal);
     }
 
     public bool IsAuthenticated()
