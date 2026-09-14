@@ -1,14 +1,13 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
-using NovaCore.Auth.Application.Configurations;
 using NovaCore.Auth.Application.Abstractions.Persistence.Apps;
 using NovaCore.Auth.Application.Abstractions.Persistence.RefreshTokens;
 using NovaCore.Auth.Application.Abstractions.Persistence.Scopes;
 using NovaCore.Auth.Application.Abstractions.Persistence.TenantClients;
 using NovaCore.Auth.Application.Abstractions.Persistence.Tenants;
+using NovaCore.Auth.Application.Configurations;
 using NovaCore.Auth.Domain.Entities.Accounts;
 using NovaCore.Auth.Domain.Entities.Apps;
 using NovaCore.Auth.Domain.Entities.Invitations;
@@ -43,9 +42,7 @@ using NovaCore.BuildingBlock.Persistence.Ef.Inbox;
 using NovaCore.BuildingBlock.Persistence.Ef.Outbox;
 using NovaCore.BuildingBlock.Persistence.Repository;
 using NovaCore.BuildingBlock.SharedKernel.Authorization;
-
 using Npgsql;
-
 using OpenTelemetry.Trace;
 
 namespace NovaCore.Auth.Persistence;
@@ -200,11 +197,11 @@ public static class DependencyInjection
         return services;
     }
 
-    // RefreshTokenRepo implements the generic IRepository<T> (restored - it genuinely needs the
-    // tracked-load-and-mutate UpdateAsync), so it's Scrutor-scanned; AccountRepo doesn't (its only
-    // real operation, DeleteIfExistAsync, is a bulk ExecuteDeleteAsync that doesn't fit the
-    // generic shape - Account mutation itself goes through ASP.NET Identity's UserManager, not
-    // this repository at all), so it stays manually registered.
+    // RefreshTokenRepository implements the generic IRepository<T> (restored - it genuinely needs
+    // the tracked-load-and-mutate UpdateAsync), so it's Scrutor-scanned; AccountRepository stays
+    // manually registered regardless (Account mutation itself goes through ASP.NET Identity's
+    // UserManager, not this repository, for everything except its own DeleteIfExistAsync/
+    // GetRoleIdsAsync/GetRoleNamesAsync/IsAssignedToAppAsync helpers).
     //
     // The Write Services registered here by hand (Account/RefreshToken) are each a single
     // Repository-method decorator with no meaningful grouping of their own (e.g.
@@ -219,7 +216,7 @@ public static class DependencyInjection
     {
         services.AddScopedByInterface(typeof(IRepository<>), typeof(AuthDbContext));
 
-        services.AddScoped<IAccountRepository, AccountRepo>();
+        services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<IAccountWriteService, AccountWriteService>();
 
         services.AddScoped<IRefreshTokenWriteService, RefreshTokenWriteService>();

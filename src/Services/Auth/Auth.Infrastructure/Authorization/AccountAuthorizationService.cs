@@ -1,9 +1,11 @@
 using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
 using NovaCore.Auth.Application.Abstractions.Persistence.Permissions;
+using NovaCore.Auth.Application.Abstractions.Persistence.Tenants;
 using NovaCore.BuildingBlock.Application.Abstractions.Outbox;
 using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
 using NovaCore.BuildingBlock.Application.Exceptions;
+using NovaCore.BuildingBlock.Domain.Exceptions;
 using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
 namespace NovaCore.Auth.Infrastructure.Authorization;

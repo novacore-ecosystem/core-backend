@@ -1,10 +1,6 @@
-using Microsoft.EntityFrameworkCore;
-
 using NovaCore.Auth.Application.Abstractions.Persistence.Permissions;
 using NovaCore.Auth.Domain.Entities.Permissions;
 using NovaCore.Auth.Persistence.Contexts.Permissions.Repositories;
-using NovaCore.Auth.Persistence.Engine;
-
 using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
 using NovaCore.BuildingBlock.Domain.Exceptions;
 using NovaCore.BuildingBlock.Persistence;
@@ -12,13 +8,8 @@ using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
 namespace NovaCore.Auth.Persistence.Contexts.Permissions.Write;
 
-/// <summary>The reference Persistence Service for the centralized grant model - a cross-aggregate
-/// concern (PermissionDefinition/PermissionGrant, keyed by an arbitrary provider) exactly like
-/// EffectivePermissionReadService, so it injects AuthDbContext directly for PermissionGrant queries
-/// rather than a single-entity Repository abstraction. IPersistenceService makes it
-/// auto-registered.</summary>
 public sealed class PermissionGrantService(
-    AuthDbContext dbContext,
+    IPermissionGrantRepository permissionGrantRepo,
     IPermissionDefinitionRepository permissionDefinitionRepo,
     PermissionRegistry permissionRegistry,
     IUnitOfWork unitOfWork) : IPermissionGrantService, IPersistenceService
@@ -35,18 +26,12 @@ public sealed class PermissionGrantService(
 
         EnsureProviderAllowed(permissionKey, providerName);
 
-        var alreadyGranted = await dbContext.PermissionGrants
-            .IgnoreQueryFilters()
-            .AnyAsync(
-                g => g.TenantId == tenantId
-                    && g.PermissionDefinitionId == definition.Id
-                    && g.ProviderName == providerName
-                    && g.ProviderKey == providerKey,
-                ct);
+        var alreadyGranted = await permissionGrantRepo.ExistsForProviderAsync(
+            tenantId, definition.Id, providerName, providerKey, ct);
         if (alreadyGranted)
             return;
 
-        await dbContext.PermissionGrants.AddAsync(PermissionGrant.Create(definition.Id, providerName, providerKey), ct);
+        await permissionGrantRepo.AddAsync(PermissionGrant.Create(definition.Id, providerName, providerKey), ct);
         await unitOfWork.SaveChangesAsync(ct);
     }
 
@@ -57,19 +42,11 @@ public sealed class PermissionGrantService(
         Guid tenantId,
         CancellationToken ct = default)
     {
-        var grant = await dbContext.PermissionGrants
-            .IgnoreQueryFilters()
-            .Include(g => g.PermissionDefinition)
-            .FirstOrDefaultAsync(
-                g => g.TenantId == tenantId
-                    && g.PermissionDefinition.Key.Value == permissionKey
-                    && g.ProviderName == providerName
-                    && g.ProviderKey == providerKey,
-                ct);
+        var grant = await permissionGrantRepo.GetForProviderAsync(tenantId, permissionKey, providerName, providerKey, ct);
         if (grant is null)
             return;
 
-        dbContext.PermissionGrants.Remove(grant);
+        await permissionGrantRepo.RemoveRangeAsync([grant], ct);
         await unitOfWork.SaveChangesAsync(ct);
     }
 
@@ -94,11 +71,7 @@ public sealed class PermissionGrantService(
                 EnsureProviderAllowed(key, providerName);
         }
 
-        var currentGrants = await dbContext.PermissionGrants
-            .IgnoreQueryFilters()
-            .Include(g => g.PermissionDefinition)
-            .Where(g => g.TenantId == tenantId && g.ProviderName == providerName && g.ProviderKey == providerKey)
-            .ToListAsync(ct);
+        var currentGrants = await permissionGrantRepo.ListForProviderAsync(tenantId, providerName, providerKey, ct);
 
         var currentKeys = currentGrants
             .Select(g => g.PermissionDefinition.Key.Value)
@@ -107,14 +80,11 @@ public sealed class PermissionGrantService(
         var keysToRemove = currentKeys.Except(requestedKeys).ToList();
         var keysToAdd = requestedKeys.Except(currentKeys).Where(definitionsByKey.ContainsKey).ToList();
 
-        foreach (var key in keysToRemove)
-        {
-            var grant = currentGrants.First(g => g.PermissionDefinition.Key.Value == key);
-            dbContext.PermissionGrants.Remove(grant);
-        }
+        var grantsToRemove = currentGrants.Where(g => keysToRemove.Contains(g.PermissionDefinition.Key.Value));
+        await permissionGrantRepo.RemoveRangeAsync(grantsToRemove, ct);
 
         foreach (var key in keysToAdd)
-            await dbContext.PermissionGrants.AddAsync(
+            await permissionGrantRepo.AddAsync(
                 PermissionGrant.Create(definitionsByKey[key].Id, providerName, providerKey),
                 ct);
 
@@ -135,13 +105,7 @@ public sealed class PermissionGrantService(
         Guid tenantId,
         CancellationToken ct = default)
     {
-        var keys = await dbContext.PermissionGrants
-            .IgnoreQueryFilters()
-            .Where(g => g.TenantId == tenantId && g.ProviderName == providerName && g.ProviderKey == providerKey)
-            .Select(g => g.PermissionDefinition.Key.Value)
-            .ToListAsync(ct);
-
-        return keys.ToHashSet(StringComparer.Ordinal);
+        return await permissionGrantRepo.GetGrantedKeysAsync(tenantId, providerName, providerKey, ct);
     }
 
     private void EnsureProviderAllowed(string permissionKey, PermissionProviderName providerName)

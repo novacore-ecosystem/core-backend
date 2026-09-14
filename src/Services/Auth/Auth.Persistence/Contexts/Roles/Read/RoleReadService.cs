@@ -1,47 +1,34 @@
-using Microsoft.EntityFrameworkCore;
-
 using NovaCore.Auth.Application.Abstractions.Persistence.Roles;
 using NovaCore.Auth.Domain.Entities.Roles;
 using NovaCore.Auth.Domain.ValueObjects;
-using NovaCore.Auth.Persistence.Engine;
-
+using NovaCore.Auth.Persistence.Contexts.Permissions.Repositories;
+using NovaCore.Auth.Persistence.Contexts.Roles.Repositories;
 using NovaCore.BuildingBlock.Persistence;
 using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
 namespace NovaCore.Auth.Persistence.Contexts.Roles.Read;
 
-public sealed class RoleReadService(AuthDbContext dbContext) : IRoleReadService, IPersistenceService
+public sealed class RoleReadService(
+    IRoleRepository roleRepo,
+    IPermissionGrantRepository permissionGrantRepo) : IRoleReadService, IPersistenceService
 {
     public async Task<Role?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        return await dbContext.Roles
-            .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.Id == id, ct);
+        return await roleRepo.GetAsync(r => r.Id == id, ct);
     }
 
     public async Task<Role?> GetByCodeAsync(RoleCode code, CancellationToken ct = default)
     {
-        return await dbContext.Roles
-            .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.Code.Equals(code), ct);
+        return await roleRepo.GetAsync(r => r.Code.Equals(code), ct);
     }
 
     public async Task<IReadOnlyList<Role>> ListAsync(CancellationToken ct = default)
     {
-        return await dbContext.Roles
-            .AsNoTracking()
-            .OrderBy(r => r.Name)
-            .ToListAsync(ct);
+        return await roleRepo.ListAsync(ct);
     }
 
     public async Task<IReadOnlyList<string>> GetPermissionKeysAsync(Guid roleId, CancellationToken ct = default)
     {
-        var providerKey = roleId.ToString();
-
-        return await dbContext.PermissionGrants
-            .AsNoTracking()
-            .Where(g => g.ProviderName == PermissionProviderName.Role && g.ProviderKey == providerKey)
-            .Select(g => g.PermissionDefinition.Key.Value)
-            .ToListAsync(ct);
+        return await permissionGrantRepo.GetKeysByProviderAsync(PermissionProviderName.Role, roleId.ToString(), ct);
     }
 }

@@ -1,18 +1,15 @@
-using Microsoft.EntityFrameworkCore;
-
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
 using NovaCore.Auth.Application.Features.Accounts.DTOs;
-using NovaCore.Auth.Domain.Entities.Accounts;
-using NovaCore.Auth.Persistence.Engine;
-
+using NovaCore.Auth.Persistence.Contexts.Accounts.Repositories;
+using NovaCore.Auth.Persistence.Contexts.Roles.Repositories;
 using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
-using NovaCore.BuildingBlock.Domain.Exceptions;
 using NovaCore.BuildingBlock.Persistence;
 
 namespace NovaCore.Auth.Persistence.Contexts.Accounts.Write;
 
 public sealed class AccountRoleAssignmentService(
-    AuthDbContext dbContext,
+    IAccountRepository accountRepo,
+    IRoleRepository roleRepo,
     IUnitOfWork unitOfWork) : IAccountRoleAssignmentService, IPersistenceService
 {
     public async Task<AccountRoleReplaceResult> ReplaceRolesAsync(
@@ -20,29 +17,33 @@ public sealed class AccountRoleAssignmentService(
         IReadOnlyCollection<Guid> roleIds,
         CancellationToken ct = default)
     {
-        var account = await dbContext.Users
-            .Include(a => a.AccountRoles)
-            .FirstOrDefaultAsync(a => a.Id == accountId, ct)
-            ?? throw ExceptionFactory.EntityNotFound<Account>(accountId);
-
         var requestedIds = roleIds.ToHashSet();
         var requestedRoles = requestedIds.Count == 0
             ? []
-            : await dbContext.Roles.Where(r => requestedIds.Contains(r.Id)).ToListAsync(ct);
-
-        var currentRoleIds = account.AccountRoles.Select(ar => ar.RoleId).ToHashSet();
+            : await roleRepo.GetManyAsync(r => r.Id, requestedIds, ct);
         var requestedRoleIds = requestedRoles.Select(r => r.Id).ToHashSet();
 
-        var toRemove = currentRoleIds.Except(requestedRoleIds).ToArray();
-        var toAdd = requestedRoles.Where(r => !currentRoleIds.Contains(r.Id)).ToArray();
+        var hasChanges = false;
+        await accountRepo.UpdateAsync(
+            a => a.Id == accountId,
+            q => q.Include(a => a.AccountRoles),
+            account =>
+            {
+                var currentRoleIds = account.AccountRoles.Select(ar => ar.RoleId).ToHashSet();
 
-        foreach (var roleId in toRemove)
-            account.RemoveRole(roleId);
+                var toRemove = currentRoleIds.Except(requestedRoleIds).ToArray();
+                var toAdd = requestedRoles.Where(r => !currentRoleIds.Contains(r.Id)).ToArray();
 
-        foreach (var role in toAdd)
-            account.AssignRole(role);
+                foreach (var roleId in toRemove)
+                    account.RemoveRole(roleId);
 
-        var hasChanges = toRemove.Length > 0 || toAdd.Length > 0;
+                foreach (var role in toAdd)
+                    account.AssignRole(role);
+
+                hasChanges = toRemove.Length > 0 || toAdd.Length > 0;
+            },
+            ct);
+
         if (hasChanges)
             await unitOfWork.SaveChangesAsync(ct);
 
@@ -51,24 +52,26 @@ public sealed class AccountRoleAssignmentService(
 
     public async Task RemoveRoleAsync(Guid accountId, Guid roleId, CancellationToken ct = default)
     {
-        var account = await dbContext.Users
-            .Include(a => a.AccountRoles)
-            .FirstOrDefaultAsync(a => a.Id == accountId, ct)
-            ?? throw ExceptionFactory.EntityNotFound<Account>(accountId);
+        var hasChanges = false;
+        await accountRepo.UpdateAsync(
+            a => a.Id == accountId,
+            q => q.Include(a => a.AccountRoles),
+            account =>
+            {
+                if (!account.AccountRoles.Any(ar => ar.RoleId == roleId))
+                    return;
 
-        if (!account.AccountRoles.Any(ar => ar.RoleId == roleId))
-            return;
+                account.RemoveRole(roleId);
+                hasChanges = true;
+            },
+            ct);
 
-        account.RemoveRole(roleId);
-        await unitOfWork.SaveChangesAsync(ct);
+        if (hasChanges)
+            await unitOfWork.SaveChangesAsync(ct);
     }
 
     public async Task<IReadOnlyCollection<Guid>> GetAccountIdsInRoleAsync(Guid roleId, CancellationToken ct = default)
     {
-        return await dbContext.UserRoles
-            .AsNoTracking()
-            .Where(ar => ar.RoleId == roleId)
-            .Select(ar => ar.UserId)
-            .ToListAsync(ct);
+        return await roleRepo.GetAccountIdsAsync(roleId, ct);
     }
 }

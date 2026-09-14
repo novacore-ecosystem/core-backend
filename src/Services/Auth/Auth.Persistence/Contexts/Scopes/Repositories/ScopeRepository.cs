@@ -4,7 +4,7 @@ using NovaCore.Auth.Persistence.Engine;
 
 namespace NovaCore.Auth.Persistence.Contexts.Scopes.Repositories;
 
-public sealed class ScopeRepo(AuthDbContext dbContext)
+public sealed class ScopeRepository(AuthDbContext dbContext)
     : AuthBaseRepository<Scope>(dbContext), IScopeRepository
 {
 }

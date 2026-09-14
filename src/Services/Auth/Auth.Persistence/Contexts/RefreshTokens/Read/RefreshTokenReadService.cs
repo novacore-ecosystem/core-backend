@@ -1,21 +1,15 @@
 using NovaCore.Auth.Application.Abstractions.Persistence.RefreshTokens;
 using NovaCore.Auth.Domain.Entities.Accounts;
-using NovaCore.Auth.Persistence.Engine;
-
-using Microsoft.EntityFrameworkCore;
-
+using NovaCore.Auth.Persistence.Contexts.RefreshTokens.Repositories;
 using NovaCore.BuildingBlock.Persistence;
 
 namespace NovaCore.Auth.Persistence.Contexts.RefreshTokens.Read;
 
-public sealed class RefreshTokenReadService(AuthDbContext dbContext) : IRefreshTokenReadService, IPersistenceService
+public sealed class RefreshTokenReadService(IRefreshTokenRepository refreshTokenRepo)
+    : IRefreshTokenReadService, IPersistenceService
 {
     public async Task<List<RefreshToken>> GetByUserIdAsync(Guid userId, CancellationToken ct = default)
     {
-        return await dbContext.RefreshTokens
-            .AsNoTracking()
-            .Where(rt => rt.AccountId == userId && !rt.IsRevoked)
-            .OrderByDescending(rt => rt.CreatedAt)
-            .ToListAsync(ct);
+        return await refreshTokenRepo.GetByUserIdAsync(userId, ct);
     }
 }

@@ -1,10 +1,8 @@
-using Microsoft.EntityFrameworkCore;
-
 using NovaCore.Auth.Application.Abstractions.Persistence.Registrations;
 using NovaCore.Auth.Domain.Entities.Registrations;
 using NovaCore.Auth.Persistence.Contexts.Permissions.Repositories;
-using NovaCore.Auth.Persistence.Engine;
-
+using NovaCore.Auth.Persistence.Contexts.Registrations.Repositories;
+using NovaCore.Auth.Persistence.Contexts.Roles.Repositories;
 using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
 using NovaCore.BuildingBlock.Domain.Exceptions;
 using NovaCore.BuildingBlock.Persistence;
@@ -13,7 +11,9 @@ using NovaCore.BuildingBlock.SharedKernel.Authorization;
 namespace NovaCore.Auth.Persistence.Contexts.Registrations.Write;
 
 public sealed class RegistrationDefaultsWriteService(
-    AuthDbContext dbContext,
+    IRegistrationDefaultRoleRepository registrationDefaultRoleRepo,
+    IRegistrationDefaultPermissionRepository registrationDefaultPermissionRepo,
+    IRoleRepository roleRepo,
     IPermissionDefinitionRepository permissionDefinitionRepo,
     PermissionRegistry permissionRegistry,
     IUnitOfWork unitOfWork) : IRegistrationDefaultsWriteService, IPersistenceService
@@ -22,27 +22,18 @@ public sealed class RegistrationDefaultsWriteService(
         Guid tenantId, Guid appId, IReadOnlyCollection<Guid> roleIds, CancellationToken ct = default)
     {
         var requestedIds = roleIds.ToHashSet();
+        var validRequestedIds = await roleRepo.GetExistingValuesAsync(r => r.Id, requestedIds, ct);
 
-        var existingRoleIds = await dbContext.Roles
-            .Where(r => requestedIds.Contains(r.Id))
-            .Select(r => r.Id)
-            .ToListAsync(ct);
-        var validRequestedIds = existingRoleIds.ToHashSet();
-
-        var currentGrants = await dbContext.RegistrationDefaultRoles
-            .IgnoreQueryFilters()
-            .Where(x => x.TenantId == tenantId && x.AppId == appId)
-            .ToListAsync(ct);
+        var currentGrants = await registrationDefaultRoleRepo.ListForAppAsync(tenantId, appId, ct);
         var currentRoleIds = currentGrants.Select(x => x.RoleId).ToHashSet();
 
-        var idsToRemove = currentRoleIds.Except(validRequestedIds).ToList();
         var idsToAdd = validRequestedIds.Except(currentRoleIds).ToList();
+        var grantsToRemove = currentGrants.Where(x => !validRequestedIds.Contains(x.RoleId));
 
-        foreach (var roleId in idsToRemove)
-            dbContext.RegistrationDefaultRoles.Remove(currentGrants.First(x => x.RoleId == roleId));
+        await registrationDefaultRoleRepo.RemoveRangeAsync(grantsToRemove, ct);
 
         foreach (var roleId in idsToAdd)
-            await dbContext.RegistrationDefaultRoles.AddAsync(RegistrationDefaultRole.Create(appId, roleId), ct);
+            await registrationDefaultRoleRepo.AddAsync(RegistrationDefaultRole.Create(appId, roleId), ct);
 
         await unitOfWork.SaveChangesAsync(ct);
     }
@@ -64,24 +55,18 @@ public sealed class RegistrationDefaultsWriteService(
                     $"Permission \"{key}\" cannot be granted to provider \"{PermissionProviderName.User.ToName()}\".");
         }
 
-        var currentGrants = await dbContext.RegistrationDefaultPermissions
-            .IgnoreQueryFilters()
-            .Include(x => x.PermissionDefinition)
-            .Where(x => x.TenantId == tenantId && x.AppId == appId)
-            .ToListAsync(ct);
+        var currentGrants = await registrationDefaultPermissionRepo.ListForAppAsync(tenantId, appId, ct);
         var currentKeys = currentGrants
             .Select(x => x.PermissionDefinition.Key.Value)
             .ToHashSet(StringComparer.Ordinal);
 
-        var keysToRemove = currentKeys.Except(requestedKeys).ToList();
         var keysToAdd = requestedKeys.Except(currentKeys).Where(definitionsByKey.ContainsKey).ToList();
+        var grantsToRemove = currentGrants.Where(x => !requestedKeys.Contains(x.PermissionDefinition.Key.Value));
 
-        foreach (var key in keysToRemove)
-            dbContext.RegistrationDefaultPermissions.Remove(
-                currentGrants.First(x => x.PermissionDefinition.Key.Value == key));
+        await registrationDefaultPermissionRepo.RemoveRangeAsync(grantsToRemove, ct);
 
         foreach (var key in keysToAdd)
-            await dbContext.RegistrationDefaultPermissions.AddAsync(
+            await registrationDefaultPermissionRepo.AddAsync(
                 RegistrationDefaultPermission.Create(appId, definitionsByKey[key].Id), ct);
 
         await unitOfWork.SaveChangesAsync(ct);
