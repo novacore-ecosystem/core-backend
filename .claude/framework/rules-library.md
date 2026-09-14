@@ -14,7 +14,9 @@
 | Exception | `docs/reference/exceptions.md` |
 | Validation | `docs/04-coding-rules.md` (Validation section) |
 | Caching | `docs/reference/caching.md`, `docs/04-coding-rules.md` (Caching / decorator pattern section) |
-| Naming | `docs/04-coding-rules.md` (Naming conventions section) |
+| Naming | `docs/04-coding-rules.md` (Naming conventions section, NovaCore-specific) + `docs/conventions/personal-coding-standards.md` (boolean naming, general C# naming — portable) |
+| Documentation / XML comments | `docs/conventions/personal-coding-standards.md` (properties, methods/classes, summary/param/returns/remarks formatting, when comments are required) |
+| Style (member ordering, regions, syntax currency, anti-hardcoding, static lookups) | `docs/conventions/personal-coding-standards.md` |
 | Testing | `docs/testing/TestingGuidelines.md` |
 
 ## Gaps (no dedicated rules document exists yet)

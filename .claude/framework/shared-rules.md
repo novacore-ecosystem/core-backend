@@ -11,6 +11,7 @@
 - Before writing any code, locate the existing template or convention doc for that construct (`docs/06-implementation-templates.md`, `docs/conventions/*.md`). Reuse its shape.
 - If a template doc names a real reference file (e.g. "mirrors `Auth.API/Endpoints/Register.cs`"), open that file and match its actual current shape — the template is a starting point, the real file is ground truth.
 - Never invent a second way to do something the project already has a pattern for. If no pattern exists, stop and say so rather than freehanding a novel structure.
+- **Every code-touching Skill (`implement`, `complete`, `align`, `sync`, `scaffold`, `verify`, `review`) always loads [personal-coding-standards.md](../../docs/conventions/personal-coding-standards.md) in addition to its Reading Contract row** — it's the baseline C# style rule doc (XML documentation, member ordering, regions, boolean naming, anti-hardcoding, static lookups, language-syntax currency, enum trailing commas) that applies regardless of target/layer, so it isn't repeated as a per-row entry in every skill's Reading Contract table. NovaCore-specific rules (transaction ownership, `DbContext`/repository access, `SaveChangesAsync` placement) stay out of that doc on purpose — see its own "NovaCore-specific rules live elsewhere" section — and are still reached only through the normal per-target Reading Contract rows.
 
 ## 3. Stop conditions (common to all skills)
 Halt and ask the user instead of proceeding when:

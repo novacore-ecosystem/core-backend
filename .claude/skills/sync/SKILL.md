@@ -12,7 +12,7 @@ Catch up an implementation that was correct when written but has since fallen be
 Examples: `/sync entity`, `/sync persistence`, `/sync module Product`.
 
 ## Reading Contract
-- **Required:** `../../framework/pattern-library.md` (entry matching `<target>`), `../../framework/template-library.md` (matching entry), `../../framework/rules-library.md` (relevant categories), `docs/02-architecture-rules.md`
+- **Required:** `../../framework/pattern-library.md` (entry matching `<target>`), `../../framework/template-library.md` (matching entry), `../../framework/rules-library.md` (relevant categories), `docs/02-architecture-rules.md`, `docs/conventions/personal-coding-standards.md` (baseline C# style — XML docs, member ordering, regions, boolean naming, anti-hardcoding, static lookups, syntax currency)
 - **Optional (conditional):**
   - `docs/refactoring/README.md` + the specific `docs/refactoring/*.md` tracker, if one exists whose scope covers the target/module — when a tracker exists, its target architecture is the most authoritative source and takes precedence over inferring currency from the libraries alone
   - `docs/tasks/PROGRESS.md` — to confirm this work isn't already tracked/in-progress elsewhere

@@ -16,6 +16,8 @@ Examples: `/implement api CreateCategory`, `/implement entity Product`, `/implem
 `api` and `cqrs` are **composite targets** — see Execution Rules step 3.
 
 ## Reading Contract
+**Always required, every target:** `docs/conventions/personal-coding-standards.md` (XML docs, member ordering, regions, boolean naming, anti-hardcoding, static lookups, syntax currency — baseline C# style, not repeated per row below).
+
 Resolved per `<target>` against `../../framework/pattern-library.md` (always) — every target below has a pattern-library entry with its own Required/Optional/Forbidden. This table adds only what's specific to *generating* code for that target, on top of the pattern entry:
 
 | `<target>` | Additional Required | Additional Optional |

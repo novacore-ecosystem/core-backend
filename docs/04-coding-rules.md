@@ -1,6 +1,6 @@
 # Coding Rules
 
-**Scope:** conventions extracted from the actual codebase (Auth Service = reference). These are observed rules, not invented ones — every example below cites the file it came from. For layering/dependency rules, see [02-architecture-rules.md](02-architecture-rules.md). For ready-to-copy code shapes, see [06-implementation-templates.md](06-implementation-templates.md). For layer-specific style rules — how a class is shaped, not just where the file goes — see [conventions/domain-coding-conventions.md](conventions/domain-coding-conventions.md) (Domain: aggregate creation shape, no Spec objects, many-to-many mapping entities, reusable Value Object validation) and [conventions/application-coding-conventions.md](conventions/application-coding-conventions.md) (Application: full Feature-First folder shape, Handler Philosophy, responsibility-based extraction, Mapster policy). This doc covers naming, CQRS shape, endpoints, DI registration, and everything else not owned by those two.
+**Scope:** conventions extracted from the actual codebase (Auth Service = reference). These are observed rules, not invented ones — every example below cites the file it came from. For layering/dependency rules, see [02-architecture-rules.md](02-architecture-rules.md). For ready-to-copy code shapes, see [06-implementation-templates.md](06-implementation-templates.md). For layer-specific style rules — how a class is shaped, not just where the file goes — see [conventions/domain-coding-conventions.md](conventions/domain-coding-conventions.md) (Domain: aggregate creation shape, no Spec objects, many-to-many mapping entities, reusable Value Object validation) and [conventions/application-coding-conventions.md](conventions/application-coding-conventions.md) (Application: full Feature-First folder shape, Handler Philosophy, responsibility-based extraction, Mapster policy). This doc covers naming, CQRS shape, endpoints, DI registration, and everything else not owned by those two. For general C# style that isn't NovaCore-specific at all (XML doc rules, member ordering, regions, boolean naming, anti-hardcoding, language-syntax currency, external-data naming) see [conventions/personal-coding-standards.md](conventions/personal-coding-standards.md) — that doc is deliberately portable to other projects; this one and the two above are not.
 
 ## Folder structure (per feature)
 
@@ -165,7 +165,7 @@ Implement `IRecurringJob` (`BuildingBlock.Application.Abstractions.Jobs`), regis
 
 ## Formatting
 
-Baseline house style for whitespace/line-breaking, applies to all C# code unless a more specific rule above overrides it for that construct.
+Baseline house style for whitespace/line-breaking, applies to all C# code unless a more specific rule above overrides it for that construct. For XML documentation formatting, member ordering, `#region` usage outside handlers, boolean naming, and enum trailing commas, see [conventions/personal-coding-standards.md](conventions/personal-coding-standards.md) — those are general C# rules, not repeated here.
 
 **Properties** — no blank lines between consecutive properties/fields in a class, even across attributes or short XML doc comments. Keeps entities scannable when they have many properties.
 

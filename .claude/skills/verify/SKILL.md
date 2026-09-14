@@ -12,6 +12,8 @@ Answer, with evidence: is this implementation aligned with project architecture,
 `[Name]` follows the same rule as `/align`/`/sync`: optional for single-file-scoped targets (uses current context if omitted), required for `flow`/`module`/`feature`. `solution` takes no name — it means the whole repository, and is the one target where broad reading is legitimate because it was explicitly requested by name, not assumed.
 
 ## Reading Contract
+**Always required, every target:** `docs/conventions/personal-coding-standards.md` (XML docs, member ordering, regions, boolean naming, anti-hardcoding, static lookups, syntax currency).
+
 | `<target>` | Required | Forbidden |
 |---|---|---|
 | `api`, `handler` | `docs/02-architecture-rules.md`, `docs/04-coding-rules.md`, `docs/conventions/application-coding-conventions.md`, `../../framework/pattern-library.md` (CQRS/Endpoint entries), target service's `docs/services/*.md` | other services, unrelated Features |

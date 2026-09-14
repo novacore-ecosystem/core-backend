@@ -14,6 +14,8 @@ Restore an already-working piece of code to this project's official production s
 Examples: `/align handler`, `/align api`, `/align persistence`, `/align flow Checkout`.
 
 ## Reading Contract
+**Always required, every target:** `docs/conventions/personal-coding-standards.md` (XML docs, member ordering, regions, boolean naming, anti-hardcoding, static lookups, syntax currency).
+
 | `<target>` | Required | Forbidden |
 |---|---|---|
 | `api`, `handler` | `docs/04-coding-rules.md`, `docs/conventions/application-coding-conventions.md`, target service's `docs/services/*.md`, `docs/workflows/refactor-existing-code.md` | other services, unrelated Features |
