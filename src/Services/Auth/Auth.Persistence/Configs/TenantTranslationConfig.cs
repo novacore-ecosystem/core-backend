@@ -6,16 +6,16 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace NovaCore.Auth.Persistence.Configs;
 
-public sealed class TenantLocaleConfig : IEntityTypeConfiguration<TenantLocale>
+public sealed class TenantTranslationConfig : IEntityTypeConfiguration<TenantTranslation>
 {
-    public void Configure(EntityTypeBuilder<TenantLocale> builder)
+    public void Configure(EntityTypeBuilder<TenantTranslation> builder)
     {
         // Table
-        builder.ToTable("tenant_locales");
+        builder.ToTable("tenant_translations");
 
         // Properties
         // Own surrogate Id - unlike Role/Product/ScopeTranslation, a null LanguageCode (the
-        // fallback resource) cannot participate in a composite primary key, so TenantLocale
+        // fallback resource) cannot participate in a composite primary key, so TenantTranslation
         // keeps a real generated Id plus a separate TenantId foreign key.
         builder.HasKey(x => x.Id);
 
@@ -38,7 +38,7 @@ public sealed class TenantLocaleConfig : IEntityTypeConfiguration<TenantLocale>
 
         // Relationships
         builder.HasOne(x => x.Tenant)
-            .WithMany(t => t.Locales)
+            .WithMany(t => t.Translations)
             .HasForeignKey(x => x.TenantId)
             .OnDelete(DeleteBehavior.Cascade);
 
@@ -52,7 +52,7 @@ public sealed class TenantLocaleConfig : IEntityTypeConfiguration<TenantLocale>
         builder.HasIndex(x => x.TenantId)
             .IsUnique()
             .HasFilter("language_code IS NULL")
-            .HasDatabaseName("ix_tenant_locales_tenant_id_fallback");
+            .HasDatabaseName("ix_tenant_translations_tenant_id_fallback");
 
         // Audit & Concurrency
         builder.ConfigureCommonFields();

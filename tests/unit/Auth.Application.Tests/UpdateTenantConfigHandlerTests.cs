@@ -29,12 +29,12 @@ public sealed class UpdateTenantConfigHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WithNoLanguage_TargetsTheFallbackLocale_AndEnqueuesVersionChangedEvent()
+    public async Task Handle_WithNoLanguage_TargetsTheFallbackTranslation_AndEnqueuesVersionChangedEvent()
     {
         var tenant = Tenant.Create(TenantCode.Create("acme"), "Acme Corp");
 
         var writeService = Substitute.For<ITenantWriteService>();
-        writeService.UpsertLocaleAsync(
+        writeService.UpsertTranslationAsync(
                 Arg.Any<Guid>(), Arg.Any<LanguageCode?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(tenant);
 
@@ -44,7 +44,7 @@ public sealed class UpdateTenantConfigHandlerTests
         var payload = JsonDocument.Parse("""{"theme":"dark"}""").RootElement;
         await handler.Handle(new UpdateTenantConfigCommand(tenant.Id, null, payload));
 
-        await writeService.Received(1).UpsertLocaleAsync(
+        await writeService.Received(1).UpsertTranslationAsync(
             tenant.Id, null, Arg.Is<string>(json => json.Contains("dark")), null, Arg.Any<CancellationToken>());
         await outbox.Received(1).EnqueueAsync(
             Arg.Is<TenantVersionChangedIntegrationEvent>(e => e.TenantId == tenant.Id && e.Version == tenant.Version),

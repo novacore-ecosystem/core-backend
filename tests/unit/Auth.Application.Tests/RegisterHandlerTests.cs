@@ -4,18 +4,18 @@ using NovaCore.Auth.Application.Abstractions.Apps;
 using NovaCore.Auth.Application.Abstractions.Auth;
 using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
-using NovaCore.Auth.Application.Abstractions.Persistence.Roles;
+using NovaCore.Auth.Application.Abstractions.Persistence.Permissions;
+using NovaCore.Auth.Application.Abstractions.Registrations;
 using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
 using NovaCore.Auth.Application.Features.Auth.Commands.Register;
 using NovaCore.Auth.Domain.Entities.Accounts;
-using NovaCore.Auth.Domain.Entities.Roles;
 using NovaCore.Auth.Domain.Enums;
-using NovaCore.Auth.Domain.ValueObjects;
 
 using NovaCore.BuildingBlock.Application.Abstractions.Events;
 using NovaCore.BuildingBlock.Application.Abstractions.Services;
 using NovaCore.BuildingBlock.Domain.ValueObjects;
+using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
 using Shouldly;
 
@@ -39,20 +39,34 @@ public sealed class RegisterHandlerTests
         IUnitOfWork unitOfWork,
         IAuthService authService,
         IAppCollectionCache appCollectionCache,
-        IRoleReadService roleReadService,
+        IRegistrationDefaultsCache? registrationDefaultsCache = null,
         IAccountRoleAssignmentService? accountRoleAssignmentService = null,
+        IPermissionGrantService? permissionGrantService = null,
         IAccountAppAssignmentService? accountAppAssignmentService = null,
         IAccountReadService? accountReadService = null,
         IJwtTokenGenerator? tokenGenerator = null,
         IAppMembershipCache? appMembershipCache = null)
     {
+        IRegistrationDefaultsCache defaultsCache;
+        if (registrationDefaultsCache is null)
+        {
+            defaultsCache = Substitute.For<IRegistrationDefaultsCache>();
+            defaultsCache.GetAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+                .Returns(RegistrationDefaultsSnapshot.Empty);
+        }
+        else
+        {
+            defaultsCache = registrationDefaultsCache;
+        }
+
         return new RegisterHandler(
             unitOfWork,
             authService,
             appCollectionCache,
             appMembershipCache ?? Substitute.For<IAppMembershipCache>(),
-            roleReadService,
+            defaultsCache,
             accountRoleAssignmentService ?? Substitute.For<IAccountRoleAssignmentService>(),
+            permissionGrantService ?? Substitute.For<IPermissionGrantService>(),
             accountAppAssignmentService ?? Substitute.For<IAccountAppAssignmentService>(),
             accountReadService ?? Substitute.For<IAccountReadService>(),
             Substitute.For<IEffectivePermissionReadService>(),
@@ -67,7 +81,7 @@ public sealed class RegisterHandlerTests
     public async Task Handle_ValidApp_AssignsUserToAppAndDefaultRole()
     {
         var app = new CachedApp(Guid.NewGuid(), "storefront_web", "Storefront Web", true);
-        var role = Role.Create("User", RoleCode.Create("User"));
+        var roleId = Guid.NewGuid();
         var account = Account.Create("test@example.com", Email.Create("test@example.com"), AccountStatus.Active);
 
         var authService = Substitute.For<IAuthService>();
@@ -78,8 +92,9 @@ public sealed class RegisterHandlerTests
         var appCollectionCache = Substitute.For<IAppCollectionCache>();
         appCollectionCache.GetByCodeAsync(app.Code, Arg.Any<CancellationToken>()).Returns(app);
 
-        var roleReadService = Substitute.For<IRoleReadService>();
-        roleReadService.GetByCodeAsync(Arg.Any<RoleCode>(), Arg.Any<CancellationToken>()).Returns(role);
+        var registrationDefaultsCache = Substitute.For<IRegistrationDefaultsCache>();
+        registrationDefaultsCache.GetAsync(Arg.Any<Guid>(), app.Id, Arg.Any<CancellationToken>())
+            .Returns(new RegistrationDefaultsSnapshot([roleId], []));
 
         var accountRoleAssignmentService = Substitute.For<IAccountRoleAssignmentService>();
         var accountAppAssignmentService = Substitute.For<IAccountAppAssignmentService>();
@@ -89,9 +104,9 @@ public sealed class RegisterHandlerTests
             BuildUnitOfWork(),
             authService,
             appCollectionCache,
-            roleReadService,
+            registrationDefaultsCache,
             accountRoleAssignmentService,
-            accountAppAssignmentService,
+            accountAppAssignmentService: accountAppAssignmentService,
             tokenGenerator: tokenGenerator);
 
         var command = new RegisterCommand(
@@ -113,9 +128,97 @@ public sealed class RegisterHandlerTests
 
         await accountRoleAssignmentService.Received(1).ReplaceRolesAsync(
             account.Id,
-            Arg.Is<IReadOnlyCollection<Guid>>(ids => ids.Contains(role.Id)),
+            Arg.Is<IReadOnlyCollection<Guid>>(ids => ids.Contains(roleId)),
             Arg.Any<CancellationToken>());
         await accountAppAssignmentService.Received(1).AssignAsync(account.Id, app.Id, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_NoDefaultsConfigured_RegistersSuccessfullyWithoutRolesOrPermissions()
+    {
+        var app = new CachedApp(Guid.NewGuid(), "storefront_web", "Storefront Web", true);
+        var account = Account.Create("test@example.com", Email.Create("test@example.com"), AccountStatus.Active);
+
+        var authService = Substitute.For<IAuthService>();
+        authService.GetUserByEmailAsync("test@example.com", Arg.Any<CancellationToken>()).Returns((Account?)null);
+        authService.CreateUserAsync("test@example.com", "test@example.com", "P@ssw0rd", Arg.Any<CancellationToken>())
+            .Returns(account);
+
+        var appCollectionCache = Substitute.For<IAppCollectionCache>();
+        appCollectionCache.GetByCodeAsync(app.Code, Arg.Any<CancellationToken>()).Returns(app);
+
+        // No custom registrationDefaultsCache - BuildHandler's default substitute already
+        // returns RegistrationDefaultsSnapshot.Empty for every (tenantId, appId).
+        var accountRoleAssignmentService = Substitute.For<IAccountRoleAssignmentService>();
+        var permissionGrantService = Substitute.For<IPermissionGrantService>();
+
+        var handler = BuildHandler(
+            BuildUnitOfWork(),
+            authService,
+            appCollectionCache,
+            accountRoleAssignmentService: accountRoleAssignmentService,
+            permissionGrantService: permissionGrantService);
+
+        var command = new RegisterCommand(
+            "test@example.com",
+            "P@ssw0rd",
+            "Test",
+            "User",
+            "0123456789",
+            "storefront_web");
+
+        await handler.Handle(command);
+
+        await accountRoleAssignmentService.DidNotReceive().ReplaceRolesAsync(
+            Arg.Any<Guid>(), Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>());
+        await permissionGrantService.DidNotReceive().ReplaceForProviderAsync(
+            Arg.Any<PermissionProviderName>(), Arg.Any<string>(), Arg.Any<IReadOnlyCollection<string>>(),
+            Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_DefaultPermissionsConfigured_GrantsThemToTheNewAccount()
+    {
+        var app = new CachedApp(Guid.NewGuid(), "storefront_web", "Storefront Web", true);
+        var account = Account.Create("test@example.com", Email.Create("test@example.com"), AccountStatus.Active);
+
+        var authService = Substitute.For<IAuthService>();
+        authService.GetUserByEmailAsync("test@example.com", Arg.Any<CancellationToken>()).Returns((Account?)null);
+        authService.CreateUserAsync("test@example.com", "test@example.com", "P@ssw0rd", Arg.Any<CancellationToken>())
+            .Returns(account);
+
+        var appCollectionCache = Substitute.For<IAppCollectionCache>();
+        appCollectionCache.GetByCodeAsync(app.Code, Arg.Any<CancellationToken>()).Returns(app);
+
+        var registrationDefaultsCache = Substitute.For<IRegistrationDefaultsCache>();
+        registrationDefaultsCache.GetAsync(Arg.Any<Guid>(), app.Id, Arg.Any<CancellationToken>())
+            .Returns(new RegistrationDefaultsSnapshot([], ["some:permission"]));
+
+        var permissionGrantService = Substitute.For<IPermissionGrantService>();
+
+        var handler = BuildHandler(
+            BuildUnitOfWork(),
+            authService,
+            appCollectionCache,
+            registrationDefaultsCache,
+            permissionGrantService: permissionGrantService);
+
+        var command = new RegisterCommand(
+            "test@example.com",
+            "P@ssw0rd",
+            "Test",
+            "User",
+            "0123456789",
+            "storefront_web");
+
+        await handler.Handle(command);
+
+        await permissionGrantService.Received(1).ReplaceForProviderAsync(
+            PermissionProviderName.User,
+            account.Id.ToString(),
+            Arg.Is<IReadOnlyCollection<string>>(k => k.Contains("some:permission")),
+            account.TenantId,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -124,9 +227,8 @@ public sealed class RegisterHandlerTests
         var authService = Substitute.For<IAuthService>();
         var appCollectionCache = Substitute.For<IAppCollectionCache>();
         appCollectionCache.GetByCodeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((CachedApp?)null);
-        var roleReadService = Substitute.For<IRoleReadService>();
 
-        var handler = BuildHandler(BuildUnitOfWork(), authService, appCollectionCache, roleReadService);
+        var handler = BuildHandler(BuildUnitOfWork(), authService, appCollectionCache);
 
         var command = new RegisterCommand(
             "test@example.com",
@@ -150,9 +252,8 @@ public sealed class RegisterHandlerTests
         var authService = Substitute.For<IAuthService>();
         var appCollectionCache = Substitute.For<IAppCollectionCache>();
         appCollectionCache.GetByCodeAsync(app.Code, Arg.Any<CancellationToken>()).Returns(app);
-        var roleReadService = Substitute.For<IRoleReadService>();
 
-        var handler = BuildHandler(BuildUnitOfWork(), authService, appCollectionCache, roleReadService);
+        var handler = BuildHandler(BuildUnitOfWork(), authService, appCollectionCache);
 
         var command = new RegisterCommand(
             "test@example.com",

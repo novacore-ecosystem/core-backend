@@ -4,7 +4,7 @@ using NovaCore.BuildingBlock.Domain.ValueObjects;
 
 namespace NovaCore.Auth.Domain.Entities.Tenants;
 
-public sealed class TenantLocale : BaseEntity<Guid>, IAuditable
+public sealed class TenantTranslation : BaseEntity<Guid>, IAuditable
 {
     public Guid TenantId { get; private set; }
     public Tenant Tenant { get; private set; } = default!;
@@ -12,9 +12,9 @@ public sealed class TenantLocale : BaseEntity<Guid>, IAuditable
     public string ConfigurationJson { get; private set; } = "{}";
     public string DictionaryJson { get; private set; } = "{}";
 
-    private TenantLocale() { }
+    private TenantTranslation() { }
 
-    internal static TenantLocale Create(
+    internal static TenantTranslation Create(
         Guid tenantId,
         LanguageCode? languageCode,
         string configurationJson,
@@ -23,7 +23,7 @@ public sealed class TenantLocale : BaseEntity<Guid>, IAuditable
         ValidateJson(configurationJson, "Configuration");
         ValidateJson(dictionaryJson, "Dictionary");
 
-        return new TenantLocale
+        return new TenantTranslation
         {
             Id = Guid.CreateVersion7(),
             TenantId = tenantId,

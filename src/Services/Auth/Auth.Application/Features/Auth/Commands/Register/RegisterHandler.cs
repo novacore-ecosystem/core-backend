@@ -2,11 +2,13 @@ using NovaCore.Auth.Application.Abstractions.Apps;
 using NovaCore.Auth.Application.Abstractions.Auth;
 using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
-using NovaCore.Auth.Application.Abstractions.Persistence.Roles;
+using NovaCore.Auth.Application.Abstractions.Persistence.Permissions;
+using NovaCore.Auth.Application.Abstractions.Registrations;
 using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
 using NovaCore.Auth.Application.Features.Auth.Events.OnUserRegistered;
-using NovaCore.Auth.Domain.ValueObjects;
+
+using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
 namespace NovaCore.Auth.Application.Features.Auth.Commands.Register;
 
@@ -15,8 +17,9 @@ public sealed class RegisterHandler(
     IAuthService authService,
     IAppCollectionCache appCollectionCache,
     IAppMembershipCache appMembershipCache,
-    IRoleReadService roleReadService,
+    IRegistrationDefaultsCache registrationDefaultsCache,
     IAccountRoleAssignmentService accountRoleAssignmentService,
+    IPermissionGrantService permissionGrantService,
     IAccountAppAssignmentService accountAppAssignmentService,
     IAccountReadService accountReadService,
     IEffectivePermissionReadService effectivePermissionReadService,
@@ -37,9 +40,6 @@ public sealed class RegisterHandler(
         if (existingUser is not null)
             throw new ConflictException($"Email ({request.Email}) already exists");
 
-        var defaultRole = await roleReadService.GetByCodeAsync(RoleCode.Create(AppRoleConstant.User), ct)
-            ?? throw new BadRequestException("Default \"User\" role is not seeded.");
-
         var correlationId = currentUserService.GetCorrelationId()
             ?? Guid.NewGuid().ToString();
 
@@ -53,7 +53,21 @@ public sealed class RegisterHandler(
                     request.Password,
                     ct) ?? throw new BadRequestException("Failed to create user");
 
-                await accountRoleAssignmentService.ReplaceRolesAsync(account.Id, [defaultRole.Id], ct);
+                // (Tenant, App)-scoped defaults, not a hard-seeded Role - gracefully grants
+                // nothing when no defaults are configured for this pair.
+                var defaults = await registrationDefaultsCache.GetAsync(account.TenantId, app.Id, ct);
+
+                if (defaults.RoleIds.Count > 0)
+                    await accountRoleAssignmentService.ReplaceRolesAsync(account.Id, defaults.RoleIds, ct);
+
+                if (defaults.PermissionKeys.Count > 0)
+                    await permissionGrantService.ReplaceForProviderAsync(
+                        PermissionProviderName.User,
+                        account.Id.ToString(),
+                        defaults.PermissionKeys,
+                        account.TenantId,
+                        ct);
+
                 await accountAppAssignmentService.AssignAsync(account.Id, app.Id, ct);
             },
             ct: ct);

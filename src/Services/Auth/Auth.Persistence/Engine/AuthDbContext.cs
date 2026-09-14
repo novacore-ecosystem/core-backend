@@ -3,6 +3,7 @@ using NovaCore.Auth.Domain.Entities.Apps;
 using NovaCore.Auth.Domain.Entities.Invitations;
 using NovaCore.Auth.Domain.Entities.Permissions;
 using NovaCore.Auth.Domain.Entities.Positions;
+using NovaCore.Auth.Domain.Entities.Registrations;
 using NovaCore.Auth.Domain.Entities.Roles;
 using NovaCore.Auth.Domain.Entities.Scopes;
 using NovaCore.Auth.Domain.Entities.TenantClients;
@@ -68,11 +69,14 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
     public DbSet<TokenBlacklist> TokenBlacklists { get; set; } = null!;
 
     public DbSet<Tenant> Tenants { get; set; } = null!;
-    public DbSet<TenantLocale> TenantLocales { get; set; } = null!;
+    public DbSet<TenantTranslation> TenantTranslations { get; set; } = null!;
     public DbSet<TenantClient> TenantClients { get; set; } = null!;
 
     public DbSet<Scope> Scopes { get; set; } = null!;
     public DbSet<ScopeTranslation> ScopeTranslations { get; set; } = null!;
+
+    public DbSet<RegistrationDefaultRole> RegistrationDefaultRoles { get; set; } = null!;
+    public DbSet<RegistrationDefaultPermission> RegistrationDefaultPermissions { get; set; } = null!;
 
     // Outbox and Inbox - required by IOutboxDbContext and IInboxDbContext
     public DbSet<OutboxMessage> OutboxMessages { get; set; } = null!;

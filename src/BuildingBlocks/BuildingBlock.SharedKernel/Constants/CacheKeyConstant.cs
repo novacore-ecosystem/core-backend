@@ -64,6 +64,23 @@ public static class CacheKeyConstant
     }
 
     /// <summary>
+    /// The default Roles/Permissions granted to a newly self-registered Account, keyed by
+    /// (Tenant, App). Backs Auth.Infrastructure's IRegistrationDefaultsCache.
+    /// </summary>
+    public static class RegistrationDefaults
+    {
+        private const string Prefix = "auth:registration-defaults";
+
+        /// <summary>Snapshot cache key for one (tenant, app) pair. Pattern:
+        /// auth:registration-defaults:{tenantId}:{appId}</summary>
+        public static string Snapshot(Guid tenantId, Guid appId) => $"{Prefix}:{tenantId}:{appId}";
+
+        /// <summary>Default TTL for the registration-defaults cache in minutes - admin-managed,
+        /// changes rarely, same tier as the App collection cache.</summary>
+        public const int DefaultTtlMinutes = 60;
+    }
+
+    /// <summary>
     /// Dead scaffold - never wired to any code (kept, not deleted, to avoid churn unrelated to
     /// this change). The "auth:users" prefix was seeded for Auth's own account concept, NOT
     /// User service's UserProfile aggregate - see <see cref="UserProfiles"/> for the real,

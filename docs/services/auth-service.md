@@ -73,16 +73,16 @@ filtering was touched — those are later phases' concern. Four entities, two ag
   `LogoUrl`/`FaviconUrl`, `Version`, `Metadata`, `IsActive`) - deliberately excludes subscription,
   billing, licensing, and feature management, which are out of scope for this aggregate entirely
   (not just this phase).
-- **`TenantLocale`** (owned child of `Tenant`) - the entire bootstrap resource set
+- **`TenantTranslation`** (owned child of `Tenant`) - the entire bootstrap resource set
   (`ConfigurationJson` + `DictionaryJson`) for one locale. A `null` `LanguageCode` is the fallback
   resource, enforced to exactly one per tenant via a partial unique index
-  (`ix_tenant_locales_tenant_id_fallback`, `WHERE language_code IS NULL`) alongside the regular
+  (`ix_tenant_translations_tenant_id_fallback`, `WHERE language_code IS NULL`) alongside the regular
   `(tenant_id, language_code)` unique index. Both JSON payloads are intentionally opaque
-  (validated as well-formed JSON in `TenantLocale.Create`/`UpdateContent`, stored as `jsonb`) -
+  (validated as well-formed JSON in `TenantTranslation.Create`/`UpdateContent`, stored as `jsonb`) -
   **not** wrapped in a `MetadataBase`-style typed accessor like `ProductMetadata`, because
   bootstrap resources are denormalized per-locale blobs whose shape is owned by the frontend
   bootstrap contract, not a fixed set of Domain-known fields. Unlike every other translation
-  entity in this codebase, `TenantLocale` keeps its own generated `Id` plus a separate `TenantId`
+  entity in this codebase, `TenantTranslation` keeps its own generated `Id` plus a separate `TenantId`
   foreign key rather than reusing the parent's id as a shared composite PK - a `null`
   `LanguageCode` can't participate in a `PRIMARY KEY` column, which the shared-PK shape requires.
 - **`Scope`** (`Auth.Domain/Entities/Scopes/Scope.cs`, `AggregateRoot<Guid>`) - a business scope
@@ -94,7 +94,7 @@ filtering was touched — those are later phases' concern. Four entities, two ag
   filtering mechanism (that's a later phase). `Code` is unique per `(TenantId, Code)`, not
   platform-wide.
 - **`ScopeTranslation`** (owned child of `Scope`) - standard business translation (unlike
-  `TenantLocale`'s bootstrap data), following `ProductTranslation`/`RoleTranslation`'s shape
+  `TenantTranslation`'s bootstrap data), following `ProductTranslation`/`RoleTranslation`'s shape
   exactly: `Id` doubles as the owning `Scope`'s id, composite `(Id, LanguageCode)` primary key.
 
 Both `Tenant` and `Scope` follow the standard Repo/Read-Service/Write-Service split (see
@@ -119,7 +119,7 @@ phases' concern.
   - an independent aggregate, one row per client credential (Web/Mobile/Admin/...) belonging to
   exactly one `Tenant` (`TenantId`, plain FK - see below). A `Tenant` can have any number of
   `TenantClient`s; there is no back-collection on `Tenant` (same shadow-FK shape as `Scope`, not an
-  owned child like `TenantLocale`). Fields: `Name` (admin-facing label), `PublicKey`
+  owned child like `TenantTranslation`). Fields: `Name` (admin-facing label), `PublicKey`
   (`ClientPublicKey` VO), `Status` (`TenantClientStatus`: `Active`/`Revoked`/`Expired`),
   `ExpiresAt` (optional), `RevokedAt`/`RevokedReason` (reuses the existing `RevocationReason`
   enum already shared by `Session`/`RefreshToken`). `Revoke`/`MarkExpired` are idempotent no-ops
@@ -217,7 +217,7 @@ decisions below); everything else preserves Login/Refresh/Logout's existing beha
   position. `RefreshTokenHandler` reads `user.TenantId` off the already-fetched `Account` (no new
   lookup, no header) - refresh preserves whatever tenant context Login established.
 - **`TenantClientSeeder`** (new, wired into `DatabaseSeeder`) seeds exactly one Root `TenantClient`
-  (`TenantId == null`) on a fresh database, idempotent like `AccountSeeder`/`RoleSeeder`. Its
+  (`TenantId == null`) on a fresh database, idempotent like `RootAccountSeeder`. Its
   generated `PublicKey` is logged once (`LogWarning`) at creation - there is no other bootstrap
   channel for it yet, same local-dev-only tradeoff `SeedData.Accounts.RootPassword` already accepts.
 - **`GET /tenants`** (`ListTenants.cs`, `Permissions.Root`) - Root Portal tenant discovery/selection
@@ -400,7 +400,7 @@ Introduced 2026-08-13. Fills the gap the earlier phases explicitly deferred: ful
 rotation, a pre-authentication bootstrap endpoint, and the backend-only foundation for a future
 Notification Hub version-check flow. `Tenant`'s domain surface itself did not change beyond adding
 `ISoftDeleteEntity` and a `Delete()` method - every other operation composes the `Create`/`Rename`/
-`UpdateBranding`/`UpdateMetadata`/`Activate`/`Deactivate`/`SetLocale`/`RemoveLocale`/
+`UpdateBranding`/`UpdateMetadata`/`Activate`/`Deactivate`/`SetTranslation`/`RemoveTranslation`/
 `IncrementVersion` methods that already existed from Phase 1.
 
 ### Tenant Management APIs
@@ -414,7 +414,7 @@ Notification Hub version-check flow. `Tenant`'s domain surface itself did not ch
 | Disable Tenant | `POST /tenants/{id}/disable` | `tenant:manage` | `Tenant.Deactivate()` - idempotent no-op if already disabled. Does not bump `Version`: a disabled tenant's bootstrap is rejected outright (`ConflictException`), not served with different content. |
 | Delete Tenant | `DELETE /tenants/{id}` | `tenant:manage` | Soft delete only (`Tenant.Delete()`, `ISoftDeleteEntity` - first non-`User` adopter). Drops out of every normal query via the global `!IsDeleted` filter; a repeat delete surfaces as `NotFoundException`, same as any other operation against an already-deleted tenant. |
 | Upsert Translation | `PUT /tenants/{id}/translations` | `tenant:manage` | `{ language, key, value }` - merges one key into that language's `DictionaryJson`, every other key preserved (`JsonMergeHelper`). Bumps `Version`. |
-| Update Dictionary | `PUT /tenants/{id}/dictionary/{language}` | `tenant:manage` | Bulk payload merged onto the stored dictionary for one language - unspecified keys preserved, other languages' rows untouched (each is a separate `TenantLocale` row). Bumps `Version`. |
+| Update Dictionary | `PUT /tenants/{id}/dictionary/{language}` | `tenant:manage` | Bulk payload merged onto the stored dictionary for one language - unspecified keys preserved, other languages' rows untouched (each is a separate `TenantTranslation` row). Bumps `Version`. |
 | Update Config | `PUT /tenants/{id}/config?language=` | `tenant:manage` | Merged onto one locale's `ConfigurationJson`; omit `language` to target the tenant-wide fallback/default resource. Bumps `Version`. |
 | Rotate Client | `POST /tenants/{id}/client/rotate` | `tenant:rotate-client` (separate from `tenant:manage` - a credential-affecting operation) | Revokes every currently-`Active` `TenantClient` for the tenant (`RevocationReason.Superseded`) and issues a new one, atomically. Returns only the new `PublicKey` - a previously stored key is never returned again. Does **not** bump `Version` - rotation changes which client key resolves to this tenant, not the bootstrap content served once resolved. |
 

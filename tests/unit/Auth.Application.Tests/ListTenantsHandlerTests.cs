@@ -47,7 +47,7 @@ public sealed class ListTenantsHandlerTests
         var result = await handler.Handle(new ListTenantsQuery());
 
         // TenantSummaryResponse's own shape is the enforcement mechanism - it has no Metadata,
-        // Version, Locales, or client fields to leak. This test documents that intent.
+        // Version, Translations, or client fields to leak. This test documents that intent.
         var item = result.Items.Single();
         item.Id.ShouldNotBe(Guid.Empty);
         item.Code.ShouldBe("acme");

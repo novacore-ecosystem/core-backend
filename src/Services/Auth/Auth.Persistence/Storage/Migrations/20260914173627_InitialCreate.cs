@@ -13,6 +13,23 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "apps",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    code = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    is_active = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_apps", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "inbox_messages",
                 columns: table => new
                 {
@@ -186,6 +203,7 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                     is_mfa_enabled = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
                     failed_login_count = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     tenant_id = table.Column<Guid>(type: "uuid", nullable: false, defaultValue: new Guid("00000000-0000-0000-0000-000000000000")),
+                    level = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
@@ -207,6 +225,29 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_users", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "app_translations",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    language_code = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    display_name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_app_translations", x => new { x.id, x.language_code });
+                    table.ForeignKey(
+                        name: "fk_app_translations_apps_id",
+                        column: x => x.id,
+                        principalTable: "apps",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -302,6 +343,35 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "fk_position_roles_roles_role_id",
+                        column: x => x.role_id,
+                        principalTable: "roles",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "registration_default_roles",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    app_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    role_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    tenant_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_registration_default_roles", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_registration_default_roles_apps_app_id",
+                        column: x => x.app_id,
+                        principalTable: "apps",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_registration_default_roles_roles_role_id",
                         column: x => x.role_id,
                         principalTable: "roles",
                         principalColumn: "id",
@@ -417,7 +487,7 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "tenant_locales",
+                name: "tenant_translations",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -431,11 +501,38 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_tenant_locales", x => x.id);
+                    table.PrimaryKey("pk_tenant_translations", x => x.id);
                     table.ForeignKey(
-                        name: "fk_tenant_locales_tenants_tenant_id",
+                        name: "fk_tenant_translations_tenants_tenant_id",
                         column: x => x.tenant_id,
                         principalTable: "tenants",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "account_apps",
+                columns: table => new
+                {
+                    account_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    app_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_account_apps", x => new { x.account_id, x.app_id });
+                    table.ForeignKey(
+                        name: "fk_account_apps_apps_app_id",
+                        column: x => x.app_id,
+                        principalTable: "apps",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_account_apps_users_account_id",
+                        column: x => x.account_id,
+                        principalTable: "users",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -797,6 +894,35 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "registration_default_permissions",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    app_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    permission_definition_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    tenant_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()"),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "now()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_registration_default_permissions", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_registration_default_permissions_apps_app_id",
+                        column: x => x.app_id,
+                        principalTable: "apps",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "fk_registration_default_permissions_permission_definitions_per",
+                        column: x => x.permission_definition_id,
+                        principalTable: "permission_definitions",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "scope_translations",
                 columns: table => new
                 {
@@ -917,6 +1043,11 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "ix_account_apps_app_id",
+                table: "account_apps",
+                column: "app_id");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_account_permissions_account_id_permission_key",
                 table: "account_permissions",
                 columns: new[] { "account_id", "permission_key" },
@@ -946,6 +1077,17 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                 name: "ix_account_positions_tenant_id",
                 table: "account_positions",
                 column: "tenant_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_apps_code",
+                table: "apps",
+                column: "code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_apps_is_active",
+                table: "apps",
+                column: "is_active");
 
             migrationBuilder.CreateIndex(
                 name: "ix_devices_account_id_fingerprint",
@@ -1179,6 +1321,58 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                 column: "tenant_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_registration_default_permissions_app_id",
+                table: "registration_default_permissions",
+                column: "app_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_registration_default_permissions_permission_definition_id",
+                table: "registration_default_permissions",
+                column: "permission_definition_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_registration_default_permissions_tenant_id",
+                table: "registration_default_permissions",
+                column: "tenant_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_registration_default_permissions_tenant_id_app_id",
+                table: "registration_default_permissions",
+                columns: new[] { "tenant_id", "app_id" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_registration_default_permissions_tenant_id_app_id_permissio",
+                table: "registration_default_permissions",
+                columns: new[] { "tenant_id", "app_id", "permission_definition_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_registration_default_roles_app_id",
+                table: "registration_default_roles",
+                column: "app_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_registration_default_roles_role_id",
+                table: "registration_default_roles",
+                column: "role_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_registration_default_roles_tenant_id",
+                table: "registration_default_roles",
+                column: "tenant_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_registration_default_roles_tenant_id_app_id",
+                table: "registration_default_roles",
+                columns: new[] { "tenant_id", "app_id" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_registration_default_roles_tenant_id_app_id_role_id",
+                table: "registration_default_roles",
+                columns: new[] { "tenant_id", "app_id", "role_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "ix_role_claims_role_id",
                 table: "role_claims",
                 column: "role_id");
@@ -1268,15 +1462,15 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                 columns: new[] { "tenant_id", "status" });
 
             migrationBuilder.CreateIndex(
-                name: "ix_tenant_locales_tenant_id_fallback",
-                table: "tenant_locales",
+                name: "ix_tenant_translations_tenant_id_fallback",
+                table: "tenant_translations",
                 column: "tenant_id",
                 unique: true,
                 filter: "language_code IS NULL");
 
             migrationBuilder.CreateIndex(
-                name: "ix_tenant_locales_tenant_id_language_code",
-                table: "tenant_locales",
+                name: "ix_tenant_translations_tenant_id_language_code",
+                table: "tenant_translations",
                 columns: new[] { "tenant_id", "language_code" },
                 unique: true);
 
@@ -1368,10 +1562,16 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "account_apps");
+
+            migrationBuilder.DropTable(
                 name: "account_permissions");
 
             migrationBuilder.DropTable(
                 name: "account_positions");
+
+            migrationBuilder.DropTable(
+                name: "app_translations");
 
             migrationBuilder.DropTable(
                 name: "external_identities");
@@ -1416,6 +1616,12 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                 name: "refresh_tokens");
 
             migrationBuilder.DropTable(
+                name: "registration_default_permissions");
+
+            migrationBuilder.DropTable(
+                name: "registration_default_roles");
+
+            migrationBuilder.DropTable(
                 name: "role_claims");
 
             migrationBuilder.DropTable(
@@ -1428,7 +1634,7 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                 name: "tenant_clients");
 
             migrationBuilder.DropTable(
-                name: "tenant_locales");
+                name: "tenant_translations");
 
             migrationBuilder.DropTable(
                 name: "token_blacklists");
@@ -1449,13 +1655,16 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                 name: "mfa_methods");
 
             migrationBuilder.DropTable(
-                name: "permission_definitions");
-
-            migrationBuilder.DropTable(
                 name: "positions");
 
             migrationBuilder.DropTable(
                 name: "sessions");
+
+            migrationBuilder.DropTable(
+                name: "permission_definitions");
+
+            migrationBuilder.DropTable(
+                name: "apps");
 
             migrationBuilder.DropTable(
                 name: "scopes");
@@ -1464,10 +1673,10 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                 name: "roles");
 
             migrationBuilder.DropTable(
-                name: "permission_groups");
+                name: "devices");
 
             migrationBuilder.DropTable(
-                name: "devices");
+                name: "permission_groups");
 
             migrationBuilder.DropTable(
                 name: "tenants");

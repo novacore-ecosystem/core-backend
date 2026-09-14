@@ -14,6 +14,7 @@ using NovaCore.Auth.Domain.Entities.Apps;
 using NovaCore.Auth.Domain.Entities.Invitations;
 using NovaCore.Auth.Domain.Entities.Permissions;
 using NovaCore.Auth.Domain.Entities.Positions;
+using NovaCore.Auth.Domain.Entities.Registrations;
 using NovaCore.Auth.Domain.Entities.Roles;
 using NovaCore.Auth.Domain.Entities.Scopes;
 using NovaCore.Auth.Domain.Entities.TenantClients;
@@ -93,13 +94,17 @@ public static class DependencyInjection
     // genuine business-critical children an administrator would expect change history for, so
     // they're registered via BelongsTo despite being owned by Account rather than roots
     // themselves. Every *Translation entity is registered the same way - admin-facing display
-    // copy is real content, not structural scaffolding. TenantLocale (bootstrap resource
+    // copy is real content, not structural scaffolding. TenantTranslation (bootstrap resource
     // content) is registered the same way for the same reason. AccountRole and PermissionGrant
     // are also registered (AccountRole: BelongsTo(Account), same shape as AccountPosition;
     // PermissionGrant: its own root, since ProviderKey is polymorphic across providers and no
     // single static parent type applies) - granting/revoking a Role or Permission IS the
     // business event the authorization feature needs a trail for, unlike PositionRole (pure
-    // mapping, no content beyond the relationship, stays unregistered). RefreshToken/Session/
+    // mapping, no content beyond the relationship, stays unregistered). RegistrationDefaultRole/
+    // RegistrationDefaultPermission are registered the same way as PermissionGrant (own root, no
+    // single static parent - each row is keyed by an arbitrary (Tenant, App) pair) - configuring
+    // what a new self-registered account receives is itself a business event worth a trail for.
+    // RefreshToken/Session/
     // LoginHistory/PasswordHistory/MfaBackupCode/Device/AccountPermission (generated artifacts,
     // high-churn tracking records, or a denormalized cache) are intentionally not IAuditable and
     // stay unregistered.
@@ -141,10 +146,13 @@ public static class DependencyInjection
 
             builder.Entity<PermissionGrant>().IsRoot(x => x.Id);
 
+            builder.Entity<RegistrationDefaultRole>().IsRoot(x => x.Id);
+            builder.Entity<RegistrationDefaultPermission>().IsRoot(x => x.Id);
+
             builder.Entity<Invitation>().IsRoot(x => x.Id);
 
             builder.Entity<Tenant>().IsRoot(x => x.Id);
-            builder.Entity<TenantLocale>()
+            builder.Entity<TenantTranslation>()
                 .BelongsTo<Tenant>(x => x.TenantId);
 
             builder.Entity<Scope>().IsRoot(x => x.Id);

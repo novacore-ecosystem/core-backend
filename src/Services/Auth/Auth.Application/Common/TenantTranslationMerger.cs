@@ -21,7 +21,7 @@ internal static class TenantTranslationMerger
         Tenant tenant,
         IReadOnlyList<string> supportedLanguages)
     {
-        var fallback = tenant.Locales.FirstOrDefault(l => l.LanguageCode is null);
+        var fallback = tenant.Translations.FirstOrDefault(l => l.LanguageCode is null);
         var fallbackConfigJson = fallback?.ConfigurationJson ?? "{}";
         var fallbackDictionaryJson = fallback?.DictionaryJson ?? "{}";
 
@@ -29,10 +29,10 @@ internal static class TenantTranslationMerger
 
         foreach (var language in supportedLanguages)
         {
-            var overrideLocale = tenant.Locales.FirstOrDefault(l => l.LanguageCode?.Value == language);
+            var overrideTranslation = tenant.Translations.FirstOrDefault(l => l.LanguageCode?.Value == language);
 
-            var mergedConfig = JsonMergeHelper.Merge(fallbackConfigJson, overrideLocale?.ConfigurationJson);
-            var mergedDictionary = JsonMergeHelper.Merge(fallbackDictionaryJson, overrideLocale?.DictionaryJson);
+            var mergedConfig = JsonMergeHelper.Merge(fallbackConfigJson, overrideTranslation?.ConfigurationJson);
+            var mergedDictionary = JsonMergeHelper.Merge(fallbackDictionaryJson, overrideTranslation?.DictionaryJson);
 
             result[language] = new EffectiveTranslationResponse(
                 mergedConfig.Deserialize<JsonElement>(),

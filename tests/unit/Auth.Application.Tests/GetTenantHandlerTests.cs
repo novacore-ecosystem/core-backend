@@ -19,8 +19,8 @@ public sealed class GetTenantHandlerTests
     private static Tenant CreateTenant()
     {
         var tenant = Tenant.Create(TenantCode.Create("acme"), "Acme Corp");
-        tenant.SetLocale(null, """{"theme":"light","brand":"Acme"}""", """{"welcome":"Hello","logout":"Bye"}""");
-        tenant.SetLocale(LanguageCode.Create("vi"), """{"theme":"dark"}""", """{"welcome":"Xin chao"}""");
+        tenant.SetTranslation(null, """{"theme":"light","brand":"Acme"}""", """{"welcome":"Hello","logout":"Bye"}""");
+        tenant.SetTranslation(LanguageCode.Create("vi"), """{"theme":"dark"}""", """{"welcome":"Xin chao"}""");
         return tenant;
     }
 
@@ -35,7 +35,7 @@ public sealed class GetTenantHandlerTests
     }
 
     [Fact]
-    public async Task Handle_MergedTranslations_NeverIncludeTheFallbackLocaleAsItsOwnEntry()
+    public async Task Handle_MergedTranslations_NeverIncludeTheFallbackTranslationAsItsOwnEntry()
     {
         var tenant = CreateTenant();
         var handler = BuildHandler(tenant);
@@ -43,8 +43,8 @@ public sealed class GetTenantHandlerTests
         var result = await handler.Handle(new GetTenantQuery(tenant.Id));
 
         // The fallback/default resource (null LanguageCode) has no language code to key it by -
-        // it must never appear as an entry in the merged Translations collection, only "en"/"vi".
-        result.Translations.Keys.ShouldBe(LanguageCodeConstant.SupportedLanguages, ignoreOrder: true);
+        // it must never appear as an entry in the merged EffectiveTranslations collection, only "en"/"vi".
+        result.EffectiveTranslations.Keys.ShouldBe(LanguageCodeConstant.SupportedLanguages, ignoreOrder: true);
     }
 
     [Fact]
@@ -55,27 +55,27 @@ public sealed class GetTenantHandlerTests
 
         var result = await handler.Handle(new GetTenantQuery(tenant.Id));
 
-        var vi = result.Translations["vi"];
+        var vi = result.EffectiveTranslations["vi"];
         vi.Dictionary.GetProperty("welcome").GetString().ShouldBe("Xin chao"); // override wins
         vi.Dictionary.GetProperty("logout").GetString().ShouldBe("Bye");      // inherited from fallback
         vi.Configuration.GetProperty("theme").GetString().ShouldBe("dark");   // override wins
         vi.Configuration.GetProperty("brand").GetString().ShouldBe("Acme");   // inherited from fallback
 
         // "en" has no override row at all - effective view is exactly the fallback.
-        var en = result.Translations["en"];
+        var en = result.EffectiveTranslations["en"];
         en.Dictionary.GetProperty("welcome").GetString().ShouldBe("Hello");
     }
 
     [Fact]
-    public async Task Handle_IncludesRawLocalesForEditing_IncludingTheFallbackRow()
+    public async Task Handle_IncludesRawTranslationsForEditing_IncludingTheFallbackRow()
     {
         var tenant = CreateTenant();
         var handler = BuildHandler(tenant);
 
         var result = await handler.Handle(new GetTenantQuery(tenant.Id));
 
-        result.Locales.ShouldContain(l => l.LanguageCode == null);
-        result.Locales.ShouldContain(l => l.LanguageCode == "vi");
+        result.Translations.ShouldContain(l => l.LanguageCode == null);
+        result.Translations.ShouldContain(l => l.LanguageCode == "vi");
     }
 
     [Fact]

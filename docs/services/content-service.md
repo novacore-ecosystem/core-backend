@@ -56,7 +56,7 @@ stay intact.
 **Language fallback:** create/update/read/publish/version/translation/landing flows that don't get
 an explicit language fall back to `Content.Application.Common.ContentLanguageDefaults.Default`
 (`en`). This is a **service-wide** default, not a true per-tenant one — Content Service has no
-cross-service lookup into Auth's `Tenant`/`TenantLocale` yet, so every tenant currently shares the
+cross-service lookup into Auth's `Tenant`/`TenantTranslation` yet, so every tenant currently shares the
 same fallback. Upgrading this to a real per-tenant default is flagged as a `TODO` on
 `ContentLanguageDefaults` rather than solved here.
 

@@ -17,16 +17,16 @@ public sealed record TenantDetailResponse(
     string? FaviconUrl,
     bool IsActive,
     int Version,
-    IReadOnlyList<TenantLocaleResponse> Locales,
-    IReadOnlyDictionary<string, EffectiveTranslationResponse> Translations,
+    IReadOnlyList<TenantTranslationResponse> Translations,
+    IReadOnlyDictionary<string, EffectiveTranslationResponse> EffectiveTranslations,
     IReadOnlyList<string> SupportedLanguages,
     IReadOnlyList<TenantClientSummaryResponse> Clients,
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
-/// <summary>Raw, unmerged per-locale content - what the editing UI reads from/writes back to.
-/// A null LanguageCode is the fallback/default resource (see TenantLocale).</summary>
-public sealed record TenantLocaleResponse(
+/// <summary>Raw, unmerged per-language content - what the editing UI reads from/writes back to.
+/// A null LanguageCode is the fallback/default resource (see TenantTranslation).</summary>
+public sealed record TenantTranslationResponse(
     string? LanguageCode,
     JsonElement Configuration,
     JsonElement Dictionary);

@@ -53,9 +53,9 @@ public sealed class TenantConfig : IEntityTypeConfiguration<Tenant>
             .HasDefaultValue(true);
 
         // Relationships
-        builder.HasMany(x => x.Locales)
-            .WithOne(l => l.Tenant)
-            .HasForeignKey(l => l.TenantId)
+        builder.HasMany(x => x.Translations)
+            .WithOne(t => t.Tenant)
+            .HasForeignKey(t => t.TenantId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Indexes

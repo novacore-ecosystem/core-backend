@@ -29,7 +29,7 @@ public sealed class UpdateTenantDictionaryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ValidPayload_UpsertsLocale_AndEnqueuesVersionChangedEvent()
+    public async Task Handle_ValidPayload_UpsertsTranslation_AndEnqueuesVersionChangedEvent()
     {
         var tenant = Tenant.Create(TenantCode.Create("acme"), "Acme Corp");
         var languageCode = LanguageCode.Create("vi");
@@ -38,7 +38,7 @@ public sealed class UpdateTenantDictionaryHandlerTests
         string? capturedDictionaryJson = null;
 
         var writeService = Substitute.For<ITenantWriteService>();
-        writeService.UpsertLocaleAsync(
+        writeService.UpsertTranslationAsync(
                 Arg.Any<Guid>(),
                 Arg.Any<LanguageCode?>(),
                 Arg.Do<string?>(json => capturedConfigurationJson = json),

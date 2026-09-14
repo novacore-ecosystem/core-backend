@@ -9,15 +9,16 @@ public interface ITenantWriteService
     Task CreateAsync(Tenant tenant, CancellationToken ct = default);
 
     /// <summary>Load-mutate-save via the domain's own behavior methods (Rename, UpdateBranding,
-    /// Deactivate, Delete, SetLocale, ...) - callers never construct EF updates directly.</summary>
+    /// Deactivate, Delete, SetTranslation, ...) - callers never construct EF updates directly.</summary>
     Task UpdateAsync(Guid id, Action<Tenant> update, CancellationToken ct = default);
 
-    /// <summary>Same as UpdateAsync, but eager-loads Locales first - required whenever `update`
-    /// touches SetLocale/RemoveLocale, since Tenant.SetLocale reads the in-memory Locales
-    /// collection to decide insert-vs-update and an unloaded collection would look empty.</summary>
-    Task UpdateWithLocalesAsync(Guid id, Action<Tenant> update, CancellationToken ct = default);
+    /// <summary>Same as UpdateAsync, but eager-loads Translations first - required whenever
+    /// `update` touches SetTranslation/RemoveTranslation, since Tenant.SetTranslation reads the
+    /// in-memory Translations collection to decide insert-vs-update and an unloaded collection
+    /// would look empty.</summary>
+    Task UpdateWithTranslationsAsync(Guid id, Action<Tenant> update, CancellationToken ct = default);
 
-    Task<Tenant> UpsertLocaleAsync(
+    Task<Tenant> UpsertTranslationAsync(
         Guid id,
         LanguageCode? language,
         string? configurationJson = null,

@@ -16,7 +16,7 @@ public sealed class Tenant : AggregateRoot<Guid>, IAuditable, ISoftDeleteEntity
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
 
-    public ICollection<TenantLocale> Locales { get; private set; } = [];
+    public ICollection<TenantTranslation> Translations { get; private set; } = [];
 
     private Tenant() { }
 
@@ -45,41 +45,41 @@ public sealed class Tenant : AggregateRoot<Guid>, IAuditable, ISoftDeleteEntity
     }
 
     // ============================================================================
-    // Locales
-    // Manages the owned TenantLocale collection - the entire bootstrap resource set
-    // (config + dictionary) for one locale, upserting by language code. A null language
-    // code identifies the fallback resource (see TenantLocale).
+    // Translations
+    // Manages the owned TenantTranslation collection - the entire bootstrap resource set
+    // (config + dictionary) for one language, upserting by language code. A null language
+    // code identifies the fallback resource (see TenantTranslation).
     // ============================================================================
 
-    #region Locales
+    #region Translations
 
-    public void SetLocale(
+    public void SetTranslation(
         LanguageCode? languageCode,
         string configurationJson,
         string dictionaryJson)
     {
-        var existingLocale = Locales.FirstOrDefault(l => l.LanguageCode == languageCode);
-        if (existingLocale != null)
+        var existingTranslation = Translations.FirstOrDefault(t => t.LanguageCode == languageCode);
+        if (existingTranslation != null)
         {
-            existingLocale.UpdateContent(configurationJson, dictionaryJson);
+            existingTranslation.UpdateContent(configurationJson, dictionaryJson);
             return;
         }
 
-        var locale = TenantLocale.Create(
+        var translation = TenantTranslation.Create(
             Id,
             languageCode,
             configurationJson,
             dictionaryJson);
-        Locales.Add(locale);
+        Translations.Add(translation);
     }
 
-    public void RemoveLocale(LanguageCode? languageCode)
+    public void RemoveTranslation(LanguageCode? languageCode)
     {
-        var locale = Locales.FirstOrDefault(l => l.LanguageCode == languageCode);
-        if (locale is null)
+        var translation = Translations.FirstOrDefault(t => t.LanguageCode == languageCode);
+        if (translation is null)
             return;
 
-        Locales.Remove(locale);
+        Translations.Remove(translation);
     }
 
     #endregion

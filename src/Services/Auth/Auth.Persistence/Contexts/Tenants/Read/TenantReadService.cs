@@ -12,7 +12,7 @@ public sealed class TenantReadService(AuthDbContext dbContext) : ITenantReadServ
     {
         return await dbContext.Tenants
             .AsNoTracking()
-            .Include(t => t.Locales)
+            .Include(t => t.Translations)
             .FirstOrDefaultAsync(t => t.Id == id, ct);
     }
 

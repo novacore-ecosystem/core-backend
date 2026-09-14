@@ -30,7 +30,7 @@ public sealed class GetTenantHandler(
             tenant.FaviconUrl,
             tenant.IsActive,
             tenant.Version,
-            [.. tenant.Locales.Select(ToLocaleResponse)],
+            [.. tenant.Translations.Select(ToTranslationResponse)],
             TenantTranslationMerger.BuildEffective(tenant, LanguageCodeConstant.SupportedLanguages),
             LanguageCodeConstant.SupportedLanguages,
             [.. clients.Select(ToClientSummary)],
@@ -38,10 +38,10 @@ public sealed class GetTenantHandler(
             tenant.UpdatedAt);
     }
 
-    private static TenantLocaleResponse ToLocaleResponse(TenantLocale locale) => new(
-        locale.LanguageCode?.Value,
-        ParseJson(locale.ConfigurationJson),
-        ParseJson(locale.DictionaryJson));
+    private static TenantTranslationResponse ToTranslationResponse(TenantTranslation translation) => new(
+        translation.LanguageCode?.Value,
+        ParseJson(translation.ConfigurationJson),
+        ParseJson(translation.DictionaryJson));
 
     private static TenantClientSummaryResponse ToClientSummary(TenantClient client) => new(
         client.Id,

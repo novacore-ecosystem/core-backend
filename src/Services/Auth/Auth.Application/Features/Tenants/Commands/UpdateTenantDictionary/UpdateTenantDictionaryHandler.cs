@@ -22,7 +22,7 @@ public sealed class UpdateTenantDictionaryHandler(
 
         await unitOfWork.ExecuteTransactionAsync(async () =>
         {
-            var updatedTenant = await tenantWriteService.UpsertLocaleAsync(
+            var updatedTenant = await tenantWriteService.UpsertTranslationAsync(
                 request.TenantId,
                 request.Language,
                 configurationJson: null,

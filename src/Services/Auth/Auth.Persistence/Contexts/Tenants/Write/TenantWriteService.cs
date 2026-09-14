@@ -30,13 +30,13 @@ public sealed class TenantWriteService(
         await unitOfWork.SaveChangesAsync(ct);
     }
 
-    public async Task UpdateWithLocalesAsync(Guid id, Action<Tenant> update, CancellationToken ct = default)
+    public async Task UpdateWithTranslationsAsync(Guid id, Action<Tenant> update, CancellationToken ct = default)
     {
-        await repo.UpdateAsync(t => t.Id == id, q => q.Include(t => t.Locales), update, ct);
+        await repo.UpdateAsync(t => t.Id == id, q => q.Include(t => t.Translations), update, ct);
         await unitOfWork.SaveChangesAsync(ct);
     }
 
-    public async Task<Tenant> UpsertLocaleAsync(
+    public async Task<Tenant> UpsertTranslationAsync(
         Guid id,
         LanguageCode? language,
         string? configurationJson = null,
@@ -49,10 +49,10 @@ public sealed class TenantWriteService(
         Tenant updatedTenant = null!;
         await repo.UpdateAsync(
             predicate: t => t.Id == id,
-            includes: query => query.Include(t => t.Locales),
+            includes: query => query.Include(t => t.Translations),
             updateAction: tenant =>
             {
-                var existing = tenant.Locales
+                var existing = tenant.Translations
                     .FirstOrDefault(l => l.LanguageCode == language);
 
                 // Merge new config with current config if existing
@@ -71,8 +71,8 @@ public sealed class TenantWriteService(
                     dictionary = mergedDictionary.ToJsonString();
                 }
 
-                // Upsert tenant locale
-                tenant.SetLocale(language, configuration, dictionary);
+                // Upsert tenant translation
+                tenant.SetTranslation(language, configuration, dictionary);
                 tenant.IncrementVersion();
                 updatedTenant = tenant;
             },

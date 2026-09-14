@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NovaCore.Auth.Persistence.Storage.Migrations
 {
     [DbContext(typeof(AuthDbContext))]
-    [Migration("20260914115739_AddAppAndAccountApp")]
-    partial class AddAppAndAccountApp
+    [Migration("20260914173627_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1672,6 +1672,124 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                     b.ToTable("position_translations", (string)null);
                 });
 
+            modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Registrations.RegistrationDefaultPermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AppId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("app_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("PermissionDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("permission_definition_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_registration_default_permissions");
+
+                    b.HasIndex("AppId")
+                        .HasDatabaseName("ix_registration_default_permissions_app_id");
+
+                    b.HasIndex("PermissionDefinitionId")
+                        .HasDatabaseName("ix_registration_default_permissions_permission_definition_id");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_registration_default_permissions_tenant_id");
+
+                    b.HasIndex("TenantId", "AppId")
+                        .HasDatabaseName("ix_registration_default_permissions_tenant_id_app_id");
+
+                    b.HasIndex("TenantId", "AppId", "PermissionDefinitionId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_registration_default_permissions_tenant_id_app_id_permissio");
+
+                    b.ToTable("registration_default_permissions", (string)null);
+                });
+
+            modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Registrations.RegistrationDefaultRole", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AppId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("app_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("role_id");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_registration_default_roles");
+
+                    b.HasIndex("AppId")
+                        .HasDatabaseName("ix_registration_default_roles_app_id");
+
+                    b.HasIndex("RoleId")
+                        .HasDatabaseName("ix_registration_default_roles_role_id");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_registration_default_roles_tenant_id");
+
+                    b.HasIndex("TenantId", "AppId")
+                        .HasDatabaseName("ix_registration_default_roles_tenant_id_app_id");
+
+                    b.HasIndex("TenantId", "AppId", "RoleId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_registration_default_roles_tenant_id_app_id_role_id");
+
+                    b.ToTable("registration_default_roles", (string)null);
+                });
+
             modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Roles.Role", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2119,7 +2237,7 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                     b.ToTable("tenants", (string)null);
                 });
 
-            modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Tenants.TenantLocale", b =>
+            modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Tenants.TenantTranslation", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -2164,18 +2282,18 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                         .HasColumnName("xmin");
 
                     b.HasKey("Id")
-                        .HasName("pk_tenant_locales");
+                        .HasName("pk_tenant_translations");
 
                     b.HasIndex("TenantId")
                         .IsUnique()
-                        .HasDatabaseName("ix_tenant_locales_tenant_id_fallback")
+                        .HasDatabaseName("ix_tenant_translations_tenant_id_fallback")
                         .HasFilter("language_code IS NULL");
 
                     b.HasIndex("TenantId", "LanguageCode")
                         .IsUnique()
-                        .HasDatabaseName("ix_tenant_locales_tenant_id_language_code");
+                        .HasDatabaseName("ix_tenant_translations_tenant_id_language_code");
 
-                    b.ToTable("tenant_locales", (string)null);
+                    b.ToTable("tenant_translations", (string)null);
                 });
 
             modelBuilder.Entity("NovaCore.Auth.Domain.Entities.TokenBlacklists.TokenBlacklist", b =>
@@ -2782,6 +2900,48 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                     b.Navigation("Position");
                 });
 
+            modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Registrations.RegistrationDefaultPermission", b =>
+                {
+                    b.HasOne("NovaCore.Auth.Domain.Entities.Apps.App", "App")
+                        .WithMany()
+                        .HasForeignKey("AppId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_registration_default_permissions_apps_app_id");
+
+                    b.HasOne("NovaCore.Auth.Domain.Entities.Permissions.PermissionDefinition", "PermissionDefinition")
+                        .WithMany()
+                        .HasForeignKey("PermissionDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_registration_default_permissions_permission_definitions_per");
+
+                    b.Navigation("App");
+
+                    b.Navigation("PermissionDefinition");
+                });
+
+            modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Registrations.RegistrationDefaultRole", b =>
+                {
+                    b.HasOne("NovaCore.Auth.Domain.Entities.Apps.App", "App")
+                        .WithMany()
+                        .HasForeignKey("AppId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_registration_default_roles_apps_app_id");
+
+                    b.HasOne("NovaCore.Auth.Domain.Entities.Roles.Role", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_registration_default_roles_roles_role_id");
+
+                    b.Navigation("App");
+
+                    b.Navigation("Role");
+                });
+
             modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Roles.RoleTranslation", b =>
                 {
                     b.HasOne("NovaCore.Auth.Domain.Entities.Roles.Role", "Role")
@@ -2835,14 +2995,14 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
                     b.Navigation("Tenant");
                 });
 
-            modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Tenants.TenantLocale", b =>
+            modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Tenants.TenantTranslation", b =>
                 {
                     b.HasOne("NovaCore.Auth.Domain.Entities.Tenants.Tenant", "Tenant")
-                        .WithMany("Locales")
+                        .WithMany("Translations")
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_tenant_locales_tenants_tenant_id");
+                        .HasConstraintName("fk_tenant_translations_tenants_tenant_id");
 
                     b.Navigation("Tenant");
                 });
@@ -2915,7 +3075,7 @@ namespace NovaCore.Auth.Persistence.Storage.Migrations
 
             modelBuilder.Entity("NovaCore.Auth.Domain.Entities.Tenants.Tenant", b =>
                 {
-                    b.Navigation("Locales");
+                    b.Navigation("Translations");
                 });
 #pragma warning restore 612, 618
         }
