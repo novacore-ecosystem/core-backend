@@ -62,9 +62,6 @@ public sealed class RegisterHandler(
             correlationId);
 
         // TODO: Publish audit log event bus
-        // 
-        // 
-        // 
 
         // Generate AccessToken and Refresh Token which are set to HttpOnly
         var jwtId = Guid.NewGuid();

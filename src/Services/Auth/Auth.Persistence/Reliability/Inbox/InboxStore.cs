@@ -25,7 +25,12 @@ public sealed class InboxStore(NovaCore.BuildingBlock.Persistence.Inbox.IInboxSt
     public Task CompleteAttemptAsync(Guid messageId, string consumerName, CancellationToken ct = default) =>
         _primitiveStore.CompleteAttemptAsync(messageId, consumerName, ct);
 
-    public async Task<InboxFailureOutcome> FailAttemptAsync(Guid messageId, string consumerName, string error, InboxRetryPolicy policy, CancellationToken ct = default)
+    public async Task<InboxFailureOutcome> FailAttemptAsync(
+        Guid messageId,
+        string consumerName,
+        string error,
+        InboxRetryPolicy policy,
+        CancellationToken ct = default)
     {
         var primitivePolicy = new NovaCore.BuildingBlock.Persistence.Inbox.InboxRetryPolicy(
             policy.MaxRetryCount, policy.InitialRetryDelay, policy.RetryBackoffMultiplier, policy.MaximumRetryDelay);
@@ -40,7 +45,10 @@ public sealed class InboxStore(NovaCore.BuildingBlock.Persistence.Inbox.IInboxSt
         return [.. rows.Select(ToApplication)];
     }
 
-    public Task<int> DeleteProcessedBeforeAsync(DateTime olderThanUtc, int batchSize, CancellationToken ct = default) =>
+    public Task<int> DeleteProcessedBeforeAsync(
+        DateTime olderThanUtc,
+        int batchSize,
+        CancellationToken ct = default) =>
         _primitiveStore.DeleteProcessedBeforeAsync(olderThanUtc, batchSize, ct);
 
     public async Task<IReadOnlyList<InboxDeadLetterSummary>> GetDeadLetterSummaryAsync(CancellationToken ct = default)

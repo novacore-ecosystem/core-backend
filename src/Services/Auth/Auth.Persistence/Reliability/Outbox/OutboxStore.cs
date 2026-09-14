@@ -58,7 +58,10 @@ public sealed class OutboxStore(
         await _primitiveStore.MarkFailedAsync(id, error, ct);
     }
 
-    public async Task<int> DeleteProcessedBeforeAsync(DateTime olderThanUtc, int batchSize, CancellationToken ct = default)
+    public async Task<int> DeleteProcessedBeforeAsync(
+        DateTime olderThanUtc,
+        int batchSize,
+        CancellationToken ct = default)
     {
         return await _primitiveStore.DeleteProcessedBeforeAsync(olderThanUtc, batchSize, ct);
     }

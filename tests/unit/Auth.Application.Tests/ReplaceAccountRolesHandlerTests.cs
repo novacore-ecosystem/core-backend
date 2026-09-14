@@ -11,6 +11,18 @@ namespace NovaCore.Auth.Application.Tests;
 
 public sealed class ReplaceAccountRolesHandlerTests
 {
+    private static IUnitOfWork BuildUnitOfWork()
+    {
+        var uow = Substitute.For<IUnitOfWork>();
+        uow.ExecuteTransactionAsync(Arg.Any<Func<Task>>(), Arg.Any<Func<Task>>(), Arg.Any<CancellationToken>())
+            .Returns(async ci =>
+            {
+                await ci.ArgAt<Func<Task>>(0)();
+                return true;
+            });
+        return uow;
+    }
+
     [Fact]
     public async Task Handle_ForwardsToAuthorizationService()
     {
@@ -22,7 +34,7 @@ public sealed class ReplaceAccountRolesHandlerTests
         currentUserService.GetUserId().Returns(actorId);
 
         var authorizationService = Substitute.For<IAccountAuthorizationService>();
-        var handler = new ReplaceAccountRolesHandler(currentUserService, authorizationService);
+        var handler = new ReplaceAccountRolesHandler(currentUserService, authorizationService, BuildUnitOfWork());
 
         await handler.Handle(new ReplaceAccountRolesCommand(accountId, roleIds));
 
@@ -35,7 +47,10 @@ public sealed class ReplaceAccountRolesHandlerTests
         var currentUserService = Substitute.For<ICurrentUserService>();
         currentUserService.GetUserId().Returns((Guid?)null);
 
-        var handler = new ReplaceAccountRolesHandler(currentUserService, Substitute.For<IAccountAuthorizationService>());
+        var handler = new ReplaceAccountRolesHandler(
+            currentUserService,
+            Substitute.For<IAccountAuthorizationService>(),
+            BuildUnitOfWork());
 
         await Should.ThrowAsync<UnauthorizedException>(
             () => handler.Handle(new ReplaceAccountRolesCommand(Guid.NewGuid(), [])));

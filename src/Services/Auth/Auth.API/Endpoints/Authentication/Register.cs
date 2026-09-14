@@ -6,7 +6,13 @@ using NovaCore.BuildingBlock.Web.Swagger.EndpointHeader;
 
 namespace NovaCore.Auth.API.Endpoints.Authentication;
 
-public record RegisterRequest(string Email, string Password, string FirstName, string LastName, string PhoneNumber, string MiddleName = "");
+public record RegisterRequest(
+    string Email,
+    string Password,
+    string FirstName,
+    string LastName,
+    string PhoneNumber,
+    string MiddleName = "");
 
 public sealed class RegisterEndpoint : ICarterModule
 {

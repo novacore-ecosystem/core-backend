@@ -32,10 +32,19 @@ public sealed class AuthService(UserManager<Account> userManager) : IAppService,
     public async Task<bool> ValidateCredentialsAsync(Account account, string password, CancellationToken ct = default)
         => await _userManager.CheckPasswordAsync(account, password);
 
-    public Task<Account?> CreateUserAsync(string email, string username, string password, CancellationToken ct = default)
+    public Task<Account?> CreateUserAsync(
+        string email,
+        string username,
+        string password,
+        CancellationToken ct = default)
         => CreateUserInternalAsync(Account.Create(username, Email.Create(email)), password);
 
-    public Task<Account?> CreateUserAsync(Guid id, string email, string username, string password, CancellationToken ct = default)
+    public Task<Account?> CreateUserAsync(
+        Guid id,
+        string email,
+        string username,
+        string password,
+        CancellationToken ct = default)
         => CreateUserInternalAsync(Account.Create(id, username, Email.Create(email)), password);
 
     private async Task<Account?> CreateUserInternalAsync(Account user, string password)
@@ -44,7 +53,11 @@ public sealed class AuthService(UserManager<Account> userManager) : IAppService,
         return result.Succeeded ? user : null;
     }
 
-    public async Task<bool> UpdatePasswordAsync(Guid userId, string currentPassword, string newPassword, CancellationToken ct = default)
+    public async Task<bool> UpdatePasswordAsync(
+        Guid userId,
+        string currentPassword,
+        string newPassword,
+        CancellationToken ct = default)
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null)

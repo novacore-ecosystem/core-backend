@@ -24,7 +24,12 @@ public sealed class OnUserCreatedHandler(
 
         try
         {
-            var account = await authService.CreateUserAsync(userId, @event.Email, @event.UserName, @event.TempPassword, ct)
+            var account = await authService.CreateUserAsync(
+                userId,
+                @event.Email,
+                @event.UserName,
+                @event.TempPassword,
+                ct)
                 ?? throw new InvalidOperationException("Failed to create Auth account");
 
             foreach (var role in @event.Roles)

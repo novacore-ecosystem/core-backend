@@ -9,10 +9,23 @@ public sealed class ListTenantsHandler(ITenantReadService tenantReadService)
 {
     public async Task<PaginatedResult<TenantSummaryResponse>> Handle(ListTenantsQuery request, CancellationToken ct = default)
     {
-        var (tenants, totalCount) = await tenantReadService.SearchAsync(request.Search, request.Page, request.PageSize, ct);
+        var (tenants, totalCount) = await tenantReadService.SearchAsync(
+            request.Search,
+            request.Page,
+            request.PageSize,
+            ct);
 
-        var items = tenants.Select(t => new TenantSummaryResponse(t.Id, t.Code.Value, t.Name, t.LogoUrl, t.IsActive));
+        var items = tenants.Select(t => new TenantSummaryResponse(
+            t.Id,
+            t.Code.Value,
+            t.Name,
+            t.LogoUrl,
+            t.IsActive));
 
-        return PaginatedResult<TenantSummaryResponse>.Create(items, request.Page, request.PageSize, totalCount);
+        return PaginatedResult<TenantSummaryResponse>.Create(
+            items,
+            request.Page,
+            request.PageSize,
+            totalCount);
     }
 }

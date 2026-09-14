@@ -27,10 +27,10 @@ public sealed class LoginHandler(
 
         var tenantId = tenantClient.TenantId ?? Guid.Empty;
 
-    var user = await accountReadService.GetByEmailAsync(request.Email, tenantId, ct)
-        ?? throw new UnauthorizedException("Invalid credentials");
-        
-    var isValid = await authService.ValidateCredentialsAsync(user, request.Password, ct);
+        var user = await accountReadService.GetByEmailAsync(request.Email, tenantId, ct)
+            ?? throw new UnauthorizedException("Invalid credentials");
+
+        var isValid = await authService.ValidateCredentialsAsync(user, request.Password, ct);
         if (!isValid)
             throw new UnauthorizedException("Invalid credentials");
 

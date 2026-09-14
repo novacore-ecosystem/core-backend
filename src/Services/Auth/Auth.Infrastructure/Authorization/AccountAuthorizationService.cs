@@ -1,11 +1,9 @@
 using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
 using NovaCore.Auth.Application.Abstractions.Persistence.Permissions;
-
 using NovaCore.BuildingBlock.Application.Abstractions.Outbox;
 using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
 using NovaCore.BuildingBlock.Application.Exceptions;
-using NovaCore.BuildingBlock.Contract.Events.User;
 using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
 namespace NovaCore.Auth.Infrastructure.Authorization;
@@ -18,6 +16,10 @@ namespace NovaCore.Auth.Infrastructure.Authorization;
 /// Resolves the actor's and target's <see cref="AccountAuthorizationSnapshot"/> once per operation
 /// (cache-first) and reuses them across every <see cref="AccountAuthorizationGuard"/> check, instead
 /// of each check re-resolving effective permissions independently.
+/// Non-committing beyond its own flush calls - <see cref="ReplaceRolesAsync"/> and
+/// <see cref="ReplacePermissionsAsync"/> each perform a write plus an Outbox enqueue that must
+/// stay atomic, so their callers (<c>ReplaceAccountRolesHandler</c>/<c>ReplaceAccountPermissionsHandler</c>)
+/// own the surrounding <c>IUnitOfWork.ExecuteTransactionAsync</c> transaction, not this service.
 /// </remarks>
 public sealed class AccountAuthorizationService(
     IAccountReadService accountReadService,
@@ -40,7 +42,9 @@ public sealed class AccountAuthorizationService(
         AccountAuthorizationGuard.EnsureCanManageAccount(actor, target);
 
         var currentRoleIds = await accountReadService.GetRoleIdsAsync(accountId, ct);
-        var newlyAddedRoleIds = roleIds.Where(id => !currentRoleIds.Contains(id)).ToArray();
+        var newlyAddedRoleIds = roleIds
+            .Where(id => !currentRoleIds.Contains(id))
+            .ToArray();
         await EnsureCanGrantNewRolesAsync(actor, actorId, newlyAddedRoleIds, ct);
 
         var result = await accountRoleAssignmentService.ReplaceRolesAsync(accountId, roleIds, ct);
@@ -71,7 +75,12 @@ public sealed class AccountAuthorizationService(
             await PropagateEffectivePermissionsAsync(accountId, tenantId, ct);
     }
 
-    public async Task SetLevelAsync(Guid actorId, Guid accountId, int level, Guid tenantId, CancellationToken ct = default)
+    public async Task SetLevelAsync(
+        Guid actorId,
+        Guid accountId,
+        int level,
+        Guid tenantId,
+        CancellationToken ct = default)
     {
         // Not Root-bypassed, unlike every other rule here - an account must never be able to
         // change its own level through this operation.
@@ -103,7 +112,10 @@ public sealed class AccountAuthorizationService(
             AccountAuthorizationGuard.EnsureCanGrantRole(actor, actorRoleIds.Contains(roleId));
     }
 
-    private async Task PropagateEffectivePermissionsAsync(Guid accountId, Guid tenantId, CancellationToken ct)
+    private async Task PropagateEffectivePermissionsAsync(
+        Guid accountId,
+        Guid tenantId,
+        CancellationToken ct)
     {
         await authorizationCache.InvalidateAsync(accountId, tenantId, ct);
         var refreshedSnapshot = await authorizationCache.GetAsync(accountId, tenantId, ct);

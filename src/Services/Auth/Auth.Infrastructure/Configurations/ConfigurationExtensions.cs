@@ -31,6 +31,9 @@ public static class ConfigurationExtensions
         var result = new KafkaOptionsValidator().Validate(kafkaOptions);
 
         if (!result.IsValid)
-            throw new OptionsValidationException(KafkaOptions.Section, typeof(KafkaOptions), result.Errors.Select(e => e.ErrorMessage));
+            throw new OptionsValidationException(
+                KafkaOptions.Section,
+                typeof(KafkaOptions),
+                result.Errors.Select(e => e.ErrorMessage));
     }
 }

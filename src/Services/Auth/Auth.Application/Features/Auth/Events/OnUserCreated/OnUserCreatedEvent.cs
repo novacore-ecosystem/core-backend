@@ -22,7 +22,17 @@ public sealed record OnUserCreatedEvent(
         string[] roles,
         string tempPassword,
         string correlationId)
-        : this(userId, email, userName, firstName, middleName, lastName, roles, tempPassword, correlationId, DateTime.UtcNow)
+        : this(
+            userId,
+            email,
+            userName,
+            firstName,
+            middleName,
+            lastName,
+            roles,
+            tempPassword,
+            correlationId,
+            DateTime.UtcNow)
     {
     }
 }

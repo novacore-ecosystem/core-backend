@@ -49,5 +49,10 @@ public interface IAccountAuthorizationService
     /// <param name="accountId">The account being managed.</param>
     /// <param name="level">The level to grant.</param>
     /// <param name="tenantId">The tenant scope of the operation.</param>
-    Task SetLevelAsync(Guid actorId, Guid accountId, int level, Guid tenantId, CancellationToken ct = default);
+    Task SetLevelAsync(
+        Guid actorId,
+        Guid accountId,
+        int level,
+        Guid tenantId,
+        CancellationToken ct = default);
 }

@@ -9,12 +9,17 @@ using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
 namespace NovaCore.Auth.Persistence.Contexts.Authorization.Read;
 
-/// <summary>The reference Persistence Service for this codebase - a meaningful, cross-aggregate
+/// <summary>
+/// The reference Persistence Service for this codebase - a meaningful, cross-aggregate
 /// authorization-data concern (Role/Position/PermissionGrant), not a Repository-method decorator.
-/// IPersistenceService makes it auto-registered (see Auth.Persistence/DependencyInjection.cs).</summary>
+/// IPersistenceService makes it auto-registered (see Auth.Persistence/DependencyInjection.cs).
+/// </summary>
 public sealed class EffectivePermissionReadService(AuthDbContext dbContext) : IEffectivePermissionReadService, IPersistenceService
 {
-    public async Task<IReadOnlySet<string>> GetEffectivePermissionsAsync(Guid accountId, Guid tenantId, CancellationToken ct = default)
+    public async Task<IReadOnlySet<string>> GetEffectivePermissionsAsync(
+        Guid accountId,
+        Guid tenantId,
+        CancellationToken ct = default)
     {
         var directRoleIds = dbContext.UserRoles
             .Where(ar => ar.UserId == accountId)
@@ -138,7 +143,10 @@ public sealed class EffectivePermissionReadService(AuthDbContext dbContext) : IE
                 .ToHashSet(StringComparer.Ordinal));
     }
 
-    public async Task<IReadOnlySet<Guid>> GetAccountIdsForRoleAsync(Guid roleId, Guid tenantId, CancellationToken ct = default)
+    public async Task<IReadOnlySet<Guid>> GetAccountIdsForRoleAsync(
+        Guid roleId,
+        Guid tenantId,
+        CancellationToken ct = default)
     {
         var directAccountIds = dbContext.UserRoles
             .Where(ar => ar.RoleId == roleId)

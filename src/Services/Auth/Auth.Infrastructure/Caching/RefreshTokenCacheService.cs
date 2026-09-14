@@ -1,7 +1,3 @@
-
-using NovaCore.BuildingBlock.Application.Abstractions.Services;
-using NovaCore.BuildingBlock.SharedKernel.Constants;
-
 namespace NovaCore.Auth.Infrastructure.Caching;
 
 public sealed class RefreshTokenCacheService(ICacheService cacheService)
@@ -28,7 +24,11 @@ public sealed class RefreshTokenCacheService(ICacheService cacheService)
             SyncStatus = status
         };
 
-        await cacheService.SetAsync(tokenKey, cacheEntry, expiration, ct);
+        await cacheService.SetAsync(
+            tokenKey,
+            cacheEntry,
+            expiration,
+            ct);
 
         var userKey = CacheKeyConstant.RefreshTokens.UserTokens(token.AccountId);
         await cacheService.HashSetAsync(userKey, token.Token, new UserRefreshTokenIndex
@@ -38,13 +38,20 @@ public sealed class RefreshTokenCacheService(ICacheService cacheService)
             ExpiryDate = token.ExpiryDate
         }, ct);
 
-        await cacheService.SetAddAsync(CacheKeyConstant.RefreshTokens.ActiveUsers, token.AccountId.ToString(), ct);
+        await cacheService.SetAddAsync(
+            CacheKeyConstant.RefreshTokens.ActiveUsers,
+            token.AccountId.ToString(),
+            ct);
     }
 
     public Task<CachedRefreshToken?> GetByTokenStringAsync(string token, CancellationToken ct = default)
-        => cacheService.GetAsync<CachedRefreshToken>(CacheKeyConstant.RefreshTokens.ByTokenString(token), ct);
+        => cacheService.GetAsync<CachedRefreshToken>(
+            CacheKeyConstant.RefreshTokens.ByTokenString(token),
+            ct);
 
-    public async Task RevokeByTokenStringAsync(string token, CancellationToken ct = default)
+    public async Task RevokeByTokenStringAsync(
+        string token,
+        CancellationToken ct = default)
     {
         var cached = await GetByTokenStringAsync(token, ct);
         if (cached is null)
@@ -53,7 +60,9 @@ public sealed class RefreshTokenCacheService(ICacheService cacheService)
         await RevokeCachedAsync(token, cached, ct);
     }
 
-    public async Task RevokeAllForUserAsync(Guid userId, CancellationToken ct = default)
+    public async Task RevokeAllForUserAsync(
+        Guid userId,
+        CancellationToken ct = default)
     {
         var index = await GetUserTokenIndexAsync(userId, ct);
         if (index.Count == 0)
@@ -84,7 +93,9 @@ public sealed class RefreshTokenCacheService(ICacheService cacheService)
         return WriteBackAsync(token, cached, ct);
     }
 
-    /// <summary>All user IDs that currently own at least one active refresh token (SMEMBERS, single round trip).</summary>
+    /// <summary>
+    /// All user IDs that currently own at least one active refresh token (SMEMBERS, single round trip).
+    /// </summary>
     public async Task<IReadOnlyList<Guid>> GetActiveUserIdsAsync(CancellationToken ct = default)
     {
         var members = await cacheService.SetMembersAsync(CacheKeyConstant.RefreshTokens.ActiveUsers, ct);
@@ -97,11 +108,15 @@ public sealed class RefreshTokenCacheService(ICacheService cacheService)
         return userIds;
     }
 
-    /// <summary>Lightweight per-user token index (HGETALL, single round trip).</summary>
+    /// <summary>
+    /// Lightweight per-user token index (HGETALL, single round trip).
+    /// </summary>
     public Task<IDictionary<string, UserRefreshTokenIndex?>> GetUserTokenIndexAsync(Guid userId, CancellationToken ct = default)
         => cacheService.HashGetAllAsync<UserRefreshTokenIndex>(CacheKeyConstant.RefreshTokens.UserTokens(userId), ct);
 
-    /// <summary>Bulk fetch of full cached token payloads via MGET (single round trip per batch).</summary>
+    /// <summary>
+    /// Bulk fetch of full cached token payloads via MGET (single round trip per batch).
+    /// </summary>
     public async Task<IDictionary<string, CachedRefreshToken?>> GetManyByTokenStringAsync(
         IEnumerable<string> tokens,
         CancellationToken ct = default)
@@ -120,21 +135,27 @@ public sealed class RefreshTokenCacheService(ICacheService cacheService)
         return result;
     }
 
-    /// <summary>Flags a token as Synced in both the full entry and the user index, without re-syncing it next run.</summary>
+    /// <summary>
+    /// Flags a token as Synced in both the full entry and the user index, without re-syncing it next run.
+    /// </summary>
     public Task MarkSyncedAsync(string token, CachedRefreshToken cached, CancellationToken ct = default)
     {
         cached.SyncStatus = TokenSyncStatus.Synced;
         return WriteBackAsync(token, cached, ct);
     }
 
-    /// <summary>Hard-removes a token from cache: the full entry and its user-index field. Idempotent.</summary>
+    /// <summary>
+    /// Hard-removes a token from cache: the full entry and its user-index field. Idempotent.
+    /// </summary>
     public async Task RemoveAsync(Guid userId, string token, CancellationToken ct = default)
     {
         await cacheService.RemoveAsync(CacheKeyConstant.RefreshTokens.ByTokenString(token), ct);
         await cacheService.HashDeleteAsync(CacheKeyConstant.RefreshTokens.UserTokens(userId), token, ct);
     }
 
-    /// <summary>Drops a user from the active-users set once they own no more tokens.</summary>
+    /// <summary>
+    /// Drops a user from the active-users set once they own no more tokens.
+    /// </summary>
     public Task RemoveActiveUserAsync(Guid userId, CancellationToken ct = default)
         => cacheService.SetRemoveAsync(CacheKeyConstant.RefreshTokens.ActiveUsers, userId.ToString(), ct);
 
@@ -179,7 +200,9 @@ public sealed class RefreshTokenCacheService(ICacheService cacheService)
         public TokenSyncStatus SyncStatus { get; set; } = TokenSyncStatus.New;
     }
 
-    /// <summary>Lightweight per-user index entry - just enough for the sync job to triage without a full fetch.</summary>
+    /// <summary>
+    /// Lightweight per-user index entry - just enough for the sync job to triage without a full fetch.
+    /// </summary>
     public sealed class UserRefreshTokenIndex
     {
         public TokenSyncStatus SyncStatus { get; set; }
@@ -192,6 +215,6 @@ public sealed class RefreshTokenCacheService(ICacheService cacheService)
         New = 0,
         Modified = 1,
         Revoked = 2,
-        Synced = 3
+        Synced = 3,
     }
 }

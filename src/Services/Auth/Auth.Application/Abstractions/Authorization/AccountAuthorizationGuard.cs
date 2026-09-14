@@ -1,5 +1,3 @@
-using NovaCore.BuildingBlock.Application.Exceptions;
-
 namespace NovaCore.Auth.Application.Abstractions.Authorization;
 
 /// <summary>

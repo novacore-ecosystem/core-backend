@@ -1,5 +1,3 @@
-using NovaCore.BuildingBlock.SharedKernel.Constants;
-
 namespace NovaCore.Auth.Application.Abstractions.Authorization;
 
 /// <summary>
