@@ -1,7 +1,7 @@
+using NovaCore.Auth.Application.Abstractions.Apps;
 using NovaCore.Auth.Application.Abstractions.Auth;
 using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
-using NovaCore.Auth.Application.Abstractions.Persistence.Apps;
 using NovaCore.Auth.Application.Abstractions.Persistence.Roles;
 using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
@@ -13,7 +13,8 @@ namespace NovaCore.Auth.Application.Features.Auth.Commands.Register;
 public sealed class RegisterHandler(
     IUnitOfWork unitOfWork,
     IAuthService authService,
-    IAppReadService appReadService,
+    IAppCollectionCache appCollectionCache,
+    IAppMembershipCache appMembershipCache,
     IRoleReadService roleReadService,
     IAccountRoleAssignmentService accountRoleAssignmentService,
     IAccountAppAssignmentService accountAppAssignmentService,
@@ -27,7 +28,7 @@ public sealed class RegisterHandler(
 {
     public async Task<RegisterResult> Handle(RegisterCommand request, CancellationToken ct = default)
     {
-        var app = await appReadService.GetByCodeAsync(AppCode.Create(request.AppCode), ct)
+        var app = await appCollectionCache.GetByCodeAsync(request.AppCode, ct)
             ?? throw new NotFoundException("App", request.AppCode);
         if (!app.IsActive)
             throw new BadRequestException($"App ({request.AppCode}) is not active.");
@@ -56,6 +57,10 @@ public sealed class RegisterHandler(
                 await accountAppAssignmentService.AssignAsync(account.Id, app.Id, ct);
             },
             ct: ct);
+
+        // Registration just changed this App's membership - invalidate after the transaction
+        // commits (never before) so the next membership lookup rebuilds a fresh set.
+        await appMembershipCache.InvalidateAsync(app.Id, ct);
 
         // Publish an event to create new user profile via gRPC
         var @event = new OnUserRegisteredEvent(

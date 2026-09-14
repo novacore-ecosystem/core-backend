@@ -14,6 +14,10 @@ public interface IAppReadService
 
     Task<bool> ExistsByCodeAsync(AppCode code, CancellationToken ct = default);
 
+    /// <summary>Every App, unfiltered and without Translations - the single batch query backing
+    /// IAppCollectionCache's App collection cache (no per-App query, no pagination).</summary>
+    Task<IReadOnlyList<App>> GetAllAsync(CancellationToken ct = default);
+
     /// <summary>Database-level search + pagination for the App Management list screen - matches
     /// against Code/Name, case-insensitive.</summary>
     Task<(IReadOnlyList<App> Items, int TotalCount)> SearchAsync(

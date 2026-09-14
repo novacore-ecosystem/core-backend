@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
+using NovaCore.Auth.Application.Configurations;
 using NovaCore.Auth.Application.Abstractions.Persistence.Apps;
 using NovaCore.Auth.Application.Abstractions.Persistence.RefreshTokens;
 using NovaCore.Auth.Application.Abstractions.Persistence.Scopes;
@@ -244,6 +246,10 @@ public static class DependencyInjection
     private static IServiceCollection AddSeeding(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<RootSetting>(configuration.GetSection(RootSetting.Section));
+        // Also expose a plain RootSetting instance (not just IOptions<RootSetting>) - the same
+        // unwrapping SettingsScanningExtensions.BindSetting uses - so Application-layer code
+        // (e.g. RefreshTokenHandler's Root bypass) can take it as a normal constructor dependency.
+        services.AddSingleton(provider => provider.GetRequiredService<IOptions<RootSetting>>().Value);
         services.AddScoped<DatabaseSeeder>();
         return services;
     }

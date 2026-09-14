@@ -1,19 +1,18 @@
+using NovaCore.Auth.Application.Abstractions.Apps;
 using NovaCore.Auth.Application.Abstractions.Auth;
 using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
-using NovaCore.Auth.Application.Abstractions.Persistence.Apps;
 using NovaCore.Auth.Application.Abstractions.Persistence.TenantClients;
 using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
-using NovaCore.Auth.Domain.ValueObjects;
 
 namespace NovaCore.Auth.Application.Features.Auth.Commands.Login;
 
 public sealed class LoginHandler(
     ITenantClientReadService tenantClientReadService,
-    IAppReadService appReadService,
+    IAppCollectionCache appCollectionCache,
+    IAppMembershipCache appMembershipCache,
     IAccountReadService accountReadService,
-    IAccountAppAssignmentService accountAppAssignmentService,
     IAuthService authService,
     IEffectivePermissionReadService effectivePermissionReadService,
     IJwtTokenGenerator tokenGenerator,
@@ -30,7 +29,7 @@ public sealed class LoginHandler(
         if (tenantClient is null || !tenantClient.IsUsable())
             throw new UnauthorizedException("Invalid credentials");
 
-        var app = await appReadService.GetByCodeAsync(AppCode.Create(request.AppCode), ct);
+        var app = await appCollectionCache.GetByCodeAsync(request.AppCode, ct);
         if (app is null || !app.IsActive)
             throw new UnauthorizedException("Invalid credentials");
 
@@ -43,7 +42,7 @@ public sealed class LoginHandler(
         if (!isValid)
             throw new UnauthorizedException("Invalid credentials");
 
-        var isAssignedToApp = await accountAppAssignmentService.IsAssignedAsync(user.Id, app.Id, ct);
+        var isAssignedToApp = await appMembershipCache.IsAssignedAsync(app.Id, user.Id, ct);
         if (!isAssignedToApp)
             throw new UnauthorizedException("Invalid credentials");
 

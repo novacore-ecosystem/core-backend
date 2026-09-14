@@ -1,9 +1,11 @@
+using NovaCore.Auth.Application.Abstractions.Apps;
 using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Auth;
 using NovaCore.Auth.Application.Abstractions.Services;
 using NovaCore.Auth.Infrastructure.Authorization;
 using NovaCore.Auth.Infrastructure.BackgroundJobs;
 using NovaCore.Auth.Infrastructure.Caching;
+using NovaCore.Auth.Infrastructure.Caching.Apps;
 using NovaCore.Auth.Infrastructure.Configurations;
 using NovaCore.Auth.Infrastructure.Configurations.Settings;
 using NovaCore.Auth.Infrastructure.GrpcClients;
@@ -36,6 +38,7 @@ public static class DependencyInjection
             .AddRedisCache(configuration)
             .AddAuthService()
             .AddTenantCaching()
+            .AddAppCaching()
             .AddAccountAuthorization()
             .AddBackgroundJobs(configuration)
             .AddInboxOutboxCleanupJobs(configuration)
@@ -69,6 +72,14 @@ public static class DependencyInjection
     private static IServiceCollection AddTenantCaching(this IServiceCollection services)
     {
         services.AddScoped<ITenantVersionCache, TenantVersionCache>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddAppCaching(this IServiceCollection services)
+    {
+        services.AddScoped<IAppCollectionCache, AppCollectionCache>();
+        services.AddScoped<IAppMembershipCache, AppMembershipCache>();
 
         return services;
     }

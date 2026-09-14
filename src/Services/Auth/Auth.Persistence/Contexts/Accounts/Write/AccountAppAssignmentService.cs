@@ -52,4 +52,13 @@ public sealed class AccountAppAssignmentService(
             .AsNoTracking()
             .AnyAsync(aa => aa.AccountId == accountId && aa.AppId == appId, ct);
     }
+
+    public async Task<IReadOnlyCollection<Guid>> GetAccountIdsByAppAsync(Guid appId, CancellationToken ct = default)
+    {
+        return await dbContext.AccountApps
+            .AsNoTracking()
+            .Where(aa => aa.AppId == appId)
+            .Select(aa => aa.AccountId)
+            .ToListAsync(ct);
+    }
 }

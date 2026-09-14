@@ -29,4 +29,11 @@ public interface IAccountAppAssignmentService
     /// <param name="accountId">The account to check.</param>
     /// <param name="appId">The App to check membership against.</param>
     Task<bool> IsAssignedAsync(Guid accountId, Guid appId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Every AccountID currently assigned to the App, in one batch query - backs
+    /// IAppMembershipCache's per-App membership set on a cache miss.
+    /// </summary>
+    /// <param name="appId">The App to look up.</param>
+    Task<IReadOnlyCollection<Guid>> GetAccountIdsByAppAsync(Guid appId, CancellationToken ct = default);
 }

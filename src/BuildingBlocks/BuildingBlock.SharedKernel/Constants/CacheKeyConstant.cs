@@ -40,6 +40,30 @@ public static class CacheKeyConstant
     }
 
     /// <summary>
+    /// The App collection (small, catalog-like data - the number of Apps is expected to stay
+    /// small) cached as one unit, plus per-App AccountID membership sets for fast "is this
+    /// account assigned to this App" checks. Backs Auth.Infrastructure's IAppCollectionCache
+    /// and IAppMembershipCache.
+    /// </summary>
+    public static class Apps
+    {
+        private const string Prefix = "auth:apps";
+
+        /// <summary>The entire App collection, cached under one key - avoids a per-App cache
+        /// entry. Pattern: auth:apps:collection</summary>
+        public const string Collection = $"{Prefix}:collection";
+
+        /// <summary>Set of AccountIDs assigned to one App. Pattern: auth:apps:{appId}:account-ids</summary>
+        public static string AccountIds(Guid appId) => $"{Prefix}:{appId}:account-ids";
+
+        /// <summary>Default TTL for the App collection cache in minutes - Apps are an admin-managed catalog that changes rarely.</summary>
+        public const int DefaultTtlMinutes = 60;
+
+        /// <summary>Default TTL for a per-App AccountID membership cache in minutes.</summary>
+        public const int AccountIdsDefaultTtlMinutes = 15;
+    }
+
+    /// <summary>
     /// Dead scaffold - never wired to any code (kept, not deleted, to avoid churn unrelated to
     /// this change). The "auth:users" prefix was seeded for Auth's own account concept, NOT
     /// User service's UserProfile aggregate - see <see cref="UserProfiles"/> for the real,

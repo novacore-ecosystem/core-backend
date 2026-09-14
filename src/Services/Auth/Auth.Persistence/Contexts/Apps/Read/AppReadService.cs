@@ -33,6 +33,13 @@ public sealed class AppReadService(AuthDbContext dbContext) : IAppReadService, I
             .AnyAsync(a => a.Code.Equals(code), ct);
     }
 
+    public async Task<IReadOnlyList<App>> GetAllAsync(CancellationToken ct = default)
+    {
+        return await dbContext.Apps
+            .AsNoTracking()
+            .ToListAsync(ct);
+    }
+
     public async Task<(IReadOnlyList<App> Items, int TotalCount)> SearchAsync(
         string? search,
         int page,
