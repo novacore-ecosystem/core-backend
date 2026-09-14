@@ -7,6 +7,7 @@ using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
 using NovaCore.Auth.Application.Abstractions.Persistence.TenantClients;
 using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
+using NovaCore.Auth.Application.Configurations;
 using NovaCore.Auth.Application.Features.Auth.Commands.Login;
 using NovaCore.Auth.Domain.Entities.Accounts;
 using NovaCore.Auth.Domain.Entities.TenantClients;
@@ -28,11 +29,14 @@ public sealed class LoginHandlerTests
         IAppMembershipCache AppMembershipCache,
         IJwtTokenGenerator TokenGenerator,
         CachedApp App,
-        Account Account) BuildScenario(bool isAssignedToApp, bool credentialsValid = true)
+        Account Account) BuildScenario(bool isAssignedToApp, bool credentialsValid = true, bool isRootAccount = false)
     {
+        var rootSetting = new RootSetting();
         var tenantClient = TenantClient.Create(null, "Root Client");
         var app = new CachedApp(Guid.NewGuid(), "storefront_web", "Storefront Web", true);
-        var account = Account.Create("test@example.com", Email.Create("test@example.com"), AccountStatus.Active);
+        var account = isRootAccount
+            ? Account.Create(rootSetting.Id, "test@example.com", Email.Create("test@example.com"), AccountStatus.Active)
+            : Account.Create("test@example.com", Email.Create("test@example.com"), AccountStatus.Active);
 
         var tenantClientReadService = Substitute.For<ITenantClientReadService>();
         tenantClientReadService.GetByPublicKeyAsync("client-key", Arg.Any<CancellationToken>()).Returns(tenantClient);
@@ -73,7 +77,8 @@ public sealed class LoginHandlerTests
             Substitute.For<IEffectivePermissionReadService>(),
             tokenGenerator,
             refreshTokenService,
-            Substitute.For<ICurrentUserService>());
+            Substitute.For<ICurrentUserService>(),
+            rootSetting);
 
         return (handler, authService, appMembershipCache, tokenGenerator, app, account);
     }
@@ -94,6 +99,38 @@ public sealed class LoginHandlerTests
             account.Id, account.Email!, account.UserName!,
             Arg.Any<IEnumerable<string>>(), Arg.Any<IEnumerable<string>>(),
             Guid.Empty, app.Id, Arg.Any<Guid?>());
+    }
+
+    [Fact]
+    public async Task Handle_RootAccount_BypassesAppCheckEntirely_EvenWithNoAppCodeSupplied()
+    {
+        var (handler, _, appMembershipCache, tokenGenerator, _, account) =
+            BuildScenario(isAssignedToApp: false, isRootAccount: true);
+
+        // Root never sends X-App-Key (see nova-console's env.appCode) - the bypass must not
+        // depend on one being supplied.
+        var result = await handler.Handle(new LoginCommand("test@example.com", "P@ssw0rd", "client-key", ""));
+
+        result.AccessToken.ShouldBe("access-token");
+
+        // Root holds no App membership by design - resolution/membership must never even be
+        // attempted for it, and its token gets no app_id claim (Guid.Empty), same as
+        // RefreshTokenHandler's bypass.
+        await appMembershipCache.DidNotReceive().IsAssignedAsync(
+            Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        tokenGenerator.Received(1).GenerateAccessToken(
+            account.Id, account.Email!, account.UserName!,
+            Arg.Any<IEnumerable<string>>(), Arg.Any<IEnumerable<string>>(),
+            Guid.Empty, Guid.Empty, Arg.Any<Guid?>());
+    }
+
+    [Fact]
+    public async Task Handle_NonRootWithoutAppCode_ThrowsBadRequest()
+    {
+        var (handler, _, _, _, _, _) = BuildScenario(isAssignedToApp: true);
+
+        await Should.ThrowAsync<BadRequestException>(
+            () => handler.Handle(new LoginCommand("test@example.com", "P@ssw0rd", "client-key", "")));
     }
 
     [Fact]

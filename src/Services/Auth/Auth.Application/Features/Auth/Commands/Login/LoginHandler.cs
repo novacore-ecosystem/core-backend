@@ -5,6 +5,8 @@ using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
 using NovaCore.Auth.Application.Abstractions.Persistence.TenantClients;
 using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
+using NovaCore.Auth.Application.Configurations;
+using NovaCore.BuildingBlock.SharedKernel.Extensions;
 
 namespace NovaCore.Auth.Application.Features.Auth.Commands.Login;
 
@@ -17,35 +19,45 @@ public sealed class LoginHandler(
     IEffectivePermissionReadService effectivePermissionReadService,
     IJwtTokenGenerator tokenGenerator,
     IRefreshTokenService refreshTokenService,
-    ICurrentUserService currentUserService) : ICommandHandler<LoginCommand, LoginResult>
+    ICurrentUserService currentUserService,
+    RootSetting rootSetting) : ICommandHandler<LoginCommand, LoginResult>
 {
     public async Task<LoginResult> Handle(LoginCommand request, CancellationToken ct = default)
     {
-        // A single generic message covers every pre-token failure (unknown/invalid/revoked
-        // client key, unknown App, unknown user, wrong password, missing App membership) -
-        // distinguishing them in the response would let a caller enumerate valid tenants/
-        // clients/Apps/users (see docs/services/auth-service.md).
+        // Check if tenant client is valid
         var tenantClient = await tenantClientReadService.GetByPublicKeyAsync(request.ClientPublicKey, ct);
         if (tenantClient is null || !tenantClient.IsUsable())
             throw new UnauthorizedException("Invalid credentials");
 
-        var app = await appCollectionCache.GetByCodeAsync(request.AppCode, ct);
-        if (app is null || !app.IsActive)
-            throw new UnauthorizedException("Invalid credentials");
-
+        // Check if email exists
         var tenantId = tenantClient.TenantId ?? Guid.Empty;
-
         var user = await accountReadService.GetByEmailAsync(request.Email, tenantId, ct)
             ?? throw new UnauthorizedException("Invalid credentials");
 
+        // Check if password is valid
         var isValid = await authService.ValidateCredentialsAsync(user, request.Password, ct);
         if (!isValid)
             throw new UnauthorizedException("Invalid credentials");
 
-        var isAssignedToApp = await appMembershipCache.IsAssignedAsync(app.Id, user.Id, ct);
-        if (!isAssignedToApp)
-            throw new UnauthorizedException("Invalid credentials");
+        // Root bypasses App resolution/membership entirely; every other account must supply a
+        // valid, assigned App
+        CachedApp? app = null;
+        var isRoot = user.Id == rootSetting.Id;
+        if (!isRoot)
+        {
+            if (request.AppCode.IsNullOrWhiteSpace())
+                throw new BadRequestException("This header is missing app code.");
 
+            app = await appCollectionCache.GetByCodeAsync(request.AppCode, ct);
+            if (app is null || !app.IsActive)
+                throw new UnauthorizedException("Invalid credentials");
+
+            var isAssignedToApp = await appMembershipCache.IsAssignedAsync(app.Id, user.Id, ct);
+            if (!isAssignedToApp)
+                throw new UnauthorizedException("Invalid credentials");
+        }
+
+        // Generate access token and refresh token
         var jwtId = Guid.NewGuid();
         var roles = await accountReadService.GetRoleNamesAsync(user.Id, ct);
         var permissions = await effectivePermissionReadService.GetEffectivePermissionsAsync(user.Id, tenantId, ct);
@@ -56,10 +68,11 @@ public sealed class LoginHandler(
             roles: roles,
             permissions: permissions,
             tenantId: tenantId,
-            appId: app.Id,
+            appId: app is null || isRoot ? Guid.Empty : app.Id,
             jwtId: jwtId);
         var refreshToken = await refreshTokenService.GenerateRefreshTokenAsync(user.Id, jwtId, ct);
 
+        // Set token to client cookie (HTTP Only)
         currentUserService.SetAccessToken(accessToken);
         currentUserService.SetRefreshToken(refreshToken);
 
