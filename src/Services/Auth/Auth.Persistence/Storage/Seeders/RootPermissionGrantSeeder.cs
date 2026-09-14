@@ -1,10 +1,10 @@
 using NovaCore.Auth.Domain.Entities.Permissions;
 using NovaCore.Auth.Persistence.Engine;
 
-using NovaCore.BuildingBlock.Domain.Seeders;
 using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace NovaCore.Auth.Persistence.Storage.Seeders;
 
@@ -19,11 +19,11 @@ namespace NovaCore.Auth.Persistence.Storage.Seeders;
 /// (see Permissions.Common.cs), so PermissionRegistry.IsProviderAllowed is the source of truth here
 /// rather than a hardcoded exclusion.
 /// </remarks>
-public class RootPermissionGrantSeeder(AuthDbContext context)
+public class RootPermissionGrantSeeder(AuthDbContext context, IOptions<RootSetting> rootSetting)
 {
     public async Task SeedAsync()
     {
-        var rootAccountId = SeedAuthData.Accounts.RootId.ToString();
+        var rootAccountId = rootSetting.Value.RootId.ToString();
 
         var definitions = await context.PermissionDefinitions
             .Select(p => new { p.Id, Key = p.Key.Value })

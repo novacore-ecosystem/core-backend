@@ -26,4 +26,19 @@ public static partial class Permissions
         [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string Full = "tenant:full";
     }
+
+    /// <summary>App Management - the client-application boundary (see App.cs's class doc
+    /// comment) a user is assigned to, distinct from Tenant.</summary>
+    [PermissionGroup("app")]
+    public static class App
+    {
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        public const string View = "app:view";
+
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        public const string Manage = "app:manage";
+
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        public const string AssignUsers = "app:assign-users";
+    }
 }

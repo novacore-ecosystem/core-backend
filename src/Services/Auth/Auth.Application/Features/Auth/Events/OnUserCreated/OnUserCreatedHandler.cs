@@ -1,10 +1,15 @@
 using NovaCore.Auth.Application.Abstractions.Auth;
+using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
+using NovaCore.Auth.Application.Abstractions.Persistence.Roles;
 using NovaCore.Auth.Application.Features.Auth.Events.OnUserDeletion;
+using NovaCore.Auth.Domain.ValueObjects;
 
 namespace NovaCore.Auth.Application.Features.Auth.Events.OnUserCreated;
 
 public sealed class OnUserCreatedHandler(
     IAuthService authService,
+    IRoleReadService roleReadService,
+    IAccountRoleAssignmentService accountRoleAssignmentService,
     IInternalEventDispatcher appEventDispatcher,
     IAppLogger<OnUserCreatedHandler> logger) : IInternalEventHandler<OnUserCreatedEvent>
 {
@@ -32,12 +37,15 @@ public sealed class OnUserCreatedHandler(
                 ct)
                 ?? throw new InvalidOperationException("Failed to create Auth account");
 
+            var roleIds = new List<Guid>(@event.Roles.Length);
             foreach (var role in @event.Roles)
             {
-                var assigned = await authService.AssignRoleAsync(account.Id, role, ct);
-                if (!assigned)
-                    throw new InvalidOperationException($"Failed to assign role {role}");
+                var resolvedRole = await roleReadService.GetByCodeAsync(RoleCode.Create(role), ct)
+                    ?? throw new InvalidOperationException($"Failed to assign role {role}");
+                roleIds.Add(resolvedRole.Id);
             }
+
+            await accountRoleAssignmentService.ReplaceRolesAsync(account.Id, roleIds, ct);
 
             logger.Information(
                 "Provisioned Auth account for user {UserId} with roles {Roles}",

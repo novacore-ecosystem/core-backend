@@ -34,7 +34,7 @@ public static class DependencyInjection
             .AddAuthConfigurations(configuration)
             .AddAppLogger()
             .AddRedisCache(configuration)
-            .AddRoleCaching(configuration)
+            .AddAuthService()
             .AddTenantCaching()
             .AddAccountAuthorization()
             .AddBackgroundJobs(configuration)
@@ -59,20 +59,9 @@ public static class DependencyInjection
         return services;
     }
 
-    private static IServiceCollection AddRoleCaching(
-        this IServiceCollection services,
-        IConfiguration configuration)
+    private static IServiceCollection AddAuthService(this IServiceCollection services)
     {
-        services.AddScoped<RoleCacheService>();
-
-        // Decorate IAuthService with caching. This must be called AFTER
-        // Persistence.AddPersistence which registers the original AuthService
-        services.AddScoped<IAuthService>(provider =>
-        {
-            var innerAuthService = provider.GetRequiredService<AuthService>();
-            var roleCache = provider.GetRequiredService<RoleCacheService>();
-            return new CachedAuthServiceDecorator(innerAuthService, roleCache);
-        });
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }

@@ -47,6 +47,10 @@ public static class PermissionSeedCatalog
         CreatePerm(Permissions.Tenant.RotateClient, en: "Rotate Tenant Client Keys", vi: "Xoay khóa client thuê bao"),
         CreatePerm(Permissions.Tenant.Full, en: "Full Tenant Access", vi: "Toàn quyền tổ chức thuê bao"),
 
+        CreatePerm(Permissions.App.View, en: "View Apps", vi: "Xem ứng dụng"),
+        CreatePerm(Permissions.App.Manage, en: "Manage Apps", vi: "Quản lý ứng dụng"),
+        CreatePerm(Permissions.App.AssignUsers, en: "Assign Users to Apps", vi: "Gán người dùng vào ứng dụng"),
+
         CreatePerm(Permissions.Inventory.View, en: "View Inventory", vi: "Xem tồn kho"),
         CreatePerm(Permissions.Inventory.StockMove, en: "Move Stock", vi: "Chuyển kho"),
         CreatePerm(Permissions.Inventory.Adjust, en: "Adjust Stock", vi: "Điều chỉnh tồn kho"),

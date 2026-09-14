@@ -6,6 +6,7 @@ public record RegisterCommand(
     string FirstName,
     string LastName,
     string PhoneNumber,
+    string AppCode,
     string MiddleName = "") : ICommand<RegisterResult>;
 
 public record RegisterResult;

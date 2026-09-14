@@ -42,4 +42,12 @@ public sealed class AccountReadService(AuthDbContext dbContext) : IAccountReadSe
 
         return roleIds.ToHashSet();
     }
+
+    public async Task<IReadOnlyList<string>> GetRoleNamesAsync(Guid accountId, CancellationToken ct = default)
+    {
+        return await dbContext.UserRoles
+            .Where(ar => ar.UserId == accountId)
+            .Join(dbContext.Roles, ar => ar.RoleId, r => r.Id, (ar, r) => r.Name!)
+            .ToListAsync(ct);
+    }
 }

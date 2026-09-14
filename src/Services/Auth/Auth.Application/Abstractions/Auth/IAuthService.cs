@@ -42,11 +42,5 @@ public interface IAuthService
 
     Task<bool> ConfirmEmailAsync(Guid userId, CancellationToken ct = default);
 
-    Task<IList<string>> GetUserRolesAsync(Guid userId, CancellationToken ct = default);
-
-    Task<bool> IsInRoleAsync(Guid userId, string role, CancellationToken ct = default);
-
-    Task<bool> AssignRoleAsync(Guid userId, string role, CancellationToken ct = default);
-
     Task<bool> DeleteUserAsync(Guid userId, CancellationToken ct = default);
 }

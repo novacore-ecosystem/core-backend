@@ -1,5 +1,6 @@
 using NovaCore.Auth.Application.Abstractions.Auth;
 using NovaCore.Auth.Application.Abstractions.Authorization;
+using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
 using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
 
@@ -12,6 +13,7 @@ public sealed class RefreshTokenHandler(
     IJwtTokenGenerator tokenGenerator,
     IRefreshTokenService refreshTokenService,
     IAuthService authService,
+    IAccountReadService accountReadService,
     IEffectivePermissionReadService effectivePermissionReadService,
     ICurrentUserService currentUserService) : ICommandHandler<RefreshTokenCommand>
 {
@@ -29,7 +31,7 @@ public sealed class RefreshTokenHandler(
             ?? throw new NotFoundException("User", userId);
 
         var jwtId = Guid.NewGuid();
-        var roles = await authService.GetUserRolesAsync(user.Id, ct);
+        var roles = await accountReadService.GetRoleNamesAsync(user.Id, ct);
         var permissions = await effectivePermissionReadService.GetEffectivePermissionsAsync(user.Id, user.TenantId, ct);
         var accessToken = tokenGenerator.GenerateAccessToken(
             userId: user.Id,

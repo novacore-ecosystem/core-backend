@@ -78,34 +78,6 @@ public sealed class AuthService(UserManager<Account> userManager) : IAppService,
         return result.Succeeded;
     }
 
-    public async Task<IList<string>> GetUserRolesAsync(Guid userId, CancellationToken ct = default)
-    {
-        var user = await _userManager.FindByIdAsync(userId.ToString());
-        if (user is null)
-            return [];
-
-        return await _userManager.GetRolesAsync(user);
-    }
-
-    public async Task<bool> IsInRoleAsync(Guid userId, string role, CancellationToken ct = default)
-    {
-        var user = await _userManager.FindByIdAsync(userId.ToString());
-        if (user is null)
-            return false;
-
-        return await _userManager.IsInRoleAsync(user, role);
-    }
-
-    public async Task<bool> AssignRoleAsync(Guid userId, string role, CancellationToken ct = default)
-    {
-        var user = await _userManager.FindByIdAsync(userId.ToString());
-        if (user is null)
-            return false;
-
-        var result = await _userManager.AddToRoleAsync(user, role);
-        return result.Succeeded;
-    }
-
     public async Task<bool> DeleteUserAsync(Guid userId, CancellationToken ct = default)
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());

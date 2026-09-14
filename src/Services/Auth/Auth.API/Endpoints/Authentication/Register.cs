@@ -12,6 +12,7 @@ public record RegisterRequest(
     string FirstName,
     string LastName,
     string PhoneNumber,
+    string AppCode,
     string MiddleName = "");
 
 public sealed class RegisterEndpoint : ICarterModule
@@ -28,6 +29,7 @@ public sealed class RegisterEndpoint : ICarterModule
         "- **MiddleName**: User middle name (optional)",
         "- **LastName**: User last name (required)",
         "- **PhoneNumber**: User phone number (required)",
+        "- **AppCode**: Stable App identifier the frontend hardcodes (required, must be an active App)",
         "",
         "### Response",
         "Sets HTTP-only cookies for access and refresh tokens. No tokens in response body.",
@@ -54,6 +56,7 @@ public sealed class RegisterEndpoint : ICarterModule
                 request.FirstName.Trim(),
                 request.LastName.Trim(),
                 request.PhoneNumber.Trim(),
+                request.AppCode.Trim(),
                 request.MiddleName.Trim());
             await sender.Send(command, ct);
             return ApiResponse<object>.Ok(MessageCode.Created);

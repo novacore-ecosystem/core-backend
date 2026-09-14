@@ -4,12 +4,14 @@ using NovaCore.Auth.Persistence.Engine;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace NovaCore.Auth.Persistence.Storage.Seeders;
 
 public class DatabaseSeeder(
     AuthDbContext context,
     UserManager<Account> userManager,
+    IOptions<RootSetting> rootSetting,
     ILogger<DatabaseSeeder> logger)
 {
     public async Task SeedAsync()
@@ -78,7 +80,7 @@ public class DatabaseSeeder(
     private async Task SeedAccountsAsync()
     {
         logger.LogInformation("Seeding accounts...");
-        var accountSeeder = new AccountSeeder(context, userManager);
+        var accountSeeder = new AccountSeeder(context, userManager, rootSetting);
         await accountSeeder.SeedAsync();
         logger.LogInformation("Accounts seeded successfully");
     }
@@ -86,7 +88,7 @@ public class DatabaseSeeder(
     private async Task SeedRootPermissionGrantsAsync()
     {
         logger.LogInformation("Seeding Root account permission grants...");
-        var rootPermissionGrantSeeder = new RootPermissionGrantSeeder(context);
+        var rootPermissionGrantSeeder = new RootPermissionGrantSeeder(context, rootSetting);
         await rootPermissionGrantSeeder.SeedAsync();
         logger.LogInformation("Root account permission grants seeded successfully");
     }
