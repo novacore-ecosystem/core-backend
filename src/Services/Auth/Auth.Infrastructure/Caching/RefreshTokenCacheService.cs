@@ -160,6 +160,22 @@ public sealed class RefreshTokenCacheService(ICacheService cacheService)
         => cacheService.SetRemoveAsync(CacheKeyConstant.RefreshTokens.ActiveUsers, userId.ToString(), ct);
 
     /// <summary>
+    /// Batch-removes full token entries and their per-user index fields in two round trips
+    /// (RemoveManyAsync + HashDeleteManyAsync) instead of one key at a time - used by
+    /// RefreshTokenCleanupJob, which already knows every token in the batch belongs to the given
+    /// user and is already expired.
+    /// </summary>
+    public Task RemoveManyAsync(Guid userId, IReadOnlyCollection<string> tokens, CancellationToken ct = default)
+    {
+        if (tokens.Count == 0)
+            return Task.CompletedTask;
+
+        return Task.WhenAll(
+            cacheService.RemoveManyAsync(tokens.Select(CacheKeyConstant.RefreshTokens.ByTokenString), ct),
+            cacheService.HashDeleteManyAsync(CacheKeyConstant.RefreshTokens.UserTokens(userId), tokens, ct));
+    }
+
+    /// <summary>
     /// Live HLEN check (not derived from a snapshot) - used right before dropping a user from
     /// active_users so a token added mid-sync-run isn't lost by acting on stale counts.
     /// </summary>
