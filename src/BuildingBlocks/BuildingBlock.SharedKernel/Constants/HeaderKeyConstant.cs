@@ -15,6 +15,13 @@ public static class HeaderKeyConstant
     /// needs resolving - the two are never interchangeable.</summary>
     public const string TenantClientKey = "X-Tenant-Client-Key";
 
+    /// <summary>Carries an App's stable Code on Login/Register/RefreshToken - the pre-authentication
+    /// boundary where an App identifier must be resolved and validated before a token exists. Once
+    /// a token is issued, the resolved App id travels as the AppClaimTypes.AppId claim instead -
+    /// authenticated requests never send this header. Same relationship TenantClientKey has to
+    /// AppClaimTypes.TenantId.</summary>
+    public const string AppKey = "X-App-Key";
+
     /// <summary>
     /// Reuses the standard HTTP header rather than inventing a custom one - the frontend already
     /// sends `Accept-Language` on every request (see NovaCoreUI's shared Axios client), so no

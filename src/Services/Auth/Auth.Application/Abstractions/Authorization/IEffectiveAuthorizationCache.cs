@@ -17,12 +17,18 @@ public interface IEffectiveAuthorizationCache
     /// </summary>
     /// <param name="accountId">The account to resolve.</param>
     /// <param name="tenantId">The tenant scope the snapshot is resolved within.</param>
-    Task<AccountAuthorizationSnapshot> GetAsync(Guid accountId, Guid tenantId, CancellationToken ct = default);
+    Task<AccountAuthorizationSnapshot> GetAsync(
+        Guid accountId,
+        Guid tenantId,
+        CancellationToken ct = default);
 
     /// <summary>
     /// Removes the cached snapshot for an account, e.g. after its roles/permissions/level change.
     /// </summary>
     /// <param name="accountId">The account whose snapshot is now stale.</param>
     /// <param name="tenantId">The tenant scope the snapshot was cached under.</param>
-    Task InvalidateAsync(Guid accountId, Guid tenantId, CancellationToken ct = default);
+    Task InvalidateAsync(
+        Guid accountId,
+        Guid tenantId,
+        CancellationToken ct = default);
 }

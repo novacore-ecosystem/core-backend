@@ -7,4 +7,6 @@ namespace NovaCore.Auth.Application.Features.Accounts.Commands.ReplaceAccountPer
 /// Same "client sends the desired end-state, server diffs" convention as
 /// UpdateRolePermissionsCommand.
 /// </remarks>
-public sealed record ReplaceAccountPermissionsCommand(Guid AccountId, IReadOnlyCollection<string> PermissionKeys) : ICommand;
+public sealed record ReplaceAccountPermissionsCommand(
+    Guid AccountId,
+    IReadOnlyCollection<string> PermissionKeys) : ICommand;

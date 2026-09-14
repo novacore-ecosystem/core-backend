@@ -1,4 +1,5 @@
 using NovaCore.Auth.Domain.Entities.Accounts;
+using NovaCore.Auth.Domain.Entities.Apps;
 using NovaCore.Auth.Domain.Entities.Invitations;
 using NovaCore.Auth.Domain.Entities.Permissions;
 using NovaCore.Auth.Domain.Entities.Positions;
@@ -46,6 +47,10 @@ public sealed class AuthDbContext(DbContextOptions<AuthDbContext> options)
     public DbSet<ExternalIdentity> ExternalIdentities { get; set; } = null!;
     public DbSet<AccountPosition> AccountPositions { get; set; } = null!;
     public DbSet<AccountPermission> AccountPermissions { get; set; } = null!;
+    public DbSet<AccountApp> AccountApps { get; set; } = null!;
+
+    public DbSet<App> Apps { get; set; } = null!;
+    public DbSet<AppTranslation> AppTranslations { get; set; } = null!;
 
     public DbSet<Position> Positions { get; set; } = null!;
     public DbSet<PositionRole> PositionRoles { get; set; } = null!;

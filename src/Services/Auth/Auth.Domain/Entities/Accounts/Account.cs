@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
+using NovaCore.Auth.Domain.Entities.Apps;
 using NovaCore.Auth.Domain.Entities.Positions;
 using NovaCore.Auth.Domain.Entities.Roles;
 using NovaCore.BuildingBlock.Domain.Attributes;
@@ -17,6 +18,7 @@ public sealed class Account : IdentityUser<Guid>, IEntity, IAuditable
 
     public ICollection<AccountPosition> AccountPositions { get; private set; } = [];
     public ICollection<AccountRole> AccountRoles { get; private set; } = [];
+    public ICollection<AccountApp> AccountApps { get; private set; } = [];
     public ICollection<AccountPermission> Permissions { get; private set; } = [];
     public ICollection<RefreshToken> RefreshTokens { get; private set; } = [];
     public ICollection<Session> Sessions { get; private set; } = [];
@@ -235,6 +237,34 @@ public sealed class Account : IdentityUser<Guid>, IEntity, IAuditable
         Permissions.Clear();
         foreach (var (key, sourceRoleId) in effectivePermissions)
             Permissions.Add(AccountPermission.Create(Id, key, sourceRoleId));
+    }
+
+    #endregion
+
+    // ============================================================================
+    // App membership
+    // Which client-application boundaries (App) this Account may authenticate into -
+    // distinct from Role/Permission, which govern what it may do once authenticated.
+    // ============================================================================
+
+    #region App membership
+
+    public void AssignApp(App app)
+    {
+        if (AccountApps.Any(aa => aa.AppId == app.Id))
+            throw ExceptionFactory.Duplicate("Account is already assigned to this App.");
+
+        var accountApp = AccountApp.Create(Id, app.Id);
+        AccountApps.Add(accountApp);
+    }
+
+    public void RemoveApp(Guid appId)
+    {
+        var accountApp = AccountApps.FirstOrDefault(aa => aa.AppId == appId);
+        if (accountApp is null)
+            return;
+
+        AccountApps.Remove(accountApp);
     }
 
     #endregion

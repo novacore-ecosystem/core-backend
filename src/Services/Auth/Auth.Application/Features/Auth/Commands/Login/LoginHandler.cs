@@ -1,3 +1,4 @@
+using NovaCore.Auth.Application.Abstractions.Apps;
 using NovaCore.Auth.Application.Abstractions.Auth;
 using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
@@ -9,6 +10,8 @@ namespace NovaCore.Auth.Application.Features.Auth.Commands.Login;
 
 public sealed class LoginHandler(
     ITenantClientReadService tenantClientReadService,
+    IAppCollectionCache appCollectionCache,
+    IAppMembershipCache appMembershipCache,
     IAccountReadService accountReadService,
     IAuthService authService,
     IEffectivePermissionReadService effectivePermissionReadService,
@@ -19,23 +22,32 @@ public sealed class LoginHandler(
     public async Task<LoginResult> Handle(LoginCommand request, CancellationToken ct = default)
     {
         // A single generic message covers every pre-token failure (unknown/invalid/revoked
-        // client key, unknown user, wrong password) - distinguishing them in the response would
-        // let a caller enumerate valid tenants/clients/users (see docs/services/auth-service.md).
+        // client key, unknown App, unknown user, wrong password, missing App membership) -
+        // distinguishing them in the response would let a caller enumerate valid tenants/
+        // clients/Apps/users (see docs/services/auth-service.md).
         var tenantClient = await tenantClientReadService.GetByPublicKeyAsync(request.ClientPublicKey, ct);
         if (tenantClient is null || !tenantClient.IsUsable())
             throw new UnauthorizedException("Invalid credentials");
 
+        var app = await appCollectionCache.GetByCodeAsync(request.AppCode, ct);
+        if (app is null || !app.IsActive)
+            throw new UnauthorizedException("Invalid credentials");
+
         var tenantId = tenantClient.TenantId ?? Guid.Empty;
 
-    var user = await accountReadService.GetByEmailAsync(request.Email, tenantId, ct)
-        ?? throw new UnauthorizedException("Invalid credentials");
-        
-    var isValid = await authService.ValidateCredentialsAsync(user, request.Password, ct);
+        var user = await accountReadService.GetByEmailAsync(request.Email, tenantId, ct)
+            ?? throw new UnauthorizedException("Invalid credentials");
+
+        var isValid = await authService.ValidateCredentialsAsync(user, request.Password, ct);
         if (!isValid)
             throw new UnauthorizedException("Invalid credentials");
 
+        var isAssignedToApp = await appMembershipCache.IsAssignedAsync(app.Id, user.Id, ct);
+        if (!isAssignedToApp)
+            throw new UnauthorizedException("Invalid credentials");
+
         var jwtId = Guid.NewGuid();
-        var roles = await authService.GetUserRolesAsync(user.Id, ct);
+        var roles = await accountReadService.GetRoleNamesAsync(user.Id, ct);
         var permissions = await effectivePermissionReadService.GetEffectivePermissionsAsync(user.Id, tenantId, ct);
         var accessToken = tokenGenerator.GenerateAccessToken(
             userId: user.Id,
@@ -44,6 +56,7 @@ public sealed class LoginHandler(
             roles: roles,
             permissions: permissions,
             tenantId: tenantId,
+            appId: app.Id,
             jwtId: jwtId);
         var refreshToken = await refreshTokenService.GenerateRefreshTokenAsync(user.Id, jwtId, ct);
 

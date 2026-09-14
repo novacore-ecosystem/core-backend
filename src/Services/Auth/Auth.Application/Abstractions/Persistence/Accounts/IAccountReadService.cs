@@ -23,4 +23,16 @@ public interface IAccountReadService
     /// </remarks>
     /// <param name="accountId">The account to look up.</param>
     Task<IReadOnlySet<Guid>> GetRoleIdsAsync(Guid accountId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets the names of the Roles directly assigned to this account - the claim shape JWT
+    /// issuance needs (Login/Register/Refresh), as opposed to <see cref="GetRoleIdsAsync"/>'s
+    /// ids, which authorization-management use cases need.
+    /// </summary>
+    /// <remarks>
+    /// Direct (AccountRole) assignments only - excludes Position-derived roles, same scope as
+    /// <see cref="GetRoleIdsAsync"/>.
+    /// </remarks>
+    /// <param name="accountId">The account to look up.</param>
+    Task<IReadOnlyList<string>> GetRoleNamesAsync(Guid accountId, CancellationToken ct = default);
 }

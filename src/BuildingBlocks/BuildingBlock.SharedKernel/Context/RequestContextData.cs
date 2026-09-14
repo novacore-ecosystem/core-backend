@@ -4,8 +4,8 @@ namespace NovaCore.BuildingBlock.SharedKernel.Context;
 /// Immutable snapshot of the current request's identity, extracted once by
 /// RequestContextMiddleware. Every field is either read straight off the JWT/headers or generated
 /// when absent (CorrelationId) - nothing here is looked up lazily. Anonymous requests (login,
-/// refresh token, health checks, public endpoints) simply carry null UserId/TenantId and an empty
-/// ScopeIds.
+/// refresh token, health checks, public endpoints) simply carry null UserId/TenantId/AppId and an
+/// empty ScopeIds.
 ///
 /// ScopeIds is a collection, not a single value, because a user's token already carries every
 /// Scope they're allowed to see - already expanded (including descendants) at token-issuance
@@ -17,6 +17,8 @@ public sealed class RequestContextData
     public Guid? UserId { get; init; }
 
     public Guid? TenantId { get; init; }
+
+    public Guid? AppId { get; init; }
 
     public IReadOnlyCollection<Guid> ScopeIds { get; init; } = [];
 

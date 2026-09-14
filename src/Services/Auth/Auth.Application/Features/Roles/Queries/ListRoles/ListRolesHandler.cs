@@ -9,6 +9,11 @@ public sealed class ListRolesHandler(IRoleReadService roleReadService)
     {
         var roles = await roleReadService.ListAsync(ct);
 
-        return [.. roles.Select(r => new RoleSummaryResponse(r.Id, r.Name!, r.Code.Value, r.Description, r.IsSystemRole))];
+        return [.. roles.Select(r => new RoleSummaryResponse(
+            r.Id,
+            r.Name!,
+            r.Code.Value,
+            r.Description,
+            r.IsSystemRole))];
     }
 }

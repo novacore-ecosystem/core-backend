@@ -21,4 +21,20 @@ public interface IAccountRoleAssignmentService
         Guid accountId,
         IReadOnlyCollection<Guid> roleIds,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Removes one directly-assigned Role from the account, leaving every other role untouched -
+    /// unlike ReplaceRolesAsync, which requires the full desired role set. Idempotent - a missing
+    /// assignment is a no-op, not an error.
+    /// </summary>
+    /// <param name="accountId">The account being managed.</param>
+    /// <param name="roleId">The Role to remove.</param>
+    Task RemoveRoleAsync(Guid accountId, Guid roleId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Every AccountID currently directly assigned the given Role, in one batch query - e.g. used
+    /// to find and reconcile stale Role assignments (Root account provisioning's singleton check).
+    /// </summary>
+    /// <param name="roleId">The Role to look up.</param>
+    Task<IReadOnlyCollection<Guid>> GetAccountIdsInRoleAsync(Guid roleId, CancellationToken ct = default);
 }

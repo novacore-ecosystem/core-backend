@@ -6,14 +6,24 @@ using NovaCore.BuildingBlock.Web.Swagger.EndpointHeader;
 
 namespace NovaCore.Auth.API.Endpoints.Authentication;
 
-public record RegisterRequest(string Email, string Password, string FirstName, string LastName, string PhoneNumber, string MiddleName = "");
+public record RegisterRequest(
+    string Email,
+    string Password,
+    string FirstName,
+    string LastName,
+    string PhoneNumber,
+    string MiddleName = "");
 
 public sealed class RegisterEndpoint : ICarterModule
 {
     private readonly string[] API_DESC = [
         "## User Registration",
         "",
-        "Creates a new user account with email and password.",
+        "Creates a new user account with email and password, scoped to the App identified by the",
+        "App key header.",
+        "",
+        $"### Headers",
+        $"- **{HeaderKeyConstant.AppKey}**: Stable App identifier the frontend hardcodes (required, must be an active App). Resolved and validated before the account is created, then carried as the app_id claim on the issued token - not required again on subsequent authenticated requests.",
         "",
         "### Request Body",
         "- **Email**: User email address (required, must be unique)",
@@ -39,6 +49,7 @@ public sealed class RegisterEndpoint : ICarterModule
     {
         app.MapPost("/register", async (
             [FromBody] RegisterRequest request,
+            [FromHeader(Name = HeaderKeyConstant.AppKey)] string? appCode,
             [FromServices] ISender sender,
             CancellationToken ct = default) =>
         {
@@ -48,6 +59,7 @@ public sealed class RegisterEndpoint : ICarterModule
                 request.FirstName.Trim(),
                 request.LastName.Trim(),
                 request.PhoneNumber.Trim(),
+                appCode?.Trim() ?? string.Empty,
                 request.MiddleName.Trim());
             await sender.Send(command, ct);
             return ApiResponse<object>.Ok(MessageCode.Created);
@@ -55,7 +67,8 @@ public sealed class RegisterEndpoint : ICarterModule
         .WithTags("Authentication")
         .AllowAnonymous()
         .Headers([
-            new HeaderDefinition(HeaderKeyConstant.CorrelationId, true)
+            new HeaderDefinition(HeaderKeyConstant.CorrelationId, true),
+            new HeaderDefinition(HeaderKeyConstant.AppKey, true)
         ])
         .WithSummary("Auth_Register")
         .WithDisplayName("Register API")

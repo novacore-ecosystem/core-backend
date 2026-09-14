@@ -14,6 +14,12 @@ public static class AppClaimTypes
     /// reading this claim is wired end-to-end so it starts flowing the moment issuance catches up.</summary>
     public const string TenantId = "tenant_id";
 
+    /// <summary>The App (client-application boundary, see Auth.Domain's App entity) the current
+    /// token was issued for - resolved and validated once at Login/Register/RefreshToken time,
+    /// then carried for the token's lifetime so authenticated requests never need to re-supply an
+    /// App identifier.</summary>
+    public const string AppId = "app_id";
+
     /// <summary>Every Scope (within a Tenant) the current user is allowed to act under - already
     /// expanded to include descendant scopes at token-issuance time, so business services never
     /// compute the Scope hierarchy themselves. Emitted as one claim per accessible Scope (the

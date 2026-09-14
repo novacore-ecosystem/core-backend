@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 using NovaCore.Auth.Application.Abstractions.Persistence.Roles;
 using NovaCore.Auth.Domain.Entities.Roles;
+using NovaCore.Auth.Domain.ValueObjects;
 using NovaCore.Auth.Persistence.Engine;
 
 using NovaCore.BuildingBlock.Persistence;
@@ -16,6 +17,13 @@ public sealed class RoleReadService(AuthDbContext dbContext) : IRoleReadService,
         return await dbContext.Roles
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == id, ct);
+    }
+
+    public async Task<Role?> GetByCodeAsync(RoleCode code, CancellationToken ct = default)
+    {
+        return await dbContext.Roles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Code.Equals(code), ct);
     }
 
     public async Task<IReadOnlyList<Role>> ListAsync(CancellationToken ct = default)

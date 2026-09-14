@@ -60,9 +60,16 @@ public sealed class UpdateRolePermissionsHandler(
 
         // Role membership (who holds this Role) is unaffected by a permission-set change, so this
         // is safe to resolve before the mutation below.
-        var affectedAccountIds = await effectivePermissionReadService.GetAccountIdsForRoleAsync(request.RoleId, tenantId, ct);
+        var affectedAccountIds = await effectivePermissionReadService.GetAccountIdsForRoleAsync(
+            request.RoleId,
+            tenantId,
+            ct);
 
-        var result = await roleWriteService.UpdatePermissionsAsync(request.RoleId, request.PermissionKeys, tenantId, ct);
+        var result = await roleWriteService.UpdatePermissionsAsync(
+            request.RoleId,
+            request.PermissionKeys,
+            tenantId,
+            ct);
 
         if (!result.HasChanges || affectedAccountIds.Count == 0)
             return;

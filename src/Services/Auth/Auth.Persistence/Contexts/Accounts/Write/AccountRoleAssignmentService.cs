@@ -48,4 +48,27 @@ public sealed class AccountRoleAssignmentService(
 
         return new AccountRoleReplaceResult(hasChanges, requestedRoleIds);
     }
+
+    public async Task RemoveRoleAsync(Guid accountId, Guid roleId, CancellationToken ct = default)
+    {
+        var account = await dbContext.Users
+            .Include(a => a.AccountRoles)
+            .FirstOrDefaultAsync(a => a.Id == accountId, ct)
+            ?? throw ExceptionFactory.EntityNotFound<Account>(accountId);
+
+        if (!account.AccountRoles.Any(ar => ar.RoleId == roleId))
+            return;
+
+        account.RemoveRole(roleId);
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+
+    public async Task<IReadOnlyCollection<Guid>> GetAccountIdsInRoleAsync(Guid roleId, CancellationToken ct = default)
+    {
+        return await dbContext.UserRoles
+            .AsNoTracking()
+            .Where(ar => ar.RoleId == roleId)
+            .Select(ar => ar.UserId)
+            .ToListAsync(ct);
+    }
 }

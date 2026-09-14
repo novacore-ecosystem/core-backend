@@ -12,10 +12,11 @@ public sealed class LoginEndpoint : ICarterModule
         "## User Login",
         "",
         "Authenticates a user with email and password credentials, scoped to the Tenant (or Root)",
-        "identified by the client's public key.",
+        "identified by the client's public key, and to the App identified by the App key header.",
         "",
         $"### Headers",
         $"- **{HeaderKeyConstant.TenantClientKey}**: TenantClient public key (required) - identifies which Tenant, or Root, this login is for. Resolved before credentials are checked.",
+        $"- **{HeaderKeyConstant.AppKey}**: Stable App identifier the frontend hardcodes (required, must be an active App the account is assigned to). Resolved and validated before credentials are checked, then carried as the app_id claim on the issued token - not required again on subsequent authenticated requests.",
         "",
         "### Request Body",
         "- **Email**: User email address (required)",
@@ -38,13 +39,15 @@ public sealed class LoginEndpoint : ICarterModule
         app.MapPost("/login", async (
             [FromBody] LoginRequest request,
             [FromHeader(Name = HeaderKeyConstant.TenantClientKey)] string? clientPublicKey,
+            [FromHeader(Name = HeaderKeyConstant.AppKey)] string? appCode,
             [FromServices] ISender sender,
             CancellationToken ct = default) =>
         {
             var command = new LoginCommand(
                 request.Email.Trim(),
                 request.Password.Trim(),
-                clientPublicKey?.Trim() ?? string.Empty);
+                clientPublicKey?.Trim() ?? string.Empty,
+                appCode?.Trim() ?? string.Empty);
             await sender.Send(command, ct);
             return ApiResponse<object>.Ok();
         })

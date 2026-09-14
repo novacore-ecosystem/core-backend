@@ -1,9 +1,11 @@
+using NovaCore.Auth.Application.Abstractions.Apps;
 using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Auth;
 using NovaCore.Auth.Application.Abstractions.Services;
 using NovaCore.Auth.Infrastructure.Authorization;
 using NovaCore.Auth.Infrastructure.BackgroundJobs;
 using NovaCore.Auth.Infrastructure.Caching;
+using NovaCore.Auth.Infrastructure.Caching.Apps;
 using NovaCore.Auth.Infrastructure.Configurations;
 using NovaCore.Auth.Infrastructure.Configurations.Settings;
 using NovaCore.Auth.Infrastructure.GrpcClients;
@@ -34,8 +36,9 @@ public static class DependencyInjection
             .AddAuthConfigurations(configuration)
             .AddAppLogger()
             .AddRedisCache(configuration)
-            .AddRoleCaching(configuration)
+            .AddAuthService()
             .AddTenantCaching()
+            .AddAppCaching()
             .AddAccountAuthorization()
             .AddBackgroundJobs(configuration)
             .AddInboxOutboxCleanupJobs(configuration)
@@ -59,20 +62,9 @@ public static class DependencyInjection
         return services;
     }
 
-    private static IServiceCollection AddRoleCaching(
-        this IServiceCollection services,
-        IConfiguration configuration)
+    private static IServiceCollection AddAuthService(this IServiceCollection services)
     {
-        services.AddScoped<RoleCacheService>();
-
-        // Decorate IAuthService with caching. This must be called AFTER
-        // Persistence.AddPersistence which registers the original AuthService
-        services.AddScoped<IAuthService>(provider =>
-        {
-            var innerAuthService = provider.GetRequiredService<AuthService>();
-            var roleCache = provider.GetRequiredService<RoleCacheService>();
-            return new CachedAuthServiceDecorator(innerAuthService, roleCache);
-        });
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }
@@ -80,6 +72,14 @@ public static class DependencyInjection
     private static IServiceCollection AddTenantCaching(this IServiceCollection services)
     {
         services.AddScoped<ITenantVersionCache, TenantVersionCache>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddAppCaching(this IServiceCollection services)
+    {
+        services.AddScoped<IAppCollectionCache, AppCollectionCache>();
+        services.AddScoped<IAppMembershipCache, AppMembershipCache>();
 
         return services;
     }

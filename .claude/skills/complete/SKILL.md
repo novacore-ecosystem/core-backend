@@ -11,7 +11,7 @@ Finish code that's already started, matching the shape a project senior engineer
 `/complete file` — complete the current file.
 
 ## Reading Contract
-- **Required:** `../../framework/pattern-library.md` (entry matching the detected construct), `../../framework/template-library.md`, `../../framework/shared-rules.md` (Selection Mode contract, §7)
+- **Required:** `../../framework/pattern-library.md` (entry matching the detected construct), `../../framework/template-library.md`, `../../framework/shared-rules.md` (Selection Mode contract, §7), `docs/conventions/personal-coding-standards.md` (baseline C# style — XML docs, member ordering, regions, boolean naming, anti-hardcoding, static lookups, syntax currency)
 - **Optional (conditional on detected construct):**
   - Mapping code → `docs/04-coding-rules.md` (Mapping section)
   - Domain entity/Aggregate/Value Object → `docs/conventions/domain-coding-conventions.md`

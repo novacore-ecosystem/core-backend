@@ -12,7 +12,7 @@ Note: this project-scoped skill intentionally shadows the global `review` skill 
 `/review` — reviews `git diff --staged`, falling back to `git diff` (unstaged) if nothing is staged. No target argument — review is always diff-scoped; a specific-construct compliance check is `/verify`'s job, not this one's.
 
 ## Reading Contract
-- **Required:** `docs/02-architecture-rules.md`, `docs/04-coding-rules.md`, `../../framework/engineering-scoring.md`, `../../framework/shared-rules.md`
+- **Required:** `docs/02-architecture-rules.md`, `docs/04-coding-rules.md`, `docs/conventions/personal-coding-standards.md`, `../../framework/engineering-scoring.md`, `../../framework/shared-rules.md`
 - **Optional (conditional on what the diff touches):**
   - Domain files → `docs/conventions/domain-coding-conventions.md`
   - Application/handler files → `docs/conventions/application-coding-conventions.md`

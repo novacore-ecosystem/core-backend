@@ -1,5 +1,6 @@
 using System.Reflection;
 
+using NovaCore.Auth.Application.Configurations;
 using NovaCore.Auth.Infrastructure.Configurations.Validators;
 
 using NovaCore.BuildingBlock.Infrastructure.Configurations;
@@ -21,6 +22,7 @@ public static class ConfigurationExtensions
         services.AddSettings(configuration, Assembly.GetExecutingAssembly());
 
         ValidateKafkaConfiguration(configuration);
+        ValidateRootConfiguration(configuration);
 
         return services;
     }
@@ -31,6 +33,26 @@ public static class ConfigurationExtensions
         var result = new KafkaOptionsValidator().Validate(kafkaOptions);
 
         if (!result.IsValid)
-            throw new OptionsValidationException(KafkaOptions.Section, typeof(KafkaOptions), result.Errors.Select(e => e.ErrorMessage));
+            throw new OptionsValidationException(
+                KafkaOptions.Section,
+                typeof(KafkaOptions),
+                result.Errors.Select(e => e.ErrorMessage));
+    }
+
+    /// <summary>
+    /// RootSetting lives in Auth.Application (RefreshTokenHandler reads it directly) so it can't
+    /// join this assembly's ISetting reflection scan - validated manually here instead, the same
+    /// way ValidateKafkaConfiguration handles KafkaOptions.
+    /// </summary>
+    private static void ValidateRootConfiguration(IConfiguration configuration)
+    {
+        var rootSetting = configuration.GetSection(RootSetting.Section).Get<RootSetting>() ?? new RootSetting();
+        var result = new RootSettingValidator().Validate(rootSetting);
+
+        if (!result.IsValid)
+            throw new OptionsValidationException(
+                RootSetting.Section,
+                typeof(RootSetting),
+                result.Errors.Select(e => e.ErrorMessage));
     }
 }

@@ -1,5 +1,7 @@
 using NovaCore.Auth.Application.Features.Auth.Commands.RefreshToken;
 
+using NovaCore.BuildingBlock.SharedKernel.Constants;
+
 namespace NovaCore.Auth.API.Endpoints.Authentication;
 
 public sealed class RefreshTokenEndpoint : ICarterModule
@@ -7,7 +9,11 @@ public sealed class RefreshTokenEndpoint : ICarterModule
     private readonly string[] API_DESC = [
         "## Refresh Access Token",
         "",
-        "Generates a new access token using the refresh token from cookies.",
+        "Generates a new access token using the refresh token from cookies, re-validated against",
+        "the App identified by the App key header.",
+        "",
+        $"### Headers",
+        $"- **{HeaderKeyConstant.AppKey}**: Stable App identifier the frontend hardcodes (required, must be an active App). The refreshed token carries this as its app_id claim.",
         "",
         "### Request",
         "No request body required. Refresh token sent automatically via HTTP-only cookie.",
@@ -31,10 +37,11 @@ public sealed class RefreshTokenEndpoint : ICarterModule
     public void AddRoutes(IEndpointRouteBuilder app)
     {
         app.MapPost("/refresh-token", async (
+            [FromHeader(Name = HeaderKeyConstant.AppKey)] string? appCode,
             [FromServices] ISender sender,
             CancellationToken ct = default) =>
         {
-            var command = new RefreshTokenCommand();
+            var command = new RefreshTokenCommand(appCode?.Trim() ?? string.Empty);
             await sender.Send(command, ct);
             return ApiResponse<object>.Ok();
         })

@@ -10,7 +10,7 @@ Generate only the boilerplate required for a new feature — command/query, hand
 `/scaffold api <Name>` — e.g. `/scaffold api CreateWarehouse`. (Other scopes — `domain`, `repository`, `integration-event`, `background-job` — follow the same mechanism against the matching `workflows/add-*.md` doc; `api` is the primary/default scope since it typically composes the others.)
 
 ## Context Loading
-- **MUST read:** `docs/06-implementation-templates.md`, the matching `docs/workflows/add-*.md` for the requested scope (`add-new-api.md` for `api`, plus `add-new-domain-entity.md` / `add-new-repository.md` / `add-integration-event.md` / `add-background-job.md` only if the feature genuinely needs a new entity/repo/event/job, not by default), the target service's `docs/services/*.md`
+- **MUST read:** `docs/06-implementation-templates.md`, the matching `docs/workflows/add-*.md` for the requested scope (`add-new-api.md` for `api`, plus `add-new-domain-entity.md` / `add-new-repository.md` / `add-integration-event.md` / `add-background-job.md` only if the feature genuinely needs a new entity/repo/event/job, not by default), the target service's `docs/services/*.md`, `docs/conventions/personal-coding-standards.md` (baseline C# style for the generated boilerplate — XML docs, member ordering, regions, boolean naming, syntax currency)
 - **MUST NOT read:** other services, unrelated existing features
 
 ## Execution Workflow

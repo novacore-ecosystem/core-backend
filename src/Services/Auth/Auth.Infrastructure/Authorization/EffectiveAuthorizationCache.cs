@@ -2,7 +2,6 @@ using Microsoft.Extensions.Configuration;
 
 using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
-
 using NovaCore.BuildingBlock.Application.Exceptions;
 
 namespace NovaCore.Auth.Infrastructure.Authorization;
@@ -28,7 +27,10 @@ public sealed class EffectiveAuthorizationCache(
             .GetSection("Caching:EntityTtl:AccountAuthorization:MinutesToExpire")
             .Get<int?>() ?? CacheKeyConstant.AccountAuthorization.DefaultTtlMinutes);
 
-    public async Task<AccountAuthorizationSnapshot> GetAsync(Guid accountId, Guid tenantId, CancellationToken ct = default)
+    public async Task<AccountAuthorizationSnapshot> GetAsync(
+        Guid accountId,
+        Guid tenantId,
+        CancellationToken ct = default)
     {
         var key = CacheKeyConstant.AccountAuthorization.Snapshot(tenantId, accountId);
 
@@ -46,7 +48,10 @@ public sealed class EffectiveAuthorizationCache(
         return snapshot;
     }
 
-    public Task InvalidateAsync(Guid accountId, Guid tenantId, CancellationToken ct = default)
+    public Task InvalidateAsync(
+        Guid accountId,
+        Guid tenantId,
+        CancellationToken ct = default)
     {
         var key = CacheKeyConstant.AccountAuthorization.Snapshot(tenantId, accountId);
         return cacheService.RemoveAsync(key, ct);

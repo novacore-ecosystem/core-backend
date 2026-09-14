@@ -1,4 +1,3 @@
-using NovaCore.Auth.Application.Abstractions.Auth;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
 using NovaCore.Auth.Application.Abstractions.Persistence.Tenants;
 
@@ -15,7 +14,6 @@ namespace NovaCore.Auth.API.GrpcServices;
 /// </summary>
 public sealed class AuthGrpcServiceImpl(
     IAccountReadService accountReadService,
-    IAuthService authService,
     ITenantReadService tenantReadService) : AuthGrpcService.AuthGrpcServiceBase
 {
     public override async Task<GetUserRolesResponse> GetUserRoles(
@@ -23,7 +21,7 @@ public sealed class AuthGrpcServiceImpl(
         ServerCallContext context)
     {
         var userId = Guid.Parse(request.UserId);
-        var roles = await authService.GetUserRolesAsync(
+        var roles = await accountReadService.GetRoleNamesAsync(
             userId,
             context.CancellationToken);
 

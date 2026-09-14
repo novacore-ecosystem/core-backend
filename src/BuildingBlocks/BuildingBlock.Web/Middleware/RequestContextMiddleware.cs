@@ -33,6 +33,7 @@ public sealed class RequestContextMiddleware(RequestDelegate next)
         {
             UserId = TryParseGuid(user.FindFirst(ClaimTypes.NameIdentifier)?.Value),
             TenantId = TryParseGuid(user.FindFirst(AppClaimTypes.TenantId)?.Value),
+            AppId = TryParseGuid(user.FindFirst(AppClaimTypes.AppId)?.Value),
             ScopeIds = ParseScopeIds(user),
             CorrelationId = ResolveCorrelationId(context),
             IdempotencyKey = context.Request.Headers.TryGetValue(HeaderKeyConstant.IdempotencyKey, out var idempotencyKey)

@@ -1,12 +1,16 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
+using NovaCore.Auth.Application.Configurations;
+using NovaCore.Auth.Application.Abstractions.Persistence.Apps;
 using NovaCore.Auth.Application.Abstractions.Persistence.RefreshTokens;
 using NovaCore.Auth.Application.Abstractions.Persistence.Scopes;
 using NovaCore.Auth.Application.Abstractions.Persistence.TenantClients;
 using NovaCore.Auth.Application.Abstractions.Persistence.Tenants;
 using NovaCore.Auth.Domain.Entities.Accounts;
+using NovaCore.Auth.Domain.Entities.Apps;
 using NovaCore.Auth.Domain.Entities.Invitations;
 using NovaCore.Auth.Domain.Entities.Permissions;
 using NovaCore.Auth.Domain.Entities.Positions;
@@ -65,7 +69,7 @@ public static class DependencyInjection
             .AddPermissionRegistry()
             .AddUnitOfWork()
             .AddOutboxAndInbox()
-            .AddSeeding()
+            .AddSeeding(configuration)
             .AddAuditHierarchy();
 
         return services;
@@ -108,6 +112,8 @@ public static class DependencyInjection
                 .BelongsTo<Account>(x => x.AccountId);
             builder.Entity<AccountRole>()
                 .BelongsTo<Account>(x => x.UserId);
+            builder.Entity<AccountApp>()
+                .BelongsTo<Account>(x => x.AccountId);
             builder.Entity<ExternalIdentity>()
                 .BelongsTo<Account>(x => x.AccountId);
             builder.Entity<MfaMethod>()
@@ -116,6 +122,10 @@ public static class DependencyInjection
             builder.Entity<Role>().IsRoot(x => x.Id);
             builder.Entity<RoleTranslation>()
                 .BelongsTo<Role>(x => x.Id);
+
+            builder.Entity<App>().IsRoot(x => x.Id);
+            builder.Entity<AppTranslation>()
+                .BelongsTo<App>(x => x.Id);
 
             builder.Entity<Position>().IsRoot(x => x.Id);
             builder.Entity<PositionTranslation>()
@@ -233,8 +243,13 @@ public static class DependencyInjection
         return services;
     }
 
-    private static IServiceCollection AddSeeding(this IServiceCollection services)
+    private static IServiceCollection AddSeeding(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<RootSetting>(configuration.GetSection(RootSetting.Section));
+        // Also expose a plain RootSetting instance (not just IOptions<RootSetting>) - the same
+        // unwrapping SettingsScanningExtensions.BindSetting uses - so Application-layer code
+        // (e.g. RefreshTokenHandler's Root bypass) can take it as a normal constructor dependency.
+        services.AddSingleton(provider => provider.GetRequiredService<IOptions<RootSetting>>().Value);
         services.AddScoped<DatabaseSeeder>();
         return services;
     }

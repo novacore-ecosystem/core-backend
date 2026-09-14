@@ -37,7 +37,10 @@ public sealed class UpsertTenantTranslationHandler(
             }, ct);
 
             await outboxStore.EnqueueAsync(
-                new TenantVersionChangedIntegrationEvent(request.TenantId, newVersion, currentUserService.GetCorrelationId()),
+                new TenantVersionChangedIntegrationEvent(
+                    request.TenantId,
+                    newVersion,
+                    currentUserService.GetCorrelationId()),
                 ct);
         }, ct: ct);
     }

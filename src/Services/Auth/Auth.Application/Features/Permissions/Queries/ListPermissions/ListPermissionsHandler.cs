@@ -9,6 +9,10 @@ public sealed class ListPermissionsHandler(IPermissionReadService permissionRead
     {
         var permissions = await permissionReadService.ListAsync(ct);
 
-        return [.. permissions.Select(p => new PermissionSummaryResponse(p.Id, p.Key.Value, p.PermissionGroup.Code.Value, p.IsSystemPermission))];
+        return [.. permissions.Select(p => new PermissionSummaryResponse(
+            p.Id,
+            p.Key.Value,
+            p.PermissionGroup.Code.Value,
+            p.IsSystemPermission))];
     }
 }
