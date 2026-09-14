@@ -57,6 +57,7 @@ public sealed class LoginHandler(
             roles: roles,
             permissions: permissions,
             tenantId: tenantId,
+            appId: app.Id,
             jwtId: jwtId);
         var refreshToken = await refreshTokenService.GenerateRefreshTokenAsync(user.Id, jwtId, ct);
 

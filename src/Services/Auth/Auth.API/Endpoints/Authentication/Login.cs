@@ -4,7 +4,7 @@ using NovaCore.BuildingBlock.SharedKernel.Constants;
 
 namespace NovaCore.Auth.API.Endpoints.Authentication;
 
-public record LoginRequest(string Email, string Password, string AppCode);
+public record LoginRequest(string Email, string Password);
 
 public sealed class LoginEndpoint : ICarterModule
 {
@@ -12,15 +12,15 @@ public sealed class LoginEndpoint : ICarterModule
         "## User Login",
         "",
         "Authenticates a user with email and password credentials, scoped to the Tenant (or Root)",
-        "identified by the client's public key.",
+        "identified by the client's public key, and to the App identified by the App key header.",
         "",
         $"### Headers",
         $"- **{HeaderKeyConstant.TenantClientKey}**: TenantClient public key (required) - identifies which Tenant, or Root, this login is for. Resolved before credentials are checked.",
+        $"- **{HeaderKeyConstant.AppKey}**: Stable App identifier the frontend hardcodes (required, must be an active App the account is assigned to). Resolved and validated before credentials are checked, then carried as the app_id claim on the issued token - not required again on subsequent authenticated requests.",
         "",
         "### Request Body",
         "- **Email**: User email address (required)",
         "- **Password**: User password (required)",
-        "- **AppCode**: Stable App identifier the frontend hardcodes (required, must be an active App the account is assigned to)",
         "",
         "### Response",
         "Sets HTTP-only cookies for access and refresh tokens. No tokens in response body.",
@@ -39,6 +39,7 @@ public sealed class LoginEndpoint : ICarterModule
         app.MapPost("/login", async (
             [FromBody] LoginRequest request,
             [FromHeader(Name = HeaderKeyConstant.TenantClientKey)] string? clientPublicKey,
+            [FromHeader(Name = HeaderKeyConstant.AppKey)] string? appCode,
             [FromServices] ISender sender,
             CancellationToken ct = default) =>
         {
@@ -46,7 +47,7 @@ public sealed class LoginEndpoint : ICarterModule
                 request.Email.Trim(),
                 request.Password.Trim(),
                 clientPublicKey?.Trim() ?? string.Empty,
-                request.AppCode.Trim());
+                appCode?.Trim() ?? string.Empty);
             await sender.Send(command, ct);
             return ApiResponse<object>.Ok();
         })

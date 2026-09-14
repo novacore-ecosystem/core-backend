@@ -86,6 +86,7 @@ public sealed class RegisterHandler(
             roles: roles,
             permissions: permissions,
             tenantId: account.TenantId,
+            appId: app.Id,
             jwtId: jwtId);
         var refreshToken = await refreshTokenService.GenerateRefreshTokenAsync(
             account.Id,

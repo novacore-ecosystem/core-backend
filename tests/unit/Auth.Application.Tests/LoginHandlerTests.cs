@@ -27,6 +27,7 @@ public sealed class LoginHandlerTests
         LoginHandler Handler,
         IAuthService AuthService,
         IAccountAppAssignmentService AccountAppAssignmentService,
+        IJwtTokenGenerator TokenGenerator,
         App App,
         Account Account) BuildScenario(bool isAssignedToApp, bool credentialsValid = true)
     {
@@ -58,7 +59,7 @@ public sealed class LoginHandlerTests
         var tokenGenerator = Substitute.For<IJwtTokenGenerator>();
         tokenGenerator.GenerateAccessToken(
             Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>>(),
-            Arg.Any<IEnumerable<string>>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
+            Arg.Any<IEnumerable<string>>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>())
             .Returns("access-token");
 
         var refreshTokenService = Substitute.For<IRefreshTokenService>();
@@ -76,24 +77,31 @@ public sealed class LoginHandlerTests
             refreshTokenService,
             Substitute.For<ICurrentUserService>());
 
-        return (handler, authService, accountAppAssignmentService, app, account);
+        return (handler, authService, accountAppAssignmentService, tokenGenerator, app, account);
     }
 
     [Fact]
     public async Task Handle_ValidCredentialsAndAppMembership_Succeeds()
     {
-        var (handler, _, _, _, _) = BuildScenario(isAssignedToApp: true);
+        var (handler, _, _, tokenGenerator, app, account) = BuildScenario(isAssignedToApp: true);
 
         var result = await handler.Handle(new LoginCommand("test@example.com", "P@ssw0rd", "client-key", "storefront_web"));
 
         result.AccessToken.ShouldBe("access-token");
         result.RefreshToken.ShouldBe("refresh-token");
+
+        // The resolved App must travel as the token's appId claim - so authenticated requests
+        // never need to re-supply an App identifier.
+        tokenGenerator.Received(1).GenerateAccessToken(
+            account.Id, account.Email!, account.UserName!,
+            Arg.Any<IEnumerable<string>>(), Arg.Any<IEnumerable<string>>(),
+            Guid.Empty, app.Id, Arg.Any<Guid?>());
     }
 
     [Fact]
     public async Task Handle_ValidCredentialsButNoAppMembership_ThrowsUnauthorized()
     {
-        var (handler, _, _, _, _) = BuildScenario(isAssignedToApp: false);
+        var (handler, _, _, _, _, _) = BuildScenario(isAssignedToApp: false);
 
         await Should.ThrowAsync<UnauthorizedException>(
             () => handler.Handle(new LoginCommand("test@example.com", "P@ssw0rd", "client-key", "storefront_web")));
@@ -102,7 +110,7 @@ public sealed class LoginHandlerTests
     [Fact]
     public async Task Handle_InvalidCredentials_ThrowsUnauthorized_RegardlessOfAppMembership()
     {
-        var (handler, _, _, _, _) = BuildScenario(isAssignedToApp: true, credentialsValid: false);
+        var (handler, _, _, _, _, _) = BuildScenario(isAssignedToApp: true, credentialsValid: false);
 
         await Should.ThrowAsync<UnauthorizedException>(
             () => handler.Handle(new LoginCommand("test@example.com", "P@ssw0rd", "client-key", "storefront_web")));

@@ -43,7 +43,8 @@ public sealed class RegisterHandlerTests
         IRoleReadService roleReadService,
         IAccountRoleAssignmentService? accountRoleAssignmentService = null,
         IAccountAppAssignmentService? accountAppAssignmentService = null,
-        IAccountReadService? accountReadService = null)
+        IAccountReadService? accountReadService = null,
+        IJwtTokenGenerator? tokenGenerator = null)
     {
         return new RegisterHandler(
             unitOfWork,
@@ -54,7 +55,7 @@ public sealed class RegisterHandlerTests
             accountAppAssignmentService ?? Substitute.For<IAccountAppAssignmentService>(),
             accountReadService ?? Substitute.For<IAccountReadService>(),
             Substitute.For<IEffectivePermissionReadService>(),
-            Substitute.For<IJwtTokenGenerator>(),
+            tokenGenerator ?? Substitute.For<IJwtTokenGenerator>(),
             Substitute.For<IRefreshTokenService>(),
             Substitute.For<ICurrentUserService>(),
             Substitute.For<IInternalEventDispatcher>(),
@@ -82,6 +83,7 @@ public sealed class RegisterHandlerTests
 
         var accountRoleAssignmentService = Substitute.For<IAccountRoleAssignmentService>();
         var accountAppAssignmentService = Substitute.For<IAccountAppAssignmentService>();
+        var tokenGenerator = Substitute.For<IJwtTokenGenerator>();
 
         var handler = BuildHandler(
             BuildUnitOfWork(),
@@ -89,7 +91,8 @@ public sealed class RegisterHandlerTests
             appReadService,
             roleReadService,
             accountRoleAssignmentService,
-            accountAppAssignmentService);
+            accountAppAssignmentService,
+            tokenGenerator: tokenGenerator);
 
         var command = new RegisterCommand(
             "test@example.com",
@@ -100,6 +103,13 @@ public sealed class RegisterHandlerTests
             "storefront_web");
 
         await handler.Handle(command);
+
+        // The resolved App must travel as the token's appId claim - so authenticated requests
+        // never need to re-supply an App identifier.
+        tokenGenerator.Received(1).GenerateAccessToken(
+            account.Id, account.Email!, account.UserName!,
+            Arg.Any<IEnumerable<string>>(), Arg.Any<IEnumerable<string>>(),
+            Guid.Empty, app.Id, Arg.Any<Guid?>());
 
         await accountRoleAssignmentService.Received(1).ReplaceRolesAsync(
             account.Id,
