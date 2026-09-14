@@ -9,23 +9,9 @@ public static class SeedAuthData
         public const string RootEmail = "root@novacore.local";
         public const string RootPassword = "Root@1234";
 
-        public static readonly List<(Guid Id, string Username, string Email, string Password, string[] Roles)> Default =
+        public static readonly List<(Guid Id, string Username, string Email, string Password)> Default =
         [
-            (RootId, RootUsername, RootEmail, RootPassword, ["Root"])
-        ];
-    }
-
-    public static class Roles
-    {
-        public const string Root = "Root";
-        public const string Admin = "Admin";
-        public const string User = "User";
-
-        public static readonly List<(string Name, string? Description)> Default =
-        [
-            (Root, "Root administrator with unrestricted system access"),
-            (Admin, "Administrator with full system management access"),
-            (User, "Standard user role with basic permissions")
+            (RootId, RootUsername, RootEmail, RootPassword)
         ];
     }
 }

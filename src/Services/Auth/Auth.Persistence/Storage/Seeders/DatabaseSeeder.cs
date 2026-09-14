@@ -1,4 +1,3 @@
-using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
 using NovaCore.Auth.Application.Configurations;
 using NovaCore.Auth.Domain.Entities.Accounts;
 using NovaCore.Auth.Persistence.Engine;
@@ -12,7 +11,6 @@ namespace NovaCore.Auth.Persistence.Storage.Seeders;
 public class DatabaseSeeder(
     AuthDbContext context,
     UserManager<Account> userManager,
-    IAccountRoleAssignmentService accountRoleAssignmentService,
     RootSetting rootSetting,
     ILogger<DatabaseSeeder> logger)
 {
@@ -23,9 +21,7 @@ public class DatabaseSeeder(
             logger.LogInformation("Starting database initialization...");
 
             await ApplyMigrationsAsync();
-            await SeedRolesAsync();
             await SeedPermissionCatalogAsync();
-            await SeedRolePermissionsAsync();
             await SeedRootAccountAsync();
             await SeedTenantClientsAsync();
 
@@ -54,14 +50,6 @@ public class DatabaseSeeder(
         }
     }
 
-    private async Task SeedRolesAsync()
-    {
-        logger.LogInformation("Seeding roles...");
-        var roleSeeder = new RoleSeeder(context);
-        await roleSeeder.SeedAsync();
-        logger.LogInformation("Roles seeded successfully");
-    }
-
     private async Task SeedPermissionCatalogAsync()
     {
         logger.LogInformation("Seeding permission catalog...");
@@ -70,18 +58,10 @@ public class DatabaseSeeder(
         logger.LogInformation("Permission catalog seeded successfully");
     }
 
-    private async Task SeedRolePermissionsAsync()
-    {
-        logger.LogInformation("Seeding role permission grants...");
-        var roleGrantSeeder = new RoleGrantSeeder(context);
-        await roleGrantSeeder.SeedAsync();
-        logger.LogInformation("Role permission grants seeded successfully");
-    }
-
     private async Task SeedRootAccountAsync()
     {
         logger.LogInformation("Provisioning Root account...");
-        var rootAccountSeeder = new RootAccountSeeder(context, userManager, accountRoleAssignmentService, rootSetting);
+        var rootAccountSeeder = new RootAccountSeeder(context, userManager, rootSetting);
         await rootAccountSeeder.SeedAsync();
         logger.LogInformation("Root account provisioned successfully");
     }

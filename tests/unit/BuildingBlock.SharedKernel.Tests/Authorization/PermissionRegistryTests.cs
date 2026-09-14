@@ -58,10 +58,11 @@ public class PermissionRegistryTests
     }
 
     [Fact]
-    public void Instance_EveryDefinition_DefaultsToRoleAllowedProvider()
+    public void Instance_Root_AllowsOnlyUserProvider()
     {
-        foreach (var definition in PermissionRegistry.Instance.GetAll())
-            definition.AllowedProviders.ShouldBe(PermissionProviderName.Role);
+        // Root is granted directly to the Root account (PermissionGrant, ProviderName.User) by
+        // RootAccountSeeder - never through a Role/RoleGrant indirection (see Permissions.Common.cs).
+        PermissionRegistry.Instance.GetAllowedProviders(Permissions.Root).ShouldBe(PermissionProviderName.User);
     }
 
     [Fact]

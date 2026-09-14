@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
 using NovaCore.Auth.Application.Configurations;
 using NovaCore.Auth.Domain.Entities.Accounts;
+using NovaCore.Auth.Domain.Entities.Permissions;
 using NovaCore.Auth.Persistence.Engine;
 
-using NovaCore.BuildingBlock.Domain.Seeders;
 using NovaCore.BuildingBlock.Domain.ValueObjects;
+using NovaCore.BuildingBlock.SharedKernel.Authorization;
+using NovaCore.BuildingBlock.SharedKernel.Constants;
 
 namespace NovaCore.Auth.Persistence.Storage.Seeders;
 
@@ -20,29 +21,21 @@ namespace NovaCore.Auth.Persistence.Storage.Seeders;
 /// <see cref="RootSetting.Id"/> is Root's sole identity - Username/Email/Password are
 /// reconciled idempotently against it (create on a fresh install, update only changed fields
 /// afterward), never used to detect which account is Root. Authorization comes from exactly one
-/// Role assignment (the "Root" Role), never a direct per-account PermissionGrant: Permissions.Root
-/// is Role-provider only (see Permissions.Common.cs's own remarks - "Providers stays Role-only...
-/// it is a provisioning/DB-seed-only concern"), and RoleGrantSeeder already grants the "Root" Role
-/// the single Permissions.Root permission, so an account only needs that one Role membership for
-/// AccountAuthorizationGuard's HasRoot check to bypass every rule. Requires RoleSeeder,
-/// PermissionCatalogSeeder, and RoleGrantSeeder to have already run (the "Root" Role and its
-/// Permissions.Root grant must already exist).
+/// direct PermissionGrant (ProviderName = User, ProviderKey = RootSetting.Id) for
+/// Permissions.Root - never a Role/RoleGrant indirection (see Permissions.Common.cs's own
+/// remarks) - so an account only needs that one grant for AccountAuthorizationGuard's HasRoot
+/// check to bypass every rule. Requires PermissionCatalogSeeder to have already run (the
+/// Permissions.Root definition must already exist).
 /// </remarks>
 public class RootAccountSeeder(
     AuthDbContext context,
     UserManager<Account> userManager,
-    IAccountRoleAssignmentService accountRoleAssignmentService,
     RootSetting rootSetting)
 {
     public async Task SeedAsync()
     {
-        var rootRole = await context.Roles
-            .FirstOrDefaultAsync(r => r.Name == SeedAuthData.Roles.Root)
-            ?? throw new InvalidOperationException(
-                $"The \"{SeedAuthData.Roles.Root}\" Role must be seeded before Root account provisioning runs.");
-
         await EnsureAccountAsync();
-        await ReconcileRoleAssignmentAsync(rootRole.Id);
+        await EnsureRootPermissionGrantAsync();
     }
 
     // ============================================================================
@@ -69,7 +62,7 @@ public class RootAccountSeeder(
         var account = Account.Create(rootSetting.Id, rootSetting.Username, Email.Create(rootSetting.Email));
         account.ConfirmEmail();
 
-        // Display/ordering only - AccountAuthorizationGuard/HasRoot key off the Root Role's
+        // Display/ordering only - AccountAuthorizationGuard/HasRoot key off the direct
         // Permissions.Root grant, never Level (see Account.SetLevel's own doc comment).
         account.SetLevel(int.MaxValue);
 
@@ -116,21 +109,41 @@ public class RootAccountSeeder(
     #endregion
 
     // ============================================================================
-    // Role assignment (singleton enforcement)
-    // The Root account holds exactly one Role assignment (the "Root" Role) -
-    // reconciled so the configured RootId is the only account that ever holds it;
-    // any other account found holding it loses just that Role, not the account.
+    // Permission grant (singleton enforcement)
+    // The Root account holds exactly one direct PermissionGrant for Permissions.Root -
+    // reconciled so the configured RootId is the only account that ever holds it; any
+    // other account found holding it loses just that grant, not the account.
     // ============================================================================
 
-    #region Role assignment (singleton enforcement)
+    #region Permission grant (singleton enforcement)
 
-    private async Task ReconcileRoleAssignmentAsync(Guid rootRoleId)
+    private async Task EnsureRootPermissionGrantAsync()
     {
-        await accountRoleAssignmentService.ReplaceRolesAsync(rootSetting.Id, [rootRoleId]);
+        // Projected first (matches PermissionCatalogSeeder's proven Select(p => p.Key.Value)
+        // shape) rather than filtered directly on p.Key.Value - EF cannot translate a WHERE
+        // predicate that decomposes PermissionKey's converted column via a member access.
+        var definitionsById = await context.PermissionDefinitions
+            .Select(p => new { p.Id, Key = p.Key.Value })
+            .ToListAsync();
+        var rootDefinitionId = definitionsById.FirstOrDefault(p => p.Key == Permissions.Root)?.Id
+            ?? throw new InvalidOperationException(
+                $"The \"{Permissions.Root}\" permission definition must be seeded before Root account provisioning runs.");
 
-        var staleAccountIds = await accountRoleAssignmentService.GetAccountIdsInRoleAsync(rootRoleId);
-        foreach (var accountId in staleAccountIds.Where(id => id != rootSetting.Id))
-            await accountRoleAssignmentService.RemoveRoleAsync(accountId, rootRoleId);
+        var rootProviderKey = rootSetting.Id.ToString();
+
+        var existingGrants = await context.PermissionGrants
+            .IgnoreQueryFilters()
+            .Where(g => g.PermissionDefinitionId == rootDefinitionId && g.ProviderName == PermissionProviderName.User)
+            .ToListAsync();
+
+        if (!existingGrants.Any(g => g.ProviderKey == rootProviderKey))
+            await context.PermissionGrants.AddAsync(
+                PermissionGrant.Create(rootDefinitionId, PermissionProviderName.User, rootProviderKey));
+
+        var staleGrants = existingGrants.Where(g => g.ProviderKey != rootProviderKey);
+        context.PermissionGrants.RemoveRange(staleGrants);
+
+        await context.SaveChangesAsync();
     }
 
     #endregion

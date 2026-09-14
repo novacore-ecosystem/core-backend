@@ -7,8 +7,8 @@ namespace NovaCore.Auth.Persistence.Storage.Seeders;
 
 /// <summary>
 /// Seeds the one Root TenantClient (TenantId == null - see TenantClient's class doc comment) so
-/// Login has a usable Root public key on a fresh environment, the same way RootAccountSeeder/
-/// RoleSeeder guarantee a usable Root account/role without a normal registration flow. Returns the
+/// Login has a usable Root public key on a fresh environment, the same way RootAccountSeeder
+/// guarantees a usable Root account without a normal registration flow. Returns the
 /// newly created client (null if one already existed) so the caller can log its PublicKey - there
 /// is no other bootstrap channel for it yet (no API exposes it, it cannot be predicted or reset),
 /// same local-dev-only tradeoff RootSetting.Password already accepts.

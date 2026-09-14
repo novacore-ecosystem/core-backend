@@ -26,15 +26,20 @@ namespace NovaCore.BuildingBlock.SharedKernel.Constants;
 /// flags stay unused for now.
 ///
 /// Root bypasses every check and can never itself be granted through the normal grant flow -
-/// Providers stays Role-only, the same restriction the Application-layer grant validation
-/// enforces (see AccountAuthorizationGuard) - it is a provisioning/DB-seed-only concern. Each
-/// module's "Full" key is an aggregate that implicitly grants every other permission in that
-/// module - this is resolved centrally by PermissionAuthorization.HasAnyPermission (BB.Web),
-/// endpoints never need to declare it explicitly.
+/// Providers stays User-only, granted directly to the Root account (PermissionGrant with
+/// ProviderName.User, ProviderKey = RootSetting.Id) by RootAccountSeeder writing straight to
+/// AuthDbContext during DB-seed provisioning, never through IPermissionGrantService's validated
+/// flow. It is still unreachable through the normal Account-management grant flow -
+/// AccountAuthorizationGuard.EnsureCanManageAccount forbids managing a Root-holding target, and
+/// EnsureCanGrantPermissions requires the actor already hold whatever it grants, so a non-Root
+/// actor can never grant itself Root through that path either. Each module's "Full" key is an
+/// aggregate that implicitly grants every other permission in that module - this is resolved
+/// centrally by PermissionAuthorization.HasAnyPermission (BB.Web), endpoints never need to
+/// declare it explicitly.
 /// </summary>
 public static partial class Permissions
 {
-    [PermissionDefinition(Providers = PermissionProviderName.Role)]
+    [PermissionDefinition(Providers = PermissionProviderName.User)]
     public const string Root = "system:root";
 
     /// <summary>The foundational Tenant/Client user capability - every authenticated non-Root
