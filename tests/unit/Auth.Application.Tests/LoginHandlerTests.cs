@@ -1,15 +1,14 @@
 using NSubstitute;
 
+using NovaCore.Auth.Application.Abstractions.Apps;
 using NovaCore.Auth.Application.Abstractions.Auth;
 using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
-using NovaCore.Auth.Application.Abstractions.Persistence.Apps;
 using NovaCore.Auth.Application.Abstractions.Persistence.TenantClients;
 using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
 using NovaCore.Auth.Application.Features.Auth.Commands.Login;
 using NovaCore.Auth.Domain.Entities.Accounts;
-using NovaCore.Auth.Domain.Entities.Apps;
 using NovaCore.Auth.Domain.Entities.TenantClients;
 using NovaCore.Auth.Domain.Enums;
 using NovaCore.Auth.Domain.ValueObjects;
@@ -26,21 +25,20 @@ public sealed class LoginHandlerTests
     private static (
         LoginHandler Handler,
         IAuthService AuthService,
-        IAccountAppAssignmentService AccountAppAssignmentService,
+        IAppMembershipCache AppMembershipCache,
         IJwtTokenGenerator TokenGenerator,
-        App App,
+        CachedApp App,
         Account Account) BuildScenario(bool isAssignedToApp, bool credentialsValid = true)
     {
         var tenantClient = TenantClient.Create(null, "Root Client");
-        var appCode = AppCode.Create("storefront_web");
-        var app = App.Create(appCode, "Storefront Web");
+        var app = new CachedApp(Guid.NewGuid(), "storefront_web", "Storefront Web", true);
         var account = Account.Create("test@example.com", Email.Create("test@example.com"), AccountStatus.Active);
 
         var tenantClientReadService = Substitute.For<ITenantClientReadService>();
         tenantClientReadService.GetByPublicKeyAsync("client-key", Arg.Any<CancellationToken>()).Returns(tenantClient);
 
-        var appReadService = Substitute.For<IAppReadService>();
-        appReadService.GetByCodeAsync(appCode, Arg.Any<CancellationToken>()).Returns(app);
+        var appCollectionCache = Substitute.For<IAppCollectionCache>();
+        appCollectionCache.GetByCodeAsync(app.Code, Arg.Any<CancellationToken>()).Returns(app);
 
         var accountReadService = Substitute.For<IAccountReadService>();
         accountReadService.GetByEmailAsync("test@example.com", Guid.Empty, Arg.Any<CancellationToken>())
@@ -48,8 +46,8 @@ public sealed class LoginHandlerTests
         accountReadService.GetRoleNamesAsync(account.Id, Arg.Any<CancellationToken>())
             .Returns((IReadOnlyList<string>)["User"]);
 
-        var accountAppAssignmentService = Substitute.For<IAccountAppAssignmentService>();
-        accountAppAssignmentService.IsAssignedAsync(account.Id, app.Id, Arg.Any<CancellationToken>())
+        var appMembershipCache = Substitute.For<IAppMembershipCache>();
+        appMembershipCache.IsAssignedAsync(app.Id, account.Id, Arg.Any<CancellationToken>())
             .Returns(isAssignedToApp);
 
         var authService = Substitute.For<IAuthService>();
@@ -68,16 +66,16 @@ public sealed class LoginHandlerTests
 
         var handler = new LoginHandler(
             tenantClientReadService,
-            appReadService,
+            appCollectionCache,
+            appMembershipCache,
             accountReadService,
-            accountAppAssignmentService,
             authService,
             Substitute.For<IEffectivePermissionReadService>(),
             tokenGenerator,
             refreshTokenService,
             Substitute.For<ICurrentUserService>());
 
-        return (handler, authService, accountAppAssignmentService, tokenGenerator, app, account);
+        return (handler, authService, appMembershipCache, tokenGenerator, app, account);
     }
 
     [Fact]

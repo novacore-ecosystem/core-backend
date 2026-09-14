@@ -1,14 +1,14 @@
 using NSubstitute;
 
+using NovaCore.Auth.Application.Abstractions.Apps;
 using NovaCore.Auth.Application.Abstractions.Auth;
 using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
-using NovaCore.Auth.Application.Abstractions.Persistence.Apps;
 using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
+using NovaCore.Auth.Application.Configurations;
 using NovaCore.Auth.Application.Features.Auth.Commands.RefreshToken;
 using NovaCore.Auth.Domain.Entities.Accounts;
-using NovaCore.Auth.Domain.Entities.Apps;
 using NovaCore.Auth.Domain.Enums;
 using NovaCore.Auth.Domain.ValueObjects;
 
@@ -24,17 +24,17 @@ public sealed class RefreshTokenHandlerTests
     private static (
         RefreshTokenHandler Handler,
         IJwtTokenGenerator TokenGenerator,
-        App App,
+        CachedApp App,
         Account Account) BuildScenario(bool appIsActive = true, bool refreshTokenValid = true)
     {
-        var appCode = AppCode.Create("storefront_web");
-        var app = App.Create(appCode, "Storefront Web");
-        if (!appIsActive)
-            app.Deactivate();
+        var app = new CachedApp(Guid.NewGuid(), "storefront_web", "Storefront Web", appIsActive);
         var account = Account.Create("test@example.com", Email.Create("test@example.com"), AccountStatus.Active);
 
-        var appReadService = Substitute.For<IAppReadService>();
-        appReadService.GetByCodeAsync(appCode, Arg.Any<CancellationToken>()).Returns(app);
+        var appCollectionCache = Substitute.For<IAppCollectionCache>();
+        appCollectionCache.GetByCodeAsync(app.Code, Arg.Any<CancellationToken>()).Returns(app);
+
+        var appMembershipCache = Substitute.For<IAppMembershipCache>();
+        appMembershipCache.IsAssignedAsync(app.Id, account.Id, Arg.Any<CancellationToken>()).Returns(true);
 
         var currentUserService = Substitute.For<ICurrentUserService>();
         currentUserService.GetRefreshToken().Returns("existing-refresh-token");
@@ -62,10 +62,12 @@ public sealed class RefreshTokenHandlerTests
             tokenGenerator,
             refreshTokenService,
             authService,
-            appReadService,
+            appCollectionCache,
+            appMembershipCache,
             accountReadService,
             Substitute.For<IEffectivePermissionReadService>(),
-            currentUserService);
+            currentUserService,
+            new RootSetting());
 
         return (handler, tokenGenerator, app, account);
     }

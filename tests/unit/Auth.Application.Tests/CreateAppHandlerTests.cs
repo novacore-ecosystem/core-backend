@@ -1,5 +1,6 @@
 using NSubstitute;
 
+using NovaCore.Auth.Application.Abstractions.Apps;
 using NovaCore.Auth.Application.Abstractions.Persistence.Apps;
 using NovaCore.Auth.Application.Features.Apps.Commands.CreateApp;
 using NovaCore.Auth.Domain.Entities.Apps;
@@ -35,7 +36,8 @@ public sealed class CreateAppHandlerTests
         writeService.CreateAsync(Arg.Do<App>(a => created = a), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
 
-        var handler = new CreateAppHandler(unitOfWork, readService, writeService);
+        var handler = new CreateAppHandler(
+            unitOfWork, readService, writeService, Substitute.For<IAppCollectionCache>());
 
         var id = await handler.Handle(new CreateAppCommand("storefront_web", "Storefront Web"));
 
@@ -54,7 +56,8 @@ public sealed class CreateAppHandlerTests
         var code = AppCode.Create("storefront_web");
         readService.ExistsByCodeAsync(code, Arg.Any<CancellationToken>()).Returns(true);
         var writeService = Substitute.For<IAppWriteService>();
-        var handler = new CreateAppHandler(unitOfWork, readService, writeService);
+        var handler = new CreateAppHandler(
+            unitOfWork, readService, writeService, Substitute.For<IAppCollectionCache>());
 
         await Should.ThrowAsync<ConflictException>(
             () => handler.Handle(new CreateAppCommand("storefront_web", "Storefront Web")));

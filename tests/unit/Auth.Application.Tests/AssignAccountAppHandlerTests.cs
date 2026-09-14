@@ -1,5 +1,6 @@
 using NSubstitute;
 
+using NovaCore.Auth.Application.Abstractions.Apps;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
 using NovaCore.Auth.Application.Features.Accounts.Commands.AssignAccountApp;
 using NovaCore.Auth.Application.Features.Accounts.Commands.RemoveAccountApp;
@@ -26,7 +27,8 @@ public sealed class AssignAccountAppHandlerTests
         var accountId = Guid.NewGuid();
         var appId = Guid.NewGuid();
         var assignmentService = Substitute.For<IAccountAppAssignmentService>();
-        var handler = new AssignAccountAppHandler(BuildUnitOfWork(), assignmentService);
+        var handler = new AssignAccountAppHandler(
+            BuildUnitOfWork(), assignmentService, Substitute.For<IAppMembershipCache>());
 
         await handler.Handle(new AssignAccountAppCommand(accountId, appId));
 
@@ -39,7 +41,8 @@ public sealed class AssignAccountAppHandlerTests
         var accountId = Guid.NewGuid();
         var appId = Guid.NewGuid();
         var assignmentService = Substitute.For<IAccountAppAssignmentService>();
-        var handler = new RemoveAccountAppHandler(BuildUnitOfWork(), assignmentService);
+        var handler = new RemoveAccountAppHandler(
+            BuildUnitOfWork(), assignmentService, Substitute.For<IAppMembershipCache>());
 
         await handler.Handle(new RemoveAccountAppCommand(accountId, appId));
 
