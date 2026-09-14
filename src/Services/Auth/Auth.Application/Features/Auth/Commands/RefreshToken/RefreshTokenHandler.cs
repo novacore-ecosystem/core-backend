@@ -24,14 +24,12 @@ public sealed class RefreshTokenHandler(
 {
     public async Task Handle(RefreshTokenCommand request, CancellationToken ct = default)
     {
-        var app = await appCollectionCache.GetByCodeAsync(request.AppCode, ct);
-        if (app is null || !app.IsActive)
-            throw new UnauthorizedException("Invalid App");
-
+        // Check if refresh token cookie is present
         var refreshToken = currentUserService.GetRefreshToken();
         if (refreshToken.IsNullOrWhiteSpace())
             throw new UnauthorizedException("Refresh token not found in cookies");
 
+        // Check if refresh token is valid
         var (userId, isValid) = await refreshTokenService.ValidateAndGetUserIdAsync(refreshToken, ct);
         if (!isValid)
             throw new UnauthorizedException(MessageCode.InvalidToken);
@@ -39,19 +37,25 @@ public sealed class RefreshTokenHandler(
         var user = await authService.GetUserByIdAsync(userId, ct)
             ?? throw new NotFoundException("User", userId);
 
-        // Root intentionally holds no App membership (see RootSetting), so the membership check
-        // below would always reject it - Root bypasses it entirely. Its token also gets no
-        // app_id claim: Guid.Empty omits the claim the same way it does for tenantId (see
-        // IJwtTokenGenerator), since fabricating the header's App as Root's membership would
-        // misrepresent a relationship Root doesn't actually have.
+        // Root bypasses App resolution/membership entirely; every other account must supply a
+        // valid, assigned App
+        CachedApp? app = null;
         var isRoot = user.Id == rootSetting.Id;
         if (!isRoot)
         {
+            if (request.AppCode.IsNullOrWhiteSpace())
+                throw new BadRequestException("This header is missing app code.");
+
+            app = await appCollectionCache.GetByCodeAsync(request.AppCode, ct);
+            if (app is null || !app.IsActive)
+                throw new UnauthorizedException("Invalid App");
+
             var isAssignedToApp = await appMembershipCache.IsAssignedAsync(app.Id, user.Id, ct);
             if (!isAssignedToApp)
                 throw new UnauthorizedException("Invalid App");
         }
 
+        // Generate access token and refresh token
         var jwtId = Guid.NewGuid();
         var roles = await accountReadService.GetRoleNamesAsync(user.Id, ct);
         var permissions = await effectivePermissionReadService.GetEffectivePermissionsAsync(user.Id, user.TenantId, ct);
@@ -62,10 +66,11 @@ public sealed class RefreshTokenHandler(
             roles: roles,
             permissions: permissions,
             tenantId: user.TenantId,
-            appId: isRoot ? Guid.Empty : app.Id,
+            appId: app is null || isRoot ? Guid.Empty : app.Id,
             jwtId: jwtId);
         var newRefreshToken = await refreshTokenService.GenerateRefreshTokenAsync(user.Id, jwtId, ct);
 
+        // Set token to client cookie (HTTP Only)
         currentUserService.SetAccessToken(accessToken);
         currentUserService.SetRefreshToken(newRefreshToken);
     }

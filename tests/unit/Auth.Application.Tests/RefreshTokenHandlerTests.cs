@@ -23,12 +23,17 @@ public sealed class RefreshTokenHandlerTests
 {
     private static (
         RefreshTokenHandler Handler,
+        IAppMembershipCache AppMembershipCache,
         IJwtTokenGenerator TokenGenerator,
         CachedApp App,
-        Account Account) BuildScenario(bool appIsActive = true, bool refreshTokenValid = true)
+        Account Account) BuildScenario(
+            bool appIsActive = true, bool refreshTokenValid = true, bool isRootAccount = false)
     {
+        var rootSetting = new RootSetting();
         var app = new CachedApp(Guid.NewGuid(), "storefront_web", "Storefront Web", appIsActive);
-        var account = Account.Create("test@example.com", Email.Create("test@example.com"), AccountStatus.Active);
+        var account = isRootAccount
+            ? Account.Create(rootSetting.Id, "test@example.com", Email.Create("test@example.com"), AccountStatus.Active)
+            : Account.Create("test@example.com", Email.Create("test@example.com"), AccountStatus.Active);
 
         var appCollectionCache = Substitute.For<IAppCollectionCache>();
         appCollectionCache.GetByCodeAsync(app.Code, Arg.Any<CancellationToken>()).Returns(app);
@@ -67,15 +72,15 @@ public sealed class RefreshTokenHandlerTests
             accountReadService,
             Substitute.For<IEffectivePermissionReadService>(),
             currentUserService,
-            new RootSetting());
+            rootSetting);
 
-        return (handler, tokenGenerator, app, account);
+        return (handler, appMembershipCache, tokenGenerator, app, account);
     }
 
     [Fact]
     public async Task Handle_ValidAppAndRefreshToken_IssuesNewTokenWithAppClaim()
     {
-        var (handler, tokenGenerator, app, account) = BuildScenario();
+        var (handler, _, tokenGenerator, app, account) = BuildScenario();
 
         await handler.Handle(new RefreshTokenCommand("storefront_web"));
 
@@ -86,9 +91,37 @@ public sealed class RefreshTokenHandlerTests
     }
 
     [Fact]
+    public async Task Handle_RootAccount_BypassesAppCheckEntirely_EvenWithNoAppCodeSupplied()
+    {
+        var (handler, appMembershipCache, tokenGenerator, _, account) = BuildScenario(isRootAccount: true);
+
+        // Root never sends X-App-Key (see nova-console's env.appCode) - the bypass must not
+        // depend on one being supplied.
+        await handler.Handle(new RefreshTokenCommand(""));
+
+        // Root holds no App membership by design - resolution/membership must never even be
+        // attempted for it, and its token gets no app_id claim (Guid.Empty).
+        await appMembershipCache.DidNotReceive().IsAssignedAsync(
+            Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        tokenGenerator.Received(1).GenerateAccessToken(
+            account.Id, account.Email!, account.UserName!,
+            Arg.Any<IEnumerable<string>>(), Arg.Any<IEnumerable<string>>(),
+            Guid.Empty, Guid.Empty, Arg.Any<Guid?>());
+    }
+
+    [Fact]
+    public async Task Handle_NonRootWithoutAppCode_ThrowsBadRequest()
+    {
+        var (handler, _, _, _, _) = BuildScenario();
+
+        await Should.ThrowAsync<BadRequestException>(
+            () => handler.Handle(new RefreshTokenCommand("")));
+    }
+
+    [Fact]
     public async Task Handle_InactiveApp_ThrowsUnauthorized()
     {
-        var (handler, _, _, _) = BuildScenario(appIsActive: false);
+        var (handler, _, _, _, _) = BuildScenario(appIsActive: false);
 
         await Should.ThrowAsync<UnauthorizedException>(
             () => handler.Handle(new RefreshTokenCommand("storefront_web")));
@@ -97,7 +130,7 @@ public sealed class RefreshTokenHandlerTests
     [Fact]
     public async Task Handle_InvalidRefreshToken_ThrowsUnauthorized()
     {
-        var (handler, _, _, _) = BuildScenario(refreshTokenValid: false);
+        var (handler, _, _, _, _) = BuildScenario(refreshTokenValid: false);
 
         await Should.ThrowAsync<UnauthorizedException>(
             () => handler.Handle(new RefreshTokenCommand("storefront_web")));
