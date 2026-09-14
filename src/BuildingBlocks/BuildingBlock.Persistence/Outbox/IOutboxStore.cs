@@ -21,6 +21,14 @@ public interface IOutboxStore
         int batchSize,
         CancellationToken ct = default);
 
+    /// <summary>
+    /// Fetch specific rows by id. Used by the immediate post-commit publish path to re-read,
+    /// by id, the exact rows a unit of work just committed.
+    /// </summary>
+    Task<IReadOnlyList<OutboxMessageSnapshot>> GetByIdsAsync(
+        IReadOnlyList<Guid> ids,
+        CancellationToken ct = default);
+
     /// <summary>Mark a row as successfully published.</summary>
     Task MarkProcessedAsync(Guid id, CancellationToken ct = default);
 

@@ -3,8 +3,10 @@ using NovaCore.BuildingBlock.Persistence.Ef.UnitOfWork;
 
 namespace NovaCore.Product.Persistence.Engine.UnitOfWork;
 
-public sealed class UnitOfWork(ProductDbContext context)
-    : EfUnitOfWork<ProductDbContext>(context), IUnitOfWork
+public sealed class UnitOfWork(
+    ProductDbContext context,
+    Func<IReadOnlyList<Guid>, CancellationToken, Task>? notifyOutboxCommittedAsync = null)
+    : EfUnitOfWork<ProductDbContext>(context, notifyOutboxCommittedAsync), IUnitOfWork
 {
     public override async Task<int> SaveChangesAsync(CancellationToken ct = default)
     {

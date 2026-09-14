@@ -48,6 +48,23 @@ public sealed class OutboxStore(
             row.RetryCount))];
     }
 
+    public async Task<IReadOnlyList<OutboxMessageSnapshot>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken ct = default)
+    {
+        var primitiveRows = await _primitiveStore.GetByIdsAsync(ids, ct);
+        return [.. primitiveRows.Select(row => new OutboxMessageSnapshot(
+            row.Id,
+            row.EventType,
+            row.Topic,
+            row.Payload,
+            row.CorrelationId,
+            row.ActorId,
+            row.ActorType,
+            row.CreatedAt,
+            row.ProcessedAt,
+            row.Error,
+            row.RetryCount))];
+    }
+
     public async Task MarkProcessedAsync(Guid id, CancellationToken ct = default)
     {
         await _primitiveStore.MarkProcessedAsync(id, ct);

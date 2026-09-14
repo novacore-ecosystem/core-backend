@@ -16,6 +16,12 @@ public interface IOutboxStore
 
     Task<IReadOnlyList<OutboxMessageSnapshot>> GetUnprocessedAsync(int batchSize, CancellationToken ct = default);
 
+    /// <summary>
+    /// Fetch specific rows by id. Used by the immediate post-commit publish path to re-read,
+    /// by id, the exact rows a unit of work just committed.
+    /// </summary>
+    Task<IReadOnlyList<OutboxMessageSnapshot>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken ct = default);
+
     Task MarkProcessedAsync(Guid id, CancellationToken ct = default);
 
     Task MarkFailedAsync(Guid id, string error, CancellationToken ct = default);

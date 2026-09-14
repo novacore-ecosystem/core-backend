@@ -58,6 +58,31 @@ public sealed class EfOutboxStore<TContext>(TContext context, ICurrentUserServic
             m.RetryCount))];
     }
 
+    public async Task<IReadOnlyList<OutboxMessageSnapshot>> GetByIdsAsync(
+        IReadOnlyList<Guid> ids,
+        CancellationToken ct = default)
+    {
+        if (ids.Count == 0)
+            return [];
+
+        var messages = await _context.OutboxMessages
+            .Where(m => ids.Contains(m.Id))
+            .ToListAsync(ct);
+
+        return [.. messages.Select(m => new OutboxMessageSnapshot(
+            m.Id,
+            m.EventType,
+            m.Topic,
+            m.Payload,
+            m.CorrelationId,
+            m.ActorId,
+            m.ActorType,
+            m.CreatedAt,
+            m.ProcessedAt,
+            m.Error,
+            m.RetryCount))];
+    }
+
     public async Task MarkProcessedAsync(Guid id, CancellationToken ct = default)
     {
         var message = await _context.OutboxMessages.FirstOrDefaultAsync(m => m.Id == id, ct);

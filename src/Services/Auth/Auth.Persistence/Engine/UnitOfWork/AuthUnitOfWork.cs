@@ -3,8 +3,10 @@ using NovaCore.BuildingBlock.Persistence.Ef.UnitOfWork;
 
 namespace NovaCore.Auth.Persistence.Engine.UnitOfWork;
 
-public sealed class AuthUnitOfWork(AuthDbContext context)
-    : EfUnitOfWork<AuthDbContext>(context), IUnitOfWork
+public sealed class AuthUnitOfWork(
+    AuthDbContext context,
+    Func<IReadOnlyList<Guid>, CancellationToken, Task>? notifyOutboxCommittedAsync = null)
+    : EfUnitOfWork<AuthDbContext>(context, notifyOutboxCommittedAsync), IUnitOfWork
 {
     public override async Task<int> SaveChangesAsync(CancellationToken ct = default)
     {
