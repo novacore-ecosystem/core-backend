@@ -11,4 +11,6 @@ public sealed record NotificationDispatchPayload(
     string Category,
     string Type,
     string Title,
-    string Content);
+    string Content,
+    /// <summary>Required when the dispatch targets <see cref="Domain.Enums.NotificationChannelType.Email"/> - the producer is responsible for resolving it, this service has no user/email lookup of its own.</summary>
+    string? RecipientEmail = null);

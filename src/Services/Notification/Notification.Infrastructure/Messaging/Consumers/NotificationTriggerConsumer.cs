@@ -4,6 +4,7 @@ using NovaCore.BuildingBlock.Application.Abstractions.Services;
 using NovaCore.BuildingBlock.Contract.Events.Order;
 using NovaCore.BuildingBlock.Contract.Events.Tenant;
 using NovaCore.BuildingBlock.Contract.Events.User;
+using NovaCore.BuildingBlock.Infrastructure.Mail.Builders;
 using NovaCore.BuildingBlock.Messaging.Abstractions;
 
 using MediatR;
@@ -51,6 +52,8 @@ public sealed class NotificationTriggerConsumer(
         nameof(OrderConfirmedIntegrationEvent).ToLowerInvariant(),
         nameof(OrderCancelledIntegrationEvent).ToLowerInvariant(),
         nameof(TenantVersionChangedIntegrationEvent).ToLowerInvariant(),
+        nameof(PasswordResetRequestedIntegrationEvent).ToLowerInvariant(),
+        nameof(EmailVerificationRequestedIntegrationEvent).ToLowerInvariant(),
     ];
 
     public async Task HandleAsync(
@@ -84,6 +87,14 @@ public sealed class NotificationTriggerConsumer(
 
             case nameof(TenantVersionChangedIntegrationEvent):
                 await HandleTenantVersionChangedAsync(message, ct);
+                break;
+
+            case nameof(PasswordResetRequestedIntegrationEvent):
+                await HandlePasswordResetRequestedAsync(message, ct);
+                break;
+
+            case nameof(EmailVerificationRequestedIntegrationEvent):
+                await HandleEmailVerificationRequestedAsync(message, ct);
                 break;
 
             default:
@@ -158,6 +169,70 @@ public sealed class NotificationTriggerConsumer(
         var data = Deserialize<TenantVersionChangedIntegrationEvent>(message);
 
         await sender.Send(new NotifyTenantVersionChangedCommand(data.TenantId, data.Version), ct);
+    }
+
+    private async Task HandlePasswordResetRequestedAsync(string message, CancellationToken ct)
+    {
+        var data = Deserialize<PasswordResetRequestedIntegrationEvent>(message);
+
+        var body = EmailBodyBuilder.Create()
+            .Heading("Reset your password")
+            .Paragraph("We received a request to reset your NovaCore password. Click the button below to choose a new one.")
+            .Button("Reset password", data.ResetLink)
+            .SmallText($"This link expires in {data.ExpiresInMinutes} minutes. If you didn't request this, you can safely ignore this email.")
+            .Build();
+
+        await SendEmailDispatchAsync(
+            nameof(PasswordResetRequestedIntegrationEvent),
+            Guid.Parse(data.AccountId),
+            data.Email,
+            subject: "Reset your NovaCore password",
+            htmlBody: EmailTemplate.Default.Wrap(body),
+            ct);
+    }
+
+    private async Task HandleEmailVerificationRequestedAsync(string message, CancellationToken ct)
+    {
+        var data = Deserialize<EmailVerificationRequestedIntegrationEvent>(message);
+
+        var body = EmailBodyBuilder.Create()
+            .Heading("Verify your email address")
+            .Paragraph("Thanks for signing up! Click the button below to confirm your email address.")
+            .Button("Verify email", data.VerificationLink)
+            .SmallText("If you didn't create a NovaCore account, you can safely ignore this email.")
+            .Build();
+
+        await SendEmailDispatchAsync(
+            nameof(EmailVerificationRequestedIntegrationEvent),
+            Guid.Parse(data.AccountId),
+            data.Email,
+            subject: "Verify your email address",
+            htmlBody: EmailTemplate.Default.Wrap(body),
+            ct);
+    }
+
+    private async Task SendEmailDispatchAsync(
+        string eventType,
+        Guid accountId,
+        string recipientEmail,
+        string subject,
+        string htmlBody,
+        CancellationToken ct)
+    {
+        var payload = new NotificationDispatchPayload(
+            accountId,
+            Category: "Account",
+            Type: eventType,
+            Title: subject,
+            Content: htmlBody,
+            RecipientEmail: recipientEmail);
+
+        var command = new CreateNotificationDispatchCommand(
+            DispatchReference.Create(eventType, accountId.ToString()),
+            [NotificationChannelType.Email],
+            JsonSerializer.Serialize(payload));
+
+        await sender.Send(command, ct);
     }
 
     private static T Deserialize<T>(string message) =>

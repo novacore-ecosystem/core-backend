@@ -1,5 +1,6 @@
 using NovaCore.BuildingBlock.Infrastructure.BackgroundJobs.Cleanup;
 using NovaCore.BuildingBlock.Infrastructure.Extensions;
+using NovaCore.BuildingBlock.Infrastructure.Mail.Extensions;
 using NovaCore.BuildingBlock.Infrastructure.Messaging;
 using NovaCore.BuildingBlock.Messaging.Abstractions;
 using NovaCore.BuildingBlock.Messaging.Kafka.Extensions;
@@ -38,6 +39,7 @@ public static class DependencyInjection
         services.AddInboxOutboxInfrastructure(configuration);
         services.AddNotificationDelivery();
         services.AddNotificationChannelCache();
+        services.AddEmailChannel(configuration);
 
         return services;
     }
@@ -61,6 +63,14 @@ public static class DependencyInjection
     {
         services.AddMemoryCache();
         services.AddScoped<INotificationChannelCache, NotificationChannelCache>();
+        return services;
+    }
+
+    /// <summary>Wires Resend as this service's - and NovaCore's only - email sender, plus the Email <see cref="IChannelSender"/> that delivers dispatches through it.</summary>
+    private static IServiceCollection AddEmailChannel(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddInfrastructureMail(Configurations.ConfigurationExtensions.GetValidatedResendMailOptions(configuration));
+        services.AddScoped<IChannelSender, EmailChannelSender>();
         return services;
     }
 }

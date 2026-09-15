@@ -1,8 +1,10 @@
 using System.Reflection;
 
+using NovaCore.Notification.Infrastructure.Configurations.Settings;
 using NovaCore.Notification.Infrastructure.Configurations.Validators;
 
 using NovaCore.BuildingBlock.Infrastructure.Configurations;
+using NovaCore.BuildingBlock.Infrastructure.Mail.Options;
 using NovaCore.BuildingBlock.Messaging.Kafka.Configuration;
 
 using Microsoft.Extensions.Configuration;
@@ -23,6 +25,23 @@ public static class ConfigurationExtensions
         ValidateKafkaConfiguration(configuration);
 
         return services;
+    }
+
+    /// <summary>Binds and validates <see cref="ResendMailSetting"/>, mapped into the mail building block's own <see cref="ResendMailOptions"/> so Notification.Infrastructure never has to depend on the Resend SDK directly.</summary>
+    public static ResendMailOptions GetValidatedResendMailOptions(IConfiguration configuration)
+    {
+        var setting = configuration.GetSection(ResendMailSetting.Section).Get<ResendMailSetting>() ?? new ResendMailSetting();
+        var result = new ResendMailSettingValidator().Validate(setting);
+
+        if (!result.IsValid)
+            throw new OptionsValidationException(ResendMailSetting.Section, typeof(ResendMailSetting), result.Errors.Select(e => e.ErrorMessage));
+
+        return new ResendMailOptions
+        {
+            ApiKey = setting.ApiKey,
+            SenderEmail = setting.FromEmail,
+            SenderName = setting.FromName,
+        };
     }
 
     private static void ValidateKafkaConfiguration(IConfiguration configuration)
