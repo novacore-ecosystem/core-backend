@@ -20,12 +20,22 @@ public static class ConfigurationExtensions
         IConfiguration configuration)
     {
         services.AddSettings(configuration, Assembly.GetExecutingAssembly());
+        services.AddSingleton(BindSessionJwtSetting(configuration));
 
         ValidateKafkaConfiguration(configuration);
         ValidateRootConfiguration(configuration);
 
         return services;
     }
+
+    /// <summary>
+    /// SessionJwtSetting lives in Auth.Application (OnAuthenticationSucceededHandler reads it
+    /// directly) so it can't join this assembly's ISetting reflection scan - bound manually here
+    /// instead, the same way RootSetting is exposed as a plain instance in Auth.Persistence's
+    /// AddSeeding.
+    /// </summary>
+    private static SessionJwtSetting BindSessionJwtSetting(IConfiguration configuration)
+        => configuration.GetSection(SessionJwtSetting.Section).Get<SessionJwtSetting>() ?? new SessionJwtSetting();
 
     private static void ValidateKafkaConfiguration(IConfiguration configuration)
     {
