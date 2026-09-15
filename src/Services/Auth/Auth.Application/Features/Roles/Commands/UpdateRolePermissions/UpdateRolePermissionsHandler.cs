@@ -2,11 +2,7 @@ using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Permissions;
 using NovaCore.Auth.Application.Abstractions.Persistence.Roles;
 using NovaCore.Auth.Application.Abstractions.Persistence.Tenants;
-
 using NovaCore.BuildingBlock.Application.Abstractions.Outbox;
-using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
-using NovaCore.BuildingBlock.Application.Abstractions.Services;
-using NovaCore.BuildingBlock.Application.Exceptions;
 using NovaCore.BuildingBlock.Contract.Events.User;
 using NovaCore.BuildingBlock.Domain.Exceptions;
 using NovaCore.BuildingBlock.SharedKernel.Authorization;
@@ -58,8 +54,8 @@ public sealed class UpdateRolePermissionsHandler(
         AccountAuthorizationGuard.EnsureCanGrantPermissions(actor, newlyAddedKeys);
         await EnsureWithinTenantBoundaryAsync(actor, tenantId, newlyAddedKeys, ct);
 
-        // Role membership (who holds this Role) is unaffected by a permission-set change, so this
-        // is safe to resolve before the mutation below.
+        // Role membership (who holds this Role) is unaffected by a permission-set change,
+        // so this is safe to resolve before the mutation below.
         var affectedAccountIds = await effectivePermissionReadService.GetAccountIdsForRoleAsync(
             request.RoleId,
             tenantId,
@@ -70,7 +66,6 @@ public sealed class UpdateRolePermissionsHandler(
             request.PermissionKeys,
             tenantId,
             ct);
-
         if (!result.HasChanges || affectedAccountIds.Count == 0)
             return;
 
@@ -83,7 +78,9 @@ public sealed class UpdateRolePermissionsHandler(
         var accountUpdates = affectedAccountIds
             .Select(accountId => new AccountEffectivePermissions(
                 accountId,
-                effectivePermissionsByAccount.TryGetValue(accountId, out var permissions) ? [.. permissions] : []))
+                effectivePermissionsByAccount.TryGetValue(accountId, out var permissions)
+                    ? [.. permissions]
+                    : []))
             .ToArray();
 
         await outboxStore.EnqueueAsync(
@@ -93,25 +90,33 @@ public sealed class UpdateRolePermissionsHandler(
         await unitOfWork.SaveChangesAsync(ct);
     }
 
-    /// <summary>Same rule as AccountAuthorizationService.EnsureWithinTenantBoundaryAsync
+    /// <summary>
+    /// Same rule as AccountAuthorizationService.EnsureWithinTenantBoundaryAsync
     /// (Auth.Infrastructure) - duplicated wiring, not duplicated logic; the actual boundary check
-    /// lives once in AccountAuthorizationGuard.EnsureWithinTenantBoundary.</summary>
+    /// lives once in AccountAuthorizationGuard.EnsureWithinTenantBoundary.
+    /// </summary>
     private async Task EnsureWithinTenantBoundaryAsync(
         AccountAuthorizationSnapshot actor,
         Guid tenantId,
-        IReadOnlyCollection<string> newlyAddedKeys,
+        string[] newlyAddedKeys,
         CancellationToken ct)
     {
-        if (actor.HasRoot || newlyAddedKeys.Count == 0)
+        if (actor.HasRoot || newlyAddedKeys.Length == 0)
             return;
 
         var tenant = await tenantReadService.GetByIdAsync(tenantId, ct)
             ?? throw ExceptionFactory.EntityNotFound($"Tenant \"{tenantId}\" does not exist.");
 
         var allowedKeys = await permissionGrantService.GetGrantedKeysAsync(
-            PermissionProviderName.Tenant, tenantId.ToString(), tenantId, ct);
+            PermissionProviderName.Tenant,
+            tenantId.ToString(),
+            tenantId,
+            ct);
 
         AccountAuthorizationGuard.EnsureWithinTenantBoundary(
-            actor, tenant.Metadata.PermissionBoundaryEnabled, allowedKeys, newlyAddedKeys);
+            actor,
+            tenant.Metadata.PermissionBoundaryEnabled,
+            allowedKeys,
+            newlyAddedKeys);
     }
 }
