@@ -1,3 +1,5 @@
+using NovaCore.Auth.Application.Abstractions.Services;
+
 namespace NovaCore.Auth.Application.Abstractions.Auth;
 
 /// <summary>
@@ -23,4 +25,16 @@ public interface IAuthEmailRequestService
     /// </summary>
     /// <param name="email">The email address a reset was requested for.</param>
     Task RequestPasswordResetAsync(string email, CancellationToken ct = default);
+
+    /// <summary>
+    /// The single source of truth for the email-verification resend cooldown: atomically claims
+    /// the shared per-email cooldown window and, only if claimed, calls
+    /// <see cref="RequestEmailVerificationAsync"/> - releasing the claim again if that call
+    /// throws. Used identically by Register's initial send and ResendEmail's explicit resend, so
+    /// the cooldown this establishes is the same one either path is blocked by.
+    /// </summary>
+    Task<CooldownClaim> TryDispatchEmailVerificationAsync(string email, CancellationToken ct = default);
+
+    /// <summary>Same claim-then-send-then-release-on-failure contract as <see cref="TryDispatchEmailVerificationAsync"/>, for password reset.</summary>
+    Task<CooldownClaim> TryDispatchPasswordResetAsync(string email, CancellationToken ct = default);
 }

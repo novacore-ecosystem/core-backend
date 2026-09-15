@@ -7,14 +7,20 @@ using NovaCore.Auth.Application.Abstractions.Registrations;
 using NovaCore.Auth.Application.Abstractions.Services;
 using NovaCore.Auth.Application.Features.Auth.Events.OnUserRegistered;
 
+using NovaCore.BuildingBlock.Application.Abstractions.Outbox;
+using NovaCore.BuildingBlock.Contract.Events.User;
 using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
 namespace NovaCore.Auth.Application.Features.Auth.Commands.Register;
 
 /// <summary>
-/// Creates the account and requests its verification email; never issues access/refresh tokens -
-/// the account's email stays unconfirmed until the link is clicked (see LoginHandler's
-/// EmailConfirmed gate), so Register cannot authenticate it yet.
+/// Creates the account and triggers its initial verification email via the same
+/// claim-then-send flow ResendEmail uses (see <see cref="IAuthEmailRequestService.TryDispatchEmailVerificationAsync"/>),
+/// so the initial send establishes the same resend cooldown a follow-up resend is bound by; also
+/// publishes <see cref="UserRegisteredIntegrationEvent"/> so the dispatch can be retried/observed
+/// as a consumer-driven reaction, independent of this request's own lifetime. Never issues
+/// access/refresh tokens - the account's email stays unconfirmed until the link is clicked (see
+/// LoginHandler's EmailConfirmed gate), so Register cannot authenticate it yet.
 /// </summary>
 public sealed class RegisterHandler(
     IUnitOfWork unitOfWork,
@@ -26,6 +32,7 @@ public sealed class RegisterHandler(
     IPermissionGrantService permissionGrantService,
     IAccountAppAssignmentService accountAppAssignmentService,
     IAuthEmailRequestService authEmailRequestService,
+    IOutboxStore outboxStore,
     ICurrentUserService currentUserService,
     IInternalEventDispatcher eventDispatcher,
     IAppLogger<RegisterHandler> logger) : ICommandHandler<RegisterCommand, RegisterResult>
@@ -53,6 +60,10 @@ public sealed class RegisterHandler(
                     request.Email,
                     request.Password,
                     ct) ?? throw new BadRequestException("Failed to create user");
+
+                await outboxStore.EnqueueAsync(
+                    new UserRegisteredIntegrationEvent(account.Id.ToString(), account.Email!, correlationId),
+                    ct);
 
                 // (Tenant, App)-scoped defaults, not a hard-seeded Role - gracefully grants
                 // nothing when no defaults are configured for this pair.
@@ -95,7 +106,11 @@ public sealed class RegisterHandler(
 
         // TODO: Publish audit log event bus
 
-        await authEmailRequestService.RequestEmailVerificationAsync(account.Email!, ct);
+        // Claims the resend cooldown and sends the email synchronously, in the same request -
+        // UserRegisteredIntegrationEvent's consumer also triggers this same flow, but the
+        // cooldown must be established here so an immediate resend right after this call returns
+        // is rejected regardless of when (or whether) the async consumer has run yet.
+        await authEmailRequestService.TryDispatchEmailVerificationAsync(account.Email!, ct);
 
         return new RegisterResult();
     }

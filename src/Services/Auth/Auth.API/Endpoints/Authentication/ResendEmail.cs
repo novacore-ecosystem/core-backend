@@ -1,3 +1,4 @@
+using NovaCore.Auth.Application.Abstractions.Auth;
 using NovaCore.Auth.Application.Features.Auth.Commands.ResendEmail;
 
 namespace NovaCore.Auth.API.Endpoints.Authentication;

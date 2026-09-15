@@ -1,4 +1,4 @@
-namespace NovaCore.Auth.Application.Features.Auth.Commands.ResendEmail;
+namespace NovaCore.Auth.Application.Abstractions.Auth;
 
 /// <summary>
 /// The authentication email a resend request targets

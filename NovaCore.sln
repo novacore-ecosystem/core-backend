@@ -225,6 +225,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Auth.Domain.Tests", "tests\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildingBlock.Application.Tests", "tests\unit\BuildingBlock.Application.Tests\BuildingBlock.Application.Tests.csproj", "{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Auth.Infrastructure.Tests", "tests\unit\Auth.Infrastructure.Tests\Auth.Infrastructure.Tests.csproj", "{566337E2-A140-4192-B2B1-519BF882BBBB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1303,6 +1305,18 @@ Global
 		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}.Release|x64.Build.0 = Release|Any CPU
 		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}.Release|x86.ActiveCfg = Release|Any CPU
 		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A}.Release|x86.Build.0 = Release|Any CPU
+		{566337E2-A140-4192-B2B1-519BF882BBBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{566337E2-A140-4192-B2B1-519BF882BBBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{566337E2-A140-4192-B2B1-519BF882BBBB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{566337E2-A140-4192-B2B1-519BF882BBBB}.Debug|x64.Build.0 = Debug|Any CPU
+		{566337E2-A140-4192-B2B1-519BF882BBBB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{566337E2-A140-4192-B2B1-519BF882BBBB}.Debug|x86.Build.0 = Debug|Any CPU
+		{566337E2-A140-4192-B2B1-519BF882BBBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{566337E2-A140-4192-B2B1-519BF882BBBB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{566337E2-A140-4192-B2B1-519BF882BBBB}.Release|x64.ActiveCfg = Release|Any CPU
+		{566337E2-A140-4192-B2B1-519BF882BBBB}.Release|x64.Build.0 = Release|Any CPU
+		{566337E2-A140-4192-B2B1-519BF882BBBB}.Release|x86.ActiveCfg = Release|Any CPU
+		{566337E2-A140-4192-B2B1-519BF882BBBB}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1413,5 +1427,6 @@ Global
 		{18BDE052-BBE9-F129-1075-478486D295B6} = {3A69DF5F-2BB9-492E-BDB6-D5F4195AE211}
 		{CD510A88-8276-4348-B0EC-391504AEF481} = {9D556B49-86D1-93A7-9596-FFAAB74EC556}
 		{31C0FB60-3A18-4FC9-ACA7-E552195EE56A} = {9D556B49-86D1-93A7-9596-FFAAB74EC556}
+		{566337E2-A140-4192-B2B1-519BF882BBBB} = {9D556B49-86D1-93A7-9596-FFAAB74EC556}
 	EndGlobalSection
 EndGlobal

@@ -13,6 +13,7 @@ using NovaCore.Auth.Domain.Enums;
 
 using NovaCore.BuildingBlock.Application.Abstractions.Events;
 using NovaCore.BuildingBlock.Application.Abstractions.Services;
+using NovaCore.BuildingBlock.Contract.Events.User;
 using NovaCore.BuildingBlock.Domain.ValueObjects;
 using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
@@ -43,7 +44,8 @@ public sealed class RegisterHandlerTests
         IPermissionGrantService? permissionGrantService = null,
         IAccountAppAssignmentService? accountAppAssignmentService = null,
         IAuthEmailRequestService? authEmailRequestService = null,
-        IAppMembershipCache? appMembershipCache = null)
+        IAppMembershipCache? appMembershipCache = null,
+        IOutboxStore? outboxStore = null)
     {
         IRegistrationDefaultsCache defaultsCache;
         if (registrationDefaultsCache is null)
@@ -67,6 +69,7 @@ public sealed class RegisterHandlerTests
             permissionGrantService ?? Substitute.For<IPermissionGrantService>(),
             accountAppAssignmentService ?? Substitute.For<IAccountAppAssignmentService>(),
             authEmailRequestService ?? Substitute.For<IAuthEmailRequestService>(),
+            outboxStore ?? Substitute.For<IOutboxStore>(),
             Substitute.For<ICurrentUserService>(),
             Substitute.For<IInternalEventDispatcher>(),
             Substitute.For<IAppLogger<RegisterHandler>>());
@@ -94,6 +97,7 @@ public sealed class RegisterHandlerTests
         var accountRoleAssignmentService = Substitute.For<IAccountRoleAssignmentService>();
         var accountAppAssignmentService = Substitute.For<IAccountAppAssignmentService>();
         var authEmailRequestService = Substitute.For<IAuthEmailRequestService>();
+        var outboxStore = Substitute.For<IOutboxStore>();
 
         var handler = BuildHandler(
             BuildUnitOfWork(),
@@ -102,7 +106,8 @@ public sealed class RegisterHandlerTests
             registrationDefaultsCache,
             accountRoleAssignmentService,
             accountAppAssignmentService: accountAppAssignmentService,
-            authEmailRequestService: authEmailRequestService);
+            authEmailRequestService: authEmailRequestService,
+            outboxStore: outboxStore);
 
         var command = new RegisterCommand(
             "test@example.com",
@@ -114,9 +119,17 @@ public sealed class RegisterHandlerTests
 
         await handler.Handle(command);
 
-        // Register must request the verification email instead of issuing tokens - the account
-        // stays unconfirmed until the link is clicked.
-        await authEmailRequestService.Received(1).RequestEmailVerificationAsync(account.Email!, Arg.Any<CancellationToken>());
+        // Register must claim the resend cooldown and dispatch the verification email itself,
+        // synchronously, instead of issuing tokens - the account stays unconfirmed until the
+        // link is clicked, and an immediate resend must already see the cooldown established.
+        await authEmailRequestService.Received(1).TryDispatchEmailVerificationAsync(account.Email!, Arg.Any<CancellationToken>());
+
+        // Also publishes UserRegisteredIntegrationEvent (in the same transaction as account
+        // creation) so the dispatch is retried/observed by a consumer independent of this
+        // request's own lifetime.
+        await outboxStore.Received(1).EnqueueAsync(
+            Arg.Is<UserRegisteredIntegrationEvent>(e => e.AccountId == account.Id.ToString() && e.Email == account.Email),
+            Arg.Any<CancellationToken>());
 
         await accountRoleAssignmentService.Received(1).ReplaceRolesAsync(
             account.Id,
