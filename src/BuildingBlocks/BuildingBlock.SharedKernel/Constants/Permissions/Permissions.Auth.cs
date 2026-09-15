@@ -41,4 +41,17 @@ public static partial class Permissions
         [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
         public const string AssignUsers = "app:assign-users";
     }
+
+    /// <summary>Default-Role/Default-Permission configuration granted to every Account that
+    /// self-registers into a given (Tenant, App) pair - see RegistrationDefaultRole/
+    /// RegistrationDefaultPermission and RegisterHandler.</summary>
+    [PermissionGroup("registration-defaults")]
+    public static class RegistrationDefaults
+    {
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        public const string View = "registration-defaults:view";
+
+        [PermissionDefinition(Providers = PermissionProviderName.Role | PermissionProviderName.User)]
+        public const string Manage = "registration-defaults:manage";
+    }
 }

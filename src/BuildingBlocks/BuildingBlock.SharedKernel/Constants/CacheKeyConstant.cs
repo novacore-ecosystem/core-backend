@@ -75,9 +75,13 @@ public static class CacheKeyConstant
         /// auth:registration-defaults:{tenantId}:{appId}</summary>
         public static string Snapshot(Guid tenantId, Guid appId) => $"{Prefix}:{tenantId}:{appId}";
 
-        /// <summary>Default TTL for the registration-defaults cache in minutes - admin-managed,
-        /// changes rarely, same tier as the App collection cache.</summary>
-        public const int DefaultTtlMinutes = 60;
+        /// <summary>
+        /// Default TTL for the registration-defaults cache in minutes - 24 hours.
+        /// Admin-managed configuration changes rarely; RegistrationDefaultsCache refreshes this
+        /// key immediately on every Create/Update/Delete, so the long TTL only bounds staleness
+        /// for the (rare) case a refresh is missed.
+        /// </summary>
+        public const int DefaultTtlMinutes = 24 * 60;
     }
 
     /// <summary>
