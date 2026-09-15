@@ -20,7 +20,6 @@ using NovaCore.BuildingBlock.Grpc.Client;
 using NovaCore.BuildingBlock.Infrastructure.Audit;
 using NovaCore.BuildingBlock.Infrastructure.BackgroundJobs.Cleanup;
 using NovaCore.BuildingBlock.Infrastructure.Extensions;
-using NovaCore.BuildingBlock.Infrastructure.Mail.Extensions;
 using NovaCore.BuildingBlock.Infrastructure.Messaging;
 using NovaCore.BuildingBlock.Messaging.Kafka.Extensions;
 
@@ -53,7 +52,6 @@ public static class DependencyInjection
             .AddKafkaMessaging(configuration, "auth-service")
             .AddInboxOutboxInfrastructure(configuration)
             .AddGrpcClients(configuration)
-            .AddAuthMail(configuration)
             .AddApplicationServices();
 
         return services;
@@ -64,15 +62,8 @@ public static class DependencyInjection
     {
         services.AddScoped<IIntegrationEventConsumer, UserCreatedIntegrationEventConsumer>();
         services.AddScoped<IIntegrationEventConsumer, AuthenticationSucceededConsumer>();
-        services.AddScoped<IIntegrationEventConsumer, EmailVerificationRequestedConsumer>();
+        services.AddScoped<IIntegrationEventConsumer, UserRegisteredConsumer>();
 
-        return services;
-    }
-
-    /// <summary>Wires Resend as Auth's own email sender for its transactional email (verification today).</summary>
-    private static IServiceCollection AddAuthMail(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddInfrastructureMail(Configurations.ConfigurationExtensions.GetValidatedResendMailOptions(configuration));
         return services;
     }
 

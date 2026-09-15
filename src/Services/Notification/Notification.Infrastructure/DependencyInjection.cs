@@ -47,6 +47,7 @@ public static class DependencyInjection
     private static IServiceCollection AddMessagingConsumers(this IServiceCollection services)
     {
         services.AddScoped<IIntegrationEventConsumer, NotificationTriggerConsumer>();
+        services.AddScoped<IIntegrationEventConsumer, EmailDispatchTriggerConsumer>();
         return services;
     }
 
