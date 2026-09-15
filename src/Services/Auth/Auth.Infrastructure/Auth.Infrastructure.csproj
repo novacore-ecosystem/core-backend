@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Auth.Application\Auth.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlock.Infrastructure\BuildingBlock.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlock.Infrastructure.Mail\BuildingBlock.Infrastructure.Mail.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlock.Grpc\BuildingBlock.Grpc.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlock.Contract\BuildingBlock.Contract.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlock.Messaging\BuildingBlock.Messaging.csproj" />

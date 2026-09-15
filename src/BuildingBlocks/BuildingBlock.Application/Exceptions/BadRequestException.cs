@@ -9,4 +9,7 @@ public class BadRequestException : ApplicationException
 
     public BadRequestException(MessageCodeEnum messageCode, string? systemMessage = null)
         : base(messageCode, systemMessage, statusCode: 400) { }
+
+    public BadRequestException(MessageCodeEnum messageCode, object errorDetails, string? systemMessage = null)
+        : base(messageCode, systemMessage, statusCode: 400, errorDetails) { }
 }

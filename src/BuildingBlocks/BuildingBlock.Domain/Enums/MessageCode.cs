@@ -61,6 +61,10 @@ public enum MessageCode
     TooManyRequests = 204,
     [MessageCode("205", "Request timeout")]
     RequestTimeout = 205,
+    [MessageCode("206", "Please wait before requesting another email")]
+    EmailResendCooldown = 206,
+    [MessageCode("207", "Too many invalid attempts. Please try again later")]
+    VerificationCodeLocked = 207,
 
     // Authentication & Authorization (300-399)
     [MessageCode("300", "Invalid credentials")]

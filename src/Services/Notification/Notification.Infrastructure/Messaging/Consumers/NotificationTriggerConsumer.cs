@@ -53,7 +53,6 @@ public sealed class NotificationTriggerConsumer(
         nameof(OrderCancelledIntegrationEvent).ToLowerInvariant(),
         nameof(TenantVersionChangedIntegrationEvent).ToLowerInvariant(),
         nameof(PasswordResetRequestedIntegrationEvent).ToLowerInvariant(),
-        nameof(EmailVerificationRequestedIntegrationEvent).ToLowerInvariant(),
     ];
 
     public async Task HandleAsync(
@@ -91,10 +90,6 @@ public sealed class NotificationTriggerConsumer(
 
             case nameof(PasswordResetRequestedIntegrationEvent):
                 await HandlePasswordResetRequestedAsync(message, ct);
-                break;
-
-            case nameof(EmailVerificationRequestedIntegrationEvent):
-                await HandleEmailVerificationRequestedAsync(message, ct);
                 break;
 
             default:
@@ -187,26 +182,6 @@ public sealed class NotificationTriggerConsumer(
             Guid.Parse(data.AccountId),
             data.Email,
             subject: "Reset your NovaCore password",
-            htmlBody: EmailTemplate.Default.Wrap(body),
-            ct);
-    }
-
-    private async Task HandleEmailVerificationRequestedAsync(string message, CancellationToken ct)
-    {
-        var data = Deserialize<EmailVerificationRequestedIntegrationEvent>(message);
-
-        var body = EmailBodyBuilder.Create()
-            .Heading("Verify your email address")
-            .Paragraph("Thanks for signing up! Click the button below to confirm your email address.")
-            .Button("Verify email", data.VerificationLink)
-            .SmallText("If you didn't create a NovaCore account, you can safely ignore this email.")
-            .Build();
-
-        await SendEmailDispatchAsync(
-            nameof(EmailVerificationRequestedIntegrationEvent),
-            Guid.Parse(data.AccountId),
-            data.Email,
-            subject: "Verify your email address",
             htmlBody: EmailTemplate.Default.Wrap(body),
             ct);
     }
