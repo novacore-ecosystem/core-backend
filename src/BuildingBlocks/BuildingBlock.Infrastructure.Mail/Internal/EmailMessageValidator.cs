@@ -4,7 +4,7 @@ namespace NovaCore.BuildingBlock.Infrastructure.Mail.Internal;
 
 internal static class EmailMessageValidator
 {
-    public static IReadOnlyCollection<string> Validate(EmailMessage message, MailOptions options)
+    public static IReadOnlyCollection<string> Validate(EmailMessage message, string defaultSenderEmail, string defaultSenderName)
     {
         List<string> errors = [];
 
@@ -14,7 +14,7 @@ internal static class EmailMessageValidator
         if (string.IsNullOrWhiteSpace(message.HtmlBody) && string.IsNullOrWhiteSpace(message.TextBody))
             errors.Add("Either HtmlBody or TextBody must be provided.");
 
-        var from = message.From ?? new EmailAddress(options.SenderEmail, options.SenderName);
+        var from = message.From ?? new EmailAddress(defaultSenderEmail, defaultSenderName);
         if (!IsValidAddress(from))
             errors.Add("A valid sender address is required.");
 

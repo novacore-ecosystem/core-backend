@@ -72,7 +72,8 @@
     <PackageVersion Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="3.0.0" />
 
     <!-- Mail -->
-    <PackageVersion Include="MailKit" Version="4.17.0" />
+    <PackageVersion Include="MimeKit" Version="4.17.0" />
+    <PackageVersion Include="Resend" Version="0.18.0" />
 
     <!-- Media / file metadata -->
     <PackageVersion Include="SixLabors.ImageSharp" Version="4.1.1" />

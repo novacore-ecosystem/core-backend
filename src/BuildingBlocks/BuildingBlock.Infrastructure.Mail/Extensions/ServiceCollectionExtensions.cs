@@ -5,37 +5,34 @@ using Microsoft.Extensions.DependencyInjection;
 using NovaCore.BuildingBlock.Infrastructure.Mail.Abstractions;
 using NovaCore.BuildingBlock.Infrastructure.Mail.Internal;
 
+using Resend;
+
 namespace NovaCore.BuildingBlock.Infrastructure.Mail.Extensions;
 
 public static class ServiceCollectionExtensions
 {
+    /// <summary>Single integration point for this building block - registers Resend as the <see cref="IEmailSender"/> implementation. The Resend SDK stays internal here; callers only ever see <see cref="IEmailSender"/>.</summary>
     public static IServiceCollection AddInfrastructureMail(
         this IServiceCollection services,
-        MailOptions options)
+        ResendMailOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
-        ValidateOptions(options);
 
-        services.AddSingleton(options);
-        services.AddSingleton<IEmailSender, MailKitEmailSender>();
-
-        return services;
-    }
-
-    private static void ValidateOptions(MailOptions options)
-    {
         List<string> errors = [];
 
-        if (string.IsNullOrWhiteSpace(options.Host))
-            errors.Add($"{nameof(MailOptions.Host)} is required.");
-
-        if (options.Port is <= 0 or > 65535)
-            errors.Add($"{nameof(MailOptions.Port)} must be between 1 and 65535.");
+        if (string.IsNullOrWhiteSpace(options.ApiKey))
+            errors.Add($"{nameof(ResendMailOptions.ApiKey)} is required.");
 
         if (string.IsNullOrWhiteSpace(options.SenderEmail) || !MailboxAddress.TryParse(options.SenderEmail, out _))
-            errors.Add($"{nameof(MailOptions.SenderEmail)} must be a valid email address.");
+            errors.Add($"{nameof(ResendMailOptions.SenderEmail)} must be a valid email address.");
 
         if (errors.Count > 0)
-            throw new ArgumentException($"Invalid {nameof(MailOptions)}: {string.Join(" ", errors)}", nameof(options));
+            throw new ArgumentException($"Invalid {nameof(ResendMailOptions)}: {string.Join(" ", errors)}", nameof(options));
+
+        services.AddSingleton(options);
+        services.AddResend(resendOptions => resendOptions.ApiToken = options.ApiKey);
+        services.AddSingleton<IEmailSender, ResendEmailSender>();
+
+        return services;
     }
 }
