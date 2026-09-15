@@ -14,6 +14,8 @@ using NovaCore.Auth.Domain.Entities.TenantClients;
 using NovaCore.Auth.Domain.Enums;
 using NovaCore.Auth.Domain.ValueObjects;
 
+using NovaCore.BuildingBlock.Application.Abstractions.Outbox;
+using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
 using NovaCore.BuildingBlock.Application.Abstractions.Services;
 using NovaCore.BuildingBlock.Domain.ValueObjects;
 
@@ -78,6 +80,8 @@ public sealed class LoginHandlerTests
             tokenGenerator,
             refreshTokenService,
             Substitute.For<ICurrentUserService>(),
+            Substitute.For<IOutboxStore>(),
+            Substitute.For<IUnitOfWork>(),
             rootSetting);
 
         return (handler, authService, appMembershipCache, tokenGenerator, app, account);

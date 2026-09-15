@@ -12,6 +12,8 @@ using NovaCore.Auth.Domain.Entities.Accounts;
 using NovaCore.Auth.Domain.Enums;
 using NovaCore.Auth.Domain.ValueObjects;
 
+using NovaCore.BuildingBlock.Application.Abstractions.Outbox;
+using NovaCore.BuildingBlock.Application.Abstractions.Persistence;
 using NovaCore.BuildingBlock.Application.Abstractions.Services;
 using NovaCore.BuildingBlock.Domain.ValueObjects;
 
@@ -72,6 +74,8 @@ public sealed class RefreshTokenHandlerTests
             accountReadService,
             Substitute.For<IEffectivePermissionReadService>(),
             currentUserService,
+            Substitute.For<IOutboxStore>(),
+            Substitute.For<IUnitOfWork>(),
             rootSetting);
 
         return (handler, appMembershipCache, tokenGenerator, app, account);
