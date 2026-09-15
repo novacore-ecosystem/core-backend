@@ -40,6 +40,19 @@ public interface IAuthService
         string newPassword,
         CancellationToken ct = default);
 
+    /// <summary>
+    /// Force-sets a new password without knowing the current one, for the token-based "forgot
+    /// password" completion flow (ResetPasswordWithTokenHandler) - the possession of a valid,
+    /// unexpired reset token stands in for knowing the current password. Backed by
+    /// UserManager.RemovePasswordAsync + AddPasswordAsync, the standard ASP.NET Identity pattern
+    /// for an administrative/token-authorized password reset, so hashing still goes through
+    /// Identity rather than being hand-rolled here.
+    /// </summary>
+    Task<bool> SetPasswordAsync(
+        Guid userId,
+        string newPassword,
+        CancellationToken ct = default);
+
     Task<bool> ConfirmEmailAsync(Guid userId, CancellationToken ct = default);
 
     Task<bool> DeleteUserAsync(Guid userId, CancellationToken ct = default);

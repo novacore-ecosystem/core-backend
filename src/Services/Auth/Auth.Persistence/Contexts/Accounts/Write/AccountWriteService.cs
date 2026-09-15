@@ -22,4 +22,11 @@ public sealed class AccountWriteService(
         await repo.UpdateAsync(a => a.Id == id, a => a.SetLevel(level), ct);
         await unitOfWork.SaveChangesAsync(ct);
     }
+
+    /// <summary>Non-committing - ResetPasswordHandler/ResetPasswordWithTokenHandler own
+    /// IUnitOfWork.ExecuteTransactionAsync themselves.</summary>
+    public async Task RecordPasswordChangeAsync(Guid accountId, string passwordHash, CancellationToken ct = default)
+    {
+        await repo.UpdateAsync(a => a.Id == accountId, a => a.RecordPasswordChange(passwordHash), ct);
+    }
 }

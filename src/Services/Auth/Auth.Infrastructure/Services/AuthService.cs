@@ -67,6 +67,26 @@ public sealed class AuthService(UserManager<Account> userManager) : IAppService,
         return result.Succeeded;
     }
 
+    public async Task<bool> SetPasswordAsync(
+        Guid userId,
+        string newPassword,
+        CancellationToken ct = default)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null)
+            return false;
+
+        if (await _userManager.HasPasswordAsync(user))
+        {
+            var removeResult = await _userManager.RemovePasswordAsync(user);
+            if (!removeResult.Succeeded)
+                return false;
+        }
+
+        var addResult = await _userManager.AddPasswordAsync(user, newPassword);
+        return addResult.Succeeded;
+    }
+
     public async Task<bool> ConfirmEmailAsync(Guid userId, CancellationToken ct = default)
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());
