@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -186,7 +187,8 @@ public static class DependencyInjection
             options.SignIn.RequireConfirmedEmail = false;
         })
         .AddRoles<Role>()
-        .AddEntityFrameworkStores<AuthDbContext>();
+        .AddEntityFrameworkStores<AuthDbContext>()
+        .AddDefaultTokenProviders();
 
         return services;
     }

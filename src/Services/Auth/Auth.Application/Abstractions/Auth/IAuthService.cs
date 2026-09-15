@@ -53,7 +53,11 @@ public interface IAuthService
         string newPassword,
         CancellationToken ct = default);
 
-    Task<bool> ConfirmEmailAsync(Guid userId, CancellationToken ct = default);
+    /// <summary>Issues Identity's own email-confirmation token (DataProtector-backed, stateless) for the account.</summary>
+    Task<string> GenerateEmailConfirmationTokenAsync(Guid userId, CancellationToken ct = default);
+
+    /// <summary>Validates the confirmation token via Identity and, if valid, marks the account's email confirmed.</summary>
+    Task<bool> ConfirmEmailAsync(Guid userId, string token, CancellationToken ct = default);
 
     Task<bool> DeleteUserAsync(Guid userId, CancellationToken ct = default);
 }

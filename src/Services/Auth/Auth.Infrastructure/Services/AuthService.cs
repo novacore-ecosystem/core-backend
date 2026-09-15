@@ -1,5 +1,6 @@
 using NovaCore.Auth.Application.Abstractions.Auth;
 
+using NovaCore.BuildingBlock.Application.Exceptions;
 using NovaCore.BuildingBlock.Domain.ValueObjects;
 
 using Microsoft.AspNetCore.Identity;
@@ -87,14 +88,21 @@ public sealed class AuthService(UserManager<Account> userManager) : IAppService,
         return addResult.Succeeded;
     }
 
-    public async Task<bool> ConfirmEmailAsync(Guid userId, CancellationToken ct = default)
+    public async Task<string> GenerateEmailConfirmationTokenAsync(Guid userId, CancellationToken ct = default)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString())
+            ?? throw new NotFoundException("Account", userId);
+
+        return await _userManager.GenerateEmailConfirmationTokenAsync(user);
+    }
+
+    public async Task<bool> ConfirmEmailAsync(Guid userId, string token, CancellationToken ct = default)
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user is null)
             return false;
 
-        user.ConfirmEmail();
-        var result = await _userManager.UpdateAsync(user);
+        var result = await _userManager.ConfirmEmailAsync(user, token);
         return result.Succeeded;
     }
 
