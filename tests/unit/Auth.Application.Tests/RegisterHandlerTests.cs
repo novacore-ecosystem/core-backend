@@ -6,7 +6,6 @@ using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
 using NovaCore.Auth.Application.Abstractions.Persistence.Permissions;
 using NovaCore.Auth.Application.Abstractions.Registrations;
-using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
 using NovaCore.Auth.Application.Features.Auth.Commands.Register;
 using NovaCore.Auth.Domain.Entities.Accounts;
@@ -43,8 +42,7 @@ public sealed class RegisterHandlerTests
         IAccountRoleAssignmentService? accountRoleAssignmentService = null,
         IPermissionGrantService? permissionGrantService = null,
         IAccountAppAssignmentService? accountAppAssignmentService = null,
-        IAccountReadService? accountReadService = null,
-        IJwtTokenGenerator? tokenGenerator = null,
+        IAuthEmailRequestService? authEmailRequestService = null,
         IAppMembershipCache? appMembershipCache = null)
     {
         IRegistrationDefaultsCache defaultsCache;
@@ -68,10 +66,7 @@ public sealed class RegisterHandlerTests
             accountRoleAssignmentService ?? Substitute.For<IAccountRoleAssignmentService>(),
             permissionGrantService ?? Substitute.For<IPermissionGrantService>(),
             accountAppAssignmentService ?? Substitute.For<IAccountAppAssignmentService>(),
-            accountReadService ?? Substitute.For<IAccountReadService>(),
-            Substitute.For<IEffectivePermissionReadService>(),
-            tokenGenerator ?? Substitute.For<IJwtTokenGenerator>(),
-            Substitute.For<IRefreshTokenService>(),
+            authEmailRequestService ?? Substitute.For<IAuthEmailRequestService>(),
             Substitute.For<ICurrentUserService>(),
             Substitute.For<IInternalEventDispatcher>(),
             Substitute.For<IAppLogger<RegisterHandler>>());
@@ -98,7 +93,7 @@ public sealed class RegisterHandlerTests
 
         var accountRoleAssignmentService = Substitute.For<IAccountRoleAssignmentService>();
         var accountAppAssignmentService = Substitute.For<IAccountAppAssignmentService>();
-        var tokenGenerator = Substitute.For<IJwtTokenGenerator>();
+        var authEmailRequestService = Substitute.For<IAuthEmailRequestService>();
 
         var handler = BuildHandler(
             BuildUnitOfWork(),
@@ -107,7 +102,7 @@ public sealed class RegisterHandlerTests
             registrationDefaultsCache,
             accountRoleAssignmentService,
             accountAppAssignmentService: accountAppAssignmentService,
-            tokenGenerator: tokenGenerator);
+            authEmailRequestService: authEmailRequestService);
 
         var command = new RegisterCommand(
             "test@example.com",
@@ -119,12 +114,9 @@ public sealed class RegisterHandlerTests
 
         await handler.Handle(command);
 
-        // The resolved App must travel as the token's appId claim - so authenticated requests
-        // never need to re-supply an App identifier.
-        tokenGenerator.Received(1).GenerateAccessToken(
-            account.Id, account.Email!, account.UserName!,
-            Arg.Any<IEnumerable<string>>(), Arg.Any<IEnumerable<string>>(),
-            Guid.Empty, app.Id, Arg.Any<Guid?>());
+        // Register must request the verification email instead of issuing tokens - the account
+        // stays unconfirmed until the link is clicked.
+        await authEmailRequestService.Received(1).RequestEmailVerificationAsync(account.Email!, Arg.Any<CancellationToken>());
 
         await accountRoleAssignmentService.Received(1).ReplaceRolesAsync(
             account.Id,

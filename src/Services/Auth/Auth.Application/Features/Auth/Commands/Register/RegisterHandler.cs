@@ -4,17 +4,18 @@ using NovaCore.Auth.Application.Abstractions.Authorization;
 using NovaCore.Auth.Application.Abstractions.Persistence.Accounts;
 using NovaCore.Auth.Application.Abstractions.Persistence.Permissions;
 using NovaCore.Auth.Application.Abstractions.Registrations;
-using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
-using NovaCore.Auth.Application.Configurations;
 using NovaCore.Auth.Application.Features.Auth.Events.OnUserRegistered;
 
-using NovaCore.BuildingBlock.Application.Abstractions.Outbox;
-using NovaCore.BuildingBlock.Contract.Events.User;
 using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
 namespace NovaCore.Auth.Application.Features.Auth.Commands.Register;
 
+/// <summary>
+/// Creates the account and requests its verification email; never issues access/refresh tokens -
+/// the account's email stays unconfirmed until the link is clicked (see LoginHandler's
+/// EmailConfirmed gate), so Register cannot authenticate it yet.
+/// </summary>
 public sealed class RegisterHandler(
     IUnitOfWork unitOfWork,
     IAuthService authService,
@@ -24,14 +25,9 @@ public sealed class RegisterHandler(
     IAccountRoleAssignmentService accountRoleAssignmentService,
     IPermissionGrantService permissionGrantService,
     IAccountAppAssignmentService accountAppAssignmentService,
-    IAccountReadService accountReadService,
-    IEffectivePermissionReadService effectivePermissionReadService,
-    IJwtTokenGenerator tokenGenerator,
-    IRefreshTokenService refreshTokenService,
+    IAuthEmailRequestService authEmailRequestService,
     ICurrentUserService currentUserService,
     IInternalEventDispatcher eventDispatcher,
-    IOutboxStore outboxStore,
-    ClientSetting clientSetting,
     IAppLogger<RegisterHandler> logger) : ICommandHandler<RegisterCommand, RegisterResult>
 {
     public async Task<RegisterResult> Handle(RegisterCommand request, CancellationToken ct = default)
@@ -99,46 +95,8 @@ public sealed class RegisterHandler(
 
         // TODO: Publish audit log event bus
 
-        await PublishEmailVerificationRequestedAsync(account, ct);
-
-        // Generate AccessToken and Refresh Token which are set to HttpOnly
-        var jwtId = Guid.NewGuid();
-        var roles = await accountReadService.GetRoleNamesAsync(account.Id, ct);
-        var permissions = await effectivePermissionReadService.GetEffectivePermissionsAsync(account.Id, account.TenantId, ct);
-        var accessToken = tokenGenerator.GenerateAccessToken(
-            userId: account.Id,
-            email: account.Email!,
-            username: account.UserName!,
-            roles: roles,
-            permissions: permissions,
-            tenantId: account.TenantId,
-            appId: app.Id,
-            jwtId: jwtId);
-        var refreshToken = await refreshTokenService.GenerateRefreshTokenAsync(
-            account.Id,
-            jwtId,
-            ct);
-        currentUserService.SetAccessToken(accessToken);
-        currentUserService.SetRefreshToken(refreshToken);
+        await authEmailRequestService.RequestEmailVerificationAsync(account.Email!, ct);
 
         return new RegisterResult();
-    }
-
-    /// <summary>Enqueues the verification email off the request path - the newly-created account stays unverified until the link is clicked, this call never blocks Register on Resend.</summary>
-    private async Task PublishEmailVerificationRequestedAsync(Account account, CancellationToken ct)
-    {
-        var token = await authService.GenerateEmailConfirmationTokenAsync(account.Id, ct);
-        var verificationLink = $"{clientSetting.EmailVerificationUrl}?token={Uri.EscapeDataString(token)}&accountId={account.Id}";
-
-        var @event = new EmailVerificationRequestedIntegrationEvent(
-            account.Id.ToString(),
-            account.Email!,
-            verificationLink);
-
-        await unitOfWork.ExecuteTransactionAsync(async () =>
-        {
-            await outboxStore.EnqueueAsync(@event, ct);
-            await unitOfWork.SaveChangesAsync(ct);
-        }, ct: ct);
     }
 }

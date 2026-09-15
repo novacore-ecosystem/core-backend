@@ -6,6 +6,7 @@ using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
 using NovaCore.Auth.Application.Configurations;
 using NovaCore.BuildingBlock.Application.Abstractions.Outbox;
+using NovaCore.BuildingBlock.Domain.Enums;
 using NovaCore.BuildingBlock.Contract.Events.User;
 using NovaCore.BuildingBlock.SharedKernel.Extensions;
 
@@ -60,6 +61,9 @@ public sealed class LoginHandler(
         var isValid = await authService.ValidateCredentialsAsync(user, request.Password, ct);
         if (!isValid)
             throw new UnauthorizedException("Invalid credentials");
+
+        if (!user.EmailConfirmed)
+            throw new BadRequestException(MessageCode.EmailNotVerified, "Email is not confirmed.");
 
         return (user, tenantId);
     }

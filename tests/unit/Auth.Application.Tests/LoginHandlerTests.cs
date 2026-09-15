@@ -31,7 +31,7 @@ public sealed class LoginHandlerTests
         IAppMembershipCache AppMembershipCache,
         IJwtTokenGenerator TokenGenerator,
         CachedApp App,
-        Account Account) BuildScenario(bool isAssignedToApp, bool credentialsValid = true, bool isRootAccount = false)
+        Account Account) BuildScenario(bool isAssignedToApp, bool credentialsValid = true, bool isRootAccount = false, bool emailConfirmed = true)
     {
         var rootSetting = new RootSetting();
         var tenantClient = TenantClient.Create(null, "Root Client");
@@ -39,6 +39,8 @@ public sealed class LoginHandlerTests
         var account = isRootAccount
             ? Account.Create(rootSetting.Id, "test@example.com", Email.Create("test@example.com"), AccountStatus.Active)
             : Account.Create("test@example.com", Email.Create("test@example.com"), AccountStatus.Active);
+        if (emailConfirmed)
+            account.ConfirmEmail();
 
         var tenantClientReadService = Substitute.For<ITenantClientReadService>();
         tenantClientReadService.GetByPublicKeyAsync("client-key", Arg.Any<CancellationToken>()).Returns(tenantClient);
@@ -152,6 +154,15 @@ public sealed class LoginHandlerTests
         var (handler, _, _, _, _, _) = BuildScenario(isAssignedToApp: true, credentialsValid: false);
 
         await Should.ThrowAsync<UnauthorizedException>(
+            () => handler.Handle(new LoginCommand("test@example.com", "P@ssw0rd", "client-key", "storefront_web")));
+    }
+
+    [Fact]
+    public async Task Handle_UnconfirmedEmail_ThrowsBadRequest()
+    {
+        var (handler, _, _, _, _, _) = BuildScenario(isAssignedToApp: true, emailConfirmed: false);
+
+        await Should.ThrowAsync<BadRequestException>(
             () => handler.Handle(new LoginCommand("test@example.com", "P@ssw0rd", "client-key", "storefront_web")));
     }
 }
