@@ -21,9 +21,11 @@ public static class ConfigurationExtensions
     {
         services.AddSettings(configuration, Assembly.GetExecutingAssembly());
         services.AddSingleton(BindSessionJwtSetting(configuration));
+        services.AddSingleton(BindClientSetting(configuration));
 
         ValidateKafkaConfiguration(configuration);
         ValidateRootConfiguration(configuration);
+        ValidateClientConfiguration(configuration);
 
         return services;
     }
@@ -36,6 +38,10 @@ public static class ConfigurationExtensions
     /// </summary>
     private static SessionJwtSetting BindSessionJwtSetting(IConfiguration configuration)
         => configuration.GetSection(SessionJwtSetting.Section).Get<SessionJwtSetting>() ?? new SessionJwtSetting();
+
+    /// <summary>ClientSetting lives in Auth.Application (ForgotPasswordHandler/RegisterHandler read it directly) so it can't join this assembly's ISetting reflection scan - bound manually here, the same way SessionJwtSetting is.</summary>
+    private static ClientSetting BindClientSetting(IConfiguration configuration)
+        => configuration.GetSection(ClientSetting.Section).Get<ClientSetting>() ?? new ClientSetting();
 
     private static void ValidateKafkaConfiguration(IConfiguration configuration)
     {
@@ -63,6 +69,18 @@ public static class ConfigurationExtensions
             throw new OptionsValidationException(
                 RootSetting.Section,
                 typeof(RootSetting),
+                result.Errors.Select(e => e.ErrorMessage));
+    }
+
+    private static void ValidateClientConfiguration(IConfiguration configuration)
+    {
+        var clientSetting = configuration.GetSection(ClientSetting.Section).Get<ClientSetting>() ?? new ClientSetting();
+        var result = new ClientSettingValidator().Validate(clientSetting);
+
+        if (!result.IsValid)
+            throw new OptionsValidationException(
+                ClientSetting.Section,
+                typeof(ClientSetting),
                 result.Errors.Select(e => e.ErrorMessage));
     }
 }

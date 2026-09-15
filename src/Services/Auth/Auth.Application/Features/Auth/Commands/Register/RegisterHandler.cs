@@ -6,8 +6,11 @@ using NovaCore.Auth.Application.Abstractions.Persistence.Permissions;
 using NovaCore.Auth.Application.Abstractions.Registrations;
 using NovaCore.Auth.Application.Abstractions.Security.Jwt;
 using NovaCore.Auth.Application.Abstractions.Services;
+using NovaCore.Auth.Application.Configurations;
 using NovaCore.Auth.Application.Features.Auth.Events.OnUserRegistered;
 
+using NovaCore.BuildingBlock.Application.Abstractions.Outbox;
+using NovaCore.BuildingBlock.Contract.Events.User;
 using NovaCore.BuildingBlock.SharedKernel.Authorization;
 
 namespace NovaCore.Auth.Application.Features.Auth.Commands.Register;
@@ -27,6 +30,8 @@ public sealed class RegisterHandler(
     IRefreshTokenService refreshTokenService,
     ICurrentUserService currentUserService,
     IInternalEventDispatcher eventDispatcher,
+    IOutboxStore outboxStore,
+    ClientSetting clientSetting,
     IAppLogger<RegisterHandler> logger) : ICommandHandler<RegisterCommand, RegisterResult>
 {
     public async Task<RegisterResult> Handle(RegisterCommand request, CancellationToken ct = default)
@@ -94,6 +99,8 @@ public sealed class RegisterHandler(
 
         // TODO: Publish audit log event bus
 
+        await PublishEmailVerificationRequestedAsync(account, ct);
+
         // Generate AccessToken and Refresh Token which are set to HttpOnly
         var jwtId = Guid.NewGuid();
         var roles = await accountReadService.GetRoleNamesAsync(account.Id, ct);
@@ -115,5 +122,23 @@ public sealed class RegisterHandler(
         currentUserService.SetRefreshToken(refreshToken);
 
         return new RegisterResult();
+    }
+
+    /// <summary>Enqueues the verification email off the request path - the newly-created account stays unverified until the link is clicked, this call never blocks Register on Resend.</summary>
+    private async Task PublishEmailVerificationRequestedAsync(Account account, CancellationToken ct)
+    {
+        var token = await authService.GenerateEmailConfirmationTokenAsync(account.Id, ct);
+        var verificationLink = $"{clientSetting.EmailVerificationUrl}?token={Uri.EscapeDataString(token)}&accountId={account.Id}";
+
+        var @event = new EmailVerificationRequestedIntegrationEvent(
+            account.Id.ToString(),
+            account.Email!,
+            verificationLink);
+
+        await unitOfWork.ExecuteTransactionAsync(async () =>
+        {
+            await outboxStore.EnqueueAsync(@event, ct);
+            await unitOfWork.SaveChangesAsync(ct);
+        }, ct: ct);
     }
 }
