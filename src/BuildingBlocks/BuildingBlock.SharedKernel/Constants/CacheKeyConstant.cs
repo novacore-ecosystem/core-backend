@@ -142,6 +142,22 @@ public static class CacheKeyConstant
         public const string ActiveUsers = "active_users";
     }
 
+    /// <summary>
+    /// Password-reset token store (the "forgot password" completion flow). Must stay in sync with
+    /// NovaCore.Auth.Infrastructure.Security.PasswordReset.PasswordResetTokenService, which owns
+    /// the write side of this key.
+    /// </summary>
+    public static class PasswordResetTokens
+    {
+        private const string TokenKeyPrefix = "password_reset_token:";
+
+        /// <summary>Cached AccountId, keyed by the opaque reset token string. Pattern: password_reset_token:{token}</summary>
+        public static string ByTokenString(string token) => $"{TokenKeyPrefix}{token}";
+
+        /// <summary>Token lifetime in minutes - short-lived by design.</summary>
+        public const int DefaultTtlMinutes = 30;
+    }
+
     /// <summary>Product cache patterns and configuration (for future extension)</summary>
     public static class Products
     {
